@@ -14,6 +14,7 @@ const protectedFiles = [
   "src/renderer.js",
   "src/styles.css",
   "scripts/runtime-watchdog.js",
+  "scripts/local-integration.js",
   "scripts/production-check.js",
   "assets/zerolag-logo.svg",
   "assets/app-config.json",

@@ -88,6 +88,7 @@
 - Added `scripts/production-check.js` and npm scripts for production readiness checks.
 - Added `docs/server-api-contract.md` for backend implementation.
 - Added runnable `server/` license-server MVP with activation-code creation, device binding, subscription validation, token rotation, update manifest endpoint, and self-test.
+- Added `npm run dev:server-app` for local desktop-plus-license-server integration testing without mutating protected production config.
 
 ## Known Boundaries
 

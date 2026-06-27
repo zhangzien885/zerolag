@@ -38,6 +38,16 @@ The server stores local state in `server/data/server-state.json`. This file is i
 
 ## Connect The Desktop App Locally
 
+Fast path:
+
+```powershell
+npm run dev:server-app
+```
+
+This starts the local server, creates `ZL-PRO-LOCAL-TEST`, and opens the desktop app with server-backed membership enabled through environment variables.
+
+Manual path:
+
 Set `assets/app-config.json`:
 
 ```json

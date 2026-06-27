@@ -52,9 +52,12 @@ npm run production:check:strict
 npm run server:test
 npm run server:create-code -- ZL-PRO-TEST-001 30 1
 npm run server:start
+npm run dev:server-app
 ```
 
 The local MVP server implements activation and validation endpoints used by the desktop app. See `server/README.md` and `docs/server-api-contract.md`.
+
+`dev:server-app` starts the local license server, creates a test activation code, and opens the desktop app in server-backed membership mode without changing the protected production config file.
 
 ## Website
 
