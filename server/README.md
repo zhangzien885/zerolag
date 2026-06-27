@@ -8,6 +8,7 @@ It provides:
 - `POST /v1/licenses/validate`
 - `POST /v1/orders/create`
 - `GET /v1/orders/:orderId`
+- `POST /v1/payments/webhook`
 - `POST /v1/admin/activation-codes`
 - `POST /v1/admin/orders/complete`
 - `GET /v1/admin/summary`
@@ -51,10 +52,19 @@ npm run server:admin -- create-code ZL-PRO-TEST-002 30 1
 npm run server:admin -- orders
 npm run server:admin -- complete-latest manual_trade_id
 npm run server:admin -- complete-order ord_xxx manual_trade_id
+npm run server:admin -- send-webhook ord_xxx manual_trade_id
 npm run server:admin -- summary
 ```
 
 The admin API requires the `X-ZeroLag-Admin-Secret` header. In production this must be a strong secret stored outside the repo.
+
+Signed payment webhooks require the `X-ZeroLag-Signature` header. The signature format is:
+
+```text
+sha256=<hmac_sha256_of_raw_json_body>
+```
+
+Set `ZEROLAG_PAYMENT_WEBHOOK_SECRET` to a strong value before connecting a real payment provider.
 
 ## Order Flow MVP
 
@@ -62,11 +72,11 @@ The server now supports a provider-neutral order flow:
 
 1. Client or website calls `POST /v1/orders/create`.
 2. Payment provider completes payment.
-3. Backend calls `POST /v1/admin/orders/complete`.
+3. Payment provider calls `POST /v1/payments/webhook` with a verified payment-success event.
 4. The paid order receives a one-time activation code.
 5. Desktop app activates membership with that code.
 
-The MVP uses manual completion so the product can be tested before choosing WeChat Pay, Alipay, or another payment provider.
+The admin completion endpoint is kept for private testing and manual support fixes, but the signed webhook is the main production integration seam.
 
 ## Connect The Desktop App Locally
 
@@ -97,8 +107,9 @@ For a paid release:
 - Set `allowLocalDemoLicense` to `false`.
 - Use a strong `ZEROLAG_SERVER_SECRET`.
 - Use a strong `ZEROLAG_ADMIN_SECRET`.
+- Use a strong `ZEROLAG_PAYMENT_WEBHOOK_SECRET`.
 - Move state from JSON to a real database.
-- Add payment webhooks that create subscriptions or activation codes.
+- Replace the manual payment placeholder with WeChat Pay, Alipay, Stripe, or another provider that calls the signed webhook.
 
 ## Test
 

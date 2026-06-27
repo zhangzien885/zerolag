@@ -93,6 +93,7 @@
 - Added provider-neutral order flow MVP: create order, query order status, manually complete paid order, and issue a one-time activation code.
 - Connected the desktop purchase dialog to server order creation and order-status refresh, with automatic activation after a paid order returns an activation code.
 - Added admin order listing and `complete-latest` helper for local payment-flow testing.
+- Added signed payment webhook MVP for payment-success callbacks, with HMAC verification, idempotent event handling, automatic order completion, and local `send-webhook` testing helper.
 
 ## Known Boundaries
 

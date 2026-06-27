@@ -2,7 +2,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
-const { addActivationCode, createAppServer } = require("./index");
+const { addActivationCode, createAppServer, signPaymentWebhook } = require("./index");
 
 function requestJson(port, pathname, body, headers = {}) {
   return new Promise((resolve, reject) => {
@@ -43,6 +43,41 @@ function requestJson(port, pathname, body, headers = {}) {
   });
 }
 
+function requestRaw(port, pathname, payload, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const request = require("http").request({
+      hostname: "127.0.0.1",
+      port,
+      path: pathname,
+      method: "POST",
+      headers: {
+        ...headers,
+        "Content-Length": Buffer.byteLength(payload)
+      }
+    }, (response) => {
+      let raw = "";
+      response.setEncoding("utf8");
+      response.on("data", (chunk) => {
+        raw += chunk;
+      });
+      response.on("end", () => {
+        try {
+          resolve({
+            statusCode: response.statusCode,
+            body: raw ? JSON.parse(raw) : null
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+
+    request.on("error", reject);
+    request.write(payload);
+    request.end();
+  });
+}
+
 function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
@@ -62,7 +97,8 @@ async function main() {
   const options = {
     statePath: path.join(tempDir, "server-state.json"),
     serverSecret: "self-test-secret",
-    adminSecret: "self-test-admin"
+    adminSecret: "self-test-admin",
+    paymentWebhookSecret: "self-test-payment"
   };
   const code = "ZL-PRO-SELF-TEST";
   const adminCode = "ZL-PRO-ADMIN-TEST";
@@ -111,14 +147,42 @@ async function main() {
     });
     assert(adminOrders.statusCode === 200 && adminOrders.body.orders.length === 1, "Admin order list failed.");
 
-    const completedOrder = await requestJson(port, "/v1/admin/orders/complete", {
+    const badWebhookBody = JSON.stringify({
+      type: "payment.succeeded",
+      eventId: "evt_bad_signature",
       orderId: createdOrder.body.order.orderId,
-      providerTradeId: "test_trade"
-    }, {
-      "X-ZeroLag-Admin-Secret": "self-test-admin"
+      provider: "self-test",
+      providerTradeId: "trade_bad_signature"
+    });
+    const rejectedWebhook = await requestRaw(port, "/v1/payments/webhook", badWebhookBody, {
+      "Content-Type": "application/json",
+      "X-ZeroLag-Signature": "sha256=bad"
+    });
+    assert(rejectedWebhook.statusCode === 401, "Payment webhook should reject invalid signatures.");
+
+    const webhookBody = JSON.stringify({
+      type: "payment.succeeded",
+      eventId: "evt_self_test_paid",
+      orderId: createdOrder.body.order.orderId,
+      provider: "self-test",
+      providerTradeId: "trade_self_test"
+    });
+    const completedOrder = await requestRaw(port, "/v1/payments/webhook", webhookBody, {
+      "Content-Type": "application/json",
+      "X-ZeroLag-Signature": signPaymentWebhook("self-test-payment", webhookBody)
     });
     assert(completedOrder.statusCode === 200 && completedOrder.body.order.status === "paid", "Order completion failed.");
     assert(Boolean(completedOrder.body.order.activationCode), "Paid order should receive an activation code.");
+
+    const repeatedWebhook = await requestRaw(port, "/v1/payments/webhook", webhookBody, {
+      "Content-Type": "application/json",
+      "X-ZeroLag-Signature": signPaymentWebhook("self-test-payment", webhookBody)
+    });
+    assert(repeatedWebhook.statusCode === 200, "Repeated webhook should be idempotent.");
+    assert(
+      repeatedWebhook.body.order.activationCode === completedOrder.body.order.activationCode,
+      "Repeated webhook should return the original activation code."
+    );
 
     const orderStatusAfter = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`);
     assert(orderStatusAfter.body.order.activationCode === completedOrder.body.order.activationCode, "Paid order status should return activation code.");

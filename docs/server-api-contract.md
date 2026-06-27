@@ -6,6 +6,12 @@ The runnable MVP server lives in `server/`. It is suitable for local integration
 
 Admin endpoints require the `X-ZeroLag-Admin-Secret` header.
 
+Payment webhooks require the `X-ZeroLag-Signature` header. The signature must be calculated from the exact raw JSON request body:
+
+```text
+sha256=<hmac_sha256(raw_body, ZEROLAG_PAYMENT_WEBHOOK_SECRET)>
+```
+
 ## Configuration
 
 The desktop client reads production endpoints from `assets/app-config.json`.
@@ -162,6 +168,44 @@ Response:
 }
 ```
 
+## POST `/v1/payments/webhook`
+
+Provider-neutral signed payment callback. Payment providers should call this endpoint after a payment succeeds. ZeroLag verifies the webhook signature, marks the matching order as paid, and issues a one-time activation code.
+
+Headers:
+
+```text
+Content-Type: application/json
+X-ZeroLag-Signature: sha256=<hmac_sha256(raw_body, ZEROLAG_PAYMENT_WEBHOOK_SECRET)>
+```
+
+Request:
+
+```json
+{
+  "type": "payment.succeeded",
+  "eventId": "evt_123",
+  "orderId": "ord_123",
+  "provider": "wechat_pay",
+  "providerTradeId": "provider_trade_123"
+}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "order": {
+    "orderId": "ord_123",
+    "status": "paid",
+    "activationCode": "ZL-PRO-ABC123-DEF456"
+  }
+}
+```
+
+The endpoint is idempotent by `eventId`, so payment providers can safely retry the same event.
+
 ## POST `/v1/admin/activation-codes`
 
 Creates an activation code after an admin action or payment callback.
@@ -212,7 +256,7 @@ Response:
 
 ## POST `/v1/admin/orders/complete`
 
-Marks an order as paid and creates a one-time activation code. In production, a payment webhook should call this after verifying the provider signature.
+Marks an order as paid and creates a one-time activation code. This is kept for private testing and support; production payment platforms should use `POST /v1/payments/webhook`.
 
 Request:
 
@@ -259,9 +303,4 @@ Response:
 
 ## Payment Integration Point
 
-Payment providers should call the backend after successful payment and either:
-
-- create a subscription directly for the user's account and device; or
-- create a one-time activation code that the desktop app can redeem.
-
-The current MVP supports the activation-code path first because it is the fastest way to test paid membership without committing to a payment provider too early.
+The current MVP supports the activation-code path first because it is the fastest way to test paid membership without committing to a payment provider too early. A future account system can switch paid webhooks from issuing codes to creating account-bound subscriptions directly.

@@ -1,7 +1,9 @@
 const http = require("http");
+const { signPaymentWebhook } = require("./index");
 
 const baseUrl = process.env.ZEROLAG_ADMIN_API_BASE_URL || "http://127.0.0.1:8787";
 const adminSecret = process.env.ZEROLAG_ADMIN_SECRET || "zerolag-dev-admin-secret-change-before-production";
+const paymentWebhookSecret = process.env.ZEROLAG_PAYMENT_WEBHOOK_SECRET || "zerolag-dev-payment-webhook-secret-change-before-production";
 
 function usage() {
   console.log("Usage:");
@@ -9,6 +11,7 @@ function usage() {
   console.log("  node server/admin-client.js orders");
   console.log("  node server/admin-client.js complete-order [orderId] [providerTradeId]");
   console.log("  node server/admin-client.js complete-latest [providerTradeId]");
+  console.log("  node server/admin-client.js send-webhook [orderId] [providerTradeId]");
   console.log("  node server/admin-client.js summary");
 }
 
@@ -45,6 +48,41 @@ function requestJson(pathname, body) {
 
     request.on("error", reject);
     if (payload) request.write(payload);
+    request.end();
+  });
+}
+
+function requestSignedWebhook(body) {
+  return new Promise((resolve, reject) => {
+    const target = new URL("/v1/payments/webhook", baseUrl);
+    const payload = JSON.stringify(body);
+    const request = http.request(target, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(payload),
+        "X-ZeroLag-Signature": signPaymentWebhook(paymentWebhookSecret, payload)
+      }
+    }, (response) => {
+      let raw = "";
+      response.setEncoding("utf8");
+      response.on("data", (chunk) => {
+        raw += chunk;
+      });
+      response.on("end", () => {
+        try {
+          resolve({
+            statusCode: response.statusCode,
+            body: raw ? JSON.parse(raw) : null
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+
+    request.on("error", reject);
+    request.write(payload);
     request.end();
   });
 }
@@ -100,6 +138,28 @@ async function main() {
     const response = await requestJson("/v1/admin/orders/complete", {
       orderId: latestPending.orderId,
       providerTradeId: process.argv[3] || "manual"
+    });
+    console.log(JSON.stringify(response.body, null, 2));
+    process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
+  if (command === "send-webhook") {
+    const orderId = process.argv[3];
+    const providerTradeId = process.argv[4] || `manual_${Date.now()}`;
+
+    if (!orderId) {
+      console.log(JSON.stringify({ ok: false, message: "Order id is required." }, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+
+    const response = await requestSignedWebhook({
+      type: "payment.succeeded",
+      eventId: `evt_${providerTradeId}`,
+      orderId,
+      provider: "manual-signed-webhook",
+      providerTradeId
     });
     console.log(JSON.stringify(response.body, null, 2));
     process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;

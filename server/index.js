@@ -42,6 +42,7 @@ function createEmptyState() {
     createdAt: nowIso(),
     activationCodes: {},
     orders: {},
+    paymentEvents: {},
     subscriptions: {},
     tokens: {}
   };
@@ -57,6 +58,12 @@ function serverSecretFromOptions(options = {}) {
 
 function adminSecretFromOptions(options = {}) {
   return options.adminSecret || process.env.ZEROLAG_ADMIN_SECRET || "zerolag-dev-admin-secret-change-before-production";
+}
+
+function paymentWebhookSecretFromOptions(options = {}) {
+  return options.paymentWebhookSecret
+    || process.env.ZEROLAG_PAYMENT_WEBHOOK_SECRET
+    || "zerolag-dev-payment-webhook-secret-change-before-production";
 }
 
 function loadState(options = {}) {
@@ -126,6 +133,9 @@ function stateSummary(state) {
       pending: orders.filter((order) => order.status === "pending").length,
       paid: orders.filter((order) => order.status === "paid").length
     },
+    paymentEvents: {
+      total: Object.keys(state.paymentEvents || {}).length
+    },
     subscriptions: {
       total: subscriptions.length,
       active: subscriptions.filter(activeSubscription).length,
@@ -152,6 +162,16 @@ function requireAdmin(request, response, options = {}) {
     return false;
   }
   return true;
+}
+
+function signPaymentWebhook(secret, bodyText) {
+  return `sha256=${crypto.createHmac("sha256", secret).update(String(bodyText || "")).digest("hex")}`;
+}
+
+function verifyPaymentWebhookSignature(request, rawBody, options = {}) {
+  const expected = signPaymentWebhook(paymentWebhookSecretFromOptions(options), rawBody);
+  const provided = request.headers["x-zerolag-signature"];
+  return timingSafeEqualText(provided, expected);
 }
 
 function putActivationCode(state, code, input = {}, options = {}) {
@@ -193,7 +213,7 @@ function jsonResponse(response, statusCode, body) {
   response.end(payload);
 }
 
-function readRequestBody(request) {
+function readRawRequestBody(request) {
   return new Promise((resolve, reject) => {
     let raw = "";
     request.setEncoding("utf8");
@@ -205,19 +225,24 @@ function readRequestBody(request) {
       }
     });
     request.on("end", () => {
-      if (!raw) {
-        resolve({});
-        return;
-      }
-
-      try {
-        resolve(JSON.parse(raw));
-      } catch {
-        reject(new Error("Invalid JSON body."));
-      }
+      resolve(raw);
     });
     request.on("error", reject);
   });
+}
+
+function parseJsonBody(raw) {
+  if (!raw) return {};
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error("Invalid JSON body.");
+  }
+}
+
+async function readRequestBody(request) {
+  return parseJsonBody(await readRawRequestBody(request));
 }
 
 function activeSubscription(subscription) {
@@ -394,6 +419,7 @@ async function createOrder(request, response, options = {}) {
     channel: String(body.channel || ""),
     createdAt: nowIso(),
     paidAt: "",
+    paymentProvider: "",
     providerTradeId: "",
     activationCode: ""
   };
@@ -425,6 +451,29 @@ async function getOrderStatus(_request, response, options = {}, orderId = "") {
   });
 }
 
+function completeOrderInState(state, orderId, input = {}, options = {}) {
+  const order = state.orders[String(orderId || "").trim()];
+  if (!order) return null;
+
+  if (!order.activationCode) {
+    const code = normalizeCode(input.activationCode || generateActivationCode());
+    putActivationCode(state, code, {
+      label: `order:${order.orderId}`,
+      plan: order.plan || "ZeroLag Pro Monthly",
+      durationDays: Number(order.durationDays || 30),
+      maxUses: Number(order.maxUses || 1),
+      enabled: true
+    }, options);
+    order.activationCode = code;
+  }
+
+  order.status = "paid";
+  order.paidAt = order.paidAt || nowIso();
+  order.paymentProvider = String(input.paymentProvider || order.paymentProvider || "");
+  order.providerTradeId = String(input.providerTradeId || order.providerTradeId || "");
+  return order;
+}
+
 async function createActivationCodeAdmin(request, response, options = {}) {
   if (!requireAdmin(request, response, options)) return;
 
@@ -451,34 +500,78 @@ async function completeOrderAdmin(request, response, options = {}) {
   const body = await readRequestBody(request);
   const orderId = String(body.orderId || "").trim();
   const state = loadState(options);
-  const order = state.orders[orderId];
+  const order = completeOrderInState(state, orderId, {
+    activationCode: body.activationCode,
+    paymentProvider: body.paymentProvider || "manual-admin",
+    providerTradeId: body.providerTradeId
+  }, options);
 
   if (!order) {
     jsonResponse(response, 404, { message: "Order not found." });
     return;
   }
 
-  if (!order.activationCode) {
-    const code = normalizeCode(body.activationCode || generateActivationCode());
-    putActivationCode(state, code, {
-      label: `order:${orderId}`,
-      plan: order.plan || "ZeroLag Pro Monthly",
-      durationDays: Number(order.durationDays || 30),
-      maxUses: Number(order.maxUses || 1),
-      enabled: true
-    }, options);
-    order.activationCode = code;
-  }
-
-  order.status = "paid";
-  order.paidAt = order.paidAt || nowIso();
-  order.providerTradeId = String(body.providerTradeId || order.providerTradeId || "");
   saveState(state, options);
 
   jsonResponse(response, 200, {
     ok: true,
     order: safeOrderRecord(order)
   });
+}
+
+async function paymentWebhook(request, response, options = {}) {
+  const rawBody = await readRawRequestBody(request);
+  if (!verifyPaymentWebhookSignature(request, rawBody, options)) {
+    jsonResponse(response, 401, { ok: false, message: "Invalid payment signature." });
+    return;
+  }
+
+  const body = parseJsonBody(rawBody);
+  const eventId = String(body.eventId || body.providerTradeId || "").trim() || randomId("evt");
+  const state = loadState(options);
+  state.paymentEvents = state.paymentEvents || {};
+
+  if (state.paymentEvents[eventId]) {
+    jsonResponse(response, 200, state.paymentEvents[eventId].response);
+    return;
+  }
+
+  if (body.type && body.type !== "payment.succeeded") {
+    const ignoredPayload = { ok: true, ignored: true };
+    state.paymentEvents[eventId] = {
+      eventId,
+      type: String(body.type || ""),
+      createdAt: nowIso(),
+      response: ignoredPayload
+    };
+    saveState(state, options);
+    jsonResponse(response, 202, ignoredPayload);
+    return;
+  }
+
+  const order = completeOrderInState(state, body.orderId, {
+    paymentProvider: body.provider || "signed-webhook",
+    providerTradeId: body.providerTradeId || eventId
+  }, options);
+
+  if (!order) {
+    jsonResponse(response, 404, { ok: false, message: "Order not found." });
+    return;
+  }
+
+  const payload = {
+    ok: true,
+    order: safeOrderRecord(order)
+  };
+  state.paymentEvents[eventId] = {
+    eventId,
+    type: String(body.type || "payment.succeeded"),
+    orderId: order.orderId,
+    createdAt: nowIso(),
+    response: payload
+  };
+  saveState(state, options);
+  jsonResponse(response, 200, payload);
 }
 
 async function listOrdersAdmin(request, response, options = {}) {
@@ -515,6 +608,11 @@ async function routeRequest(request, response, options = {}) {
 
     if (request.method === "POST" && url.pathname === "/v1/orders/create") {
       await createOrder(request, response, options);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/payments/webhook") {
+      await paymentWebhook(request, response, options);
       return;
     }
 
@@ -591,5 +689,6 @@ module.exports = {
   createAppServer,
   loadState,
   saveState,
+  signPaymentWebhook,
   startServer
 };
