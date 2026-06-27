@@ -90,6 +90,7 @@
 - Added runnable `server/` license-server MVP with activation-code creation, device binding, subscription validation, token rotation, update manifest endpoint, and self-test.
 - Added `npm run dev:server-app` for local desktop-plus-license-server integration testing without mutating protected production config.
 - Added admin-protected activation-code creation and summary endpoints for the future payment callback path.
+- Added provider-neutral order flow MVP: create order, query order status, manually complete paid order, and issue a one-time activation code.
 
 ## Known Boundaries
 

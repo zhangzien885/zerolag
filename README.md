@@ -59,6 +59,8 @@ The local MVP server implements activation and validation endpoints used by the 
 
 `dev:server-app` starts the local license server, creates a test activation code, and opens the desktop app in server-backed membership mode without changing the protected production config file.
 
+The server also includes a provider-neutral order flow so payment callbacks can later complete orders and issue one-time activation codes.
+
 ## Website
 
 The first official website landing page is available under `website/`.

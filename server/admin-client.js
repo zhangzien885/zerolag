@@ -6,6 +6,7 @@ const adminSecret = process.env.ZEROLAG_ADMIN_SECRET || "zerolag-dev-admin-secre
 function usage() {
   console.log("Usage:");
   console.log("  node server/admin-client.js create-code [code] [durationDays] [maxUses]");
+  console.log("  node server/admin-client.js complete-order [orderId] [providerTradeId]");
   console.log("  node server/admin-client.js summary");
 }
 
@@ -59,6 +60,16 @@ async function main() {
       code: process.argv[3],
       durationDays: Number(process.argv[4] || 30),
       maxUses: Number(process.argv[5] || 1)
+    });
+    console.log(JSON.stringify(response.body, null, 2));
+    process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
+  if (command === "complete-order") {
+    const response = await requestJson("/v1/admin/orders/complete", {
+      orderId: process.argv[3],
+      providerTradeId: process.argv[4] || "manual"
     });
     console.log(JSON.stringify(response.body, null, 2));
     process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;

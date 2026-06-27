@@ -111,6 +111,57 @@ If the subscription is expired, refunded, revoked, moved to another device, or p
 
 Production builds should sign update metadata and configure `updatePublicKeyPem`.
 
+## POST `/v1/orders/create`
+
+Creates a pending payment order. The MVP returns a manual-payment placeholder; production can replace this with WeChat Pay, Alipay, Stripe, or another provider.
+
+Request:
+
+```json
+{
+  "plan": "ZeroLag Pro Monthly",
+  "deviceHash": "sha256-device-id",
+  "channel": "website"
+}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "order": {
+    "orderId": "ord_123",
+    "status": "pending",
+    "plan": "ZeroLag Pro Monthly",
+    "amountCents": 3000,
+    "currency": "CNY",
+    "activationCode": ""
+  },
+  "payment": {
+    "provider": "manual",
+    "paymentUrl": "zerolag://pay/ord_123"
+  }
+}
+```
+
+## GET `/v1/orders/:orderId`
+
+Returns order status. Paid orders expose the generated activation code.
+
+Response:
+
+```json
+{
+  "ok": true,
+  "order": {
+    "orderId": "ord_123",
+    "status": "paid",
+    "activationCode": "ZL-PRO-ABC123-DEF456"
+  }
+}
+```
+
 ## POST `/v1/admin/activation-codes`
 
 Creates an activation code after an admin action or payment callback.
@@ -155,6 +206,32 @@ Response:
     "activationCodes": { "total": 1, "enabled": 1, "used": 0 },
     "subscriptions": { "total": 0, "active": 0, "expired": 0 },
     "tokens": { "active": 0 }
+  }
+}
+```
+
+## POST `/v1/admin/orders/complete`
+
+Marks an order as paid and creates a one-time activation code. In production, a payment webhook should call this after verifying the provider signature.
+
+Request:
+
+```json
+{
+  "orderId": "ord_123",
+  "providerTradeId": "wechat_or_alipay_trade_id"
+}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "order": {
+    "orderId": "ord_123",
+    "status": "paid",
+    "activationCode": "ZL-PRO-ABC123-DEF456"
   }
 }
 ```

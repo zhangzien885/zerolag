@@ -6,7 +6,10 @@ It provides:
 
 - `POST /v1/licenses/activate`
 - `POST /v1/licenses/validate`
+- `POST /v1/orders/create`
+- `GET /v1/orders/:orderId`
 - `POST /v1/admin/activation-codes`
+- `POST /v1/admin/orders/complete`
 - `GET /v1/admin/summary`
 - `GET /v1/updates/manifest`
 - local activation-code creation for early testing
@@ -45,10 +48,23 @@ Start the server, then create a code through the admin API:
 ```powershell
 $env:ZEROLAG_ADMIN_SECRET="change-this-before-production"
 npm run server:admin -- create-code ZL-PRO-TEST-002 30 1
+npm run server:admin -- complete-order ord_xxx manual_trade_id
 npm run server:admin -- summary
 ```
 
 The admin API requires the `X-ZeroLag-Admin-Secret` header. In production this must be a strong secret stored outside the repo.
+
+## Order Flow MVP
+
+The server now supports a provider-neutral order flow:
+
+1. Client or website calls `POST /v1/orders/create`.
+2. Payment provider completes payment.
+3. Backend calls `POST /v1/admin/orders/complete`.
+4. The paid order receives a one-time activation code.
+5. Desktop app activates membership with that code.
+
+The MVP uses manual completion so the product can be tested before choosing WeChat Pay, Alipay, or another payment provider.
 
 ## Connect The Desktop App Locally
 

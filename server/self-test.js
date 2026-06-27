@@ -96,8 +96,30 @@ async function main() {
     });
     assert(summaryBefore.statusCode === 200 && summaryBefore.body.summary.activationCodes.total >= 2, "Admin summary failed.");
 
+    const createdOrder = await requestJson(port, "/v1/orders/create", {
+      plan: "ZeroLag Pro Monthly",
+      deviceHash,
+      channel: "test"
+    });
+    assert(createdOrder.statusCode === 201 && createdOrder.body.order.status === "pending", "Order creation failed.");
+
+    const orderStatusBefore = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`);
+    assert(orderStatusBefore.statusCode === 200 && !orderStatusBefore.body.order.activationCode, "Pending order should not expose a code.");
+
+    const completedOrder = await requestJson(port, "/v1/admin/orders/complete", {
+      orderId: createdOrder.body.order.orderId,
+      providerTradeId: "test_trade"
+    }, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(completedOrder.statusCode === 200 && completedOrder.body.order.status === "paid", "Order completion failed.");
+    assert(Boolean(completedOrder.body.order.activationCode), "Paid order should receive an activation code.");
+
+    const orderStatusAfter = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`);
+    assert(orderStatusAfter.body.order.activationCode === completedOrder.body.order.activationCode, "Paid order status should return activation code.");
+
     const activated = await requestJson(port, "/v1/licenses/activate", {
-      activationCode: adminCode,
+      activationCode: completedOrder.body.order.activationCode,
       deviceHash,
       appVersion: "0.1.0",
       channel: "test"
@@ -128,6 +150,7 @@ async function main() {
       "X-ZeroLag-Admin-Secret": "self-test-admin"
     });
     assert(summaryAfter.body.summary.subscriptions.active === 1, "Admin summary should show active subscription.");
+    assert(summaryAfter.body.summary.orders.paid === 1, "Admin summary should show paid order.");
 
     console.log("ZeroLag server self-test passed.");
   } finally {

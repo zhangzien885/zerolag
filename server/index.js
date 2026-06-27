@@ -41,6 +41,7 @@ function createEmptyState() {
     version: 1,
     createdAt: nowIso(),
     activationCodes: {},
+    orders: {},
     subscriptions: {},
     tokens: {}
   };
@@ -93,14 +94,37 @@ function safeActivationCodeRecord(record) {
   };
 }
 
+function generateActivationCode() {
+  return `ZL-PRO-${crypto.randomBytes(3).toString("hex").toUpperCase()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+}
+
+function safeOrderRecord(order) {
+  return {
+    orderId: order.orderId,
+    status: order.status,
+    plan: order.plan,
+    amountCents: Number(order.amountCents || 0),
+    currency: order.currency || "CNY",
+    activationCode: order.activationCode || "",
+    createdAt: order.createdAt || "",
+    paidAt: order.paidAt || ""
+  };
+}
+
 function stateSummary(state) {
   const activationCodes = Object.values(state.activationCodes || {});
+  const orders = Object.values(state.orders || {});
   const subscriptions = Object.values(state.subscriptions || {});
   return {
     activationCodes: {
       total: activationCodes.length,
       enabled: activationCodes.filter((code) => code.enabled !== false).length,
       used: activationCodes.filter((code) => Number(code.useCount || 0) > 0).length
+    },
+    orders: {
+      total: orders.length,
+      pending: orders.filter((order) => order.status === "pending").length,
+      paid: orders.filter((order) => order.status === "paid").length
     },
     subscriptions: {
       total: subscriptions.length,
@@ -130,14 +154,13 @@ function requireAdmin(request, response, options = {}) {
   return true;
 }
 
-function addActivationCode(code, input = {}, options = {}) {
+function putActivationCode(state, code, input = {}, options = {}) {
   const normalized = normalizeCode(code);
   if (!normalized) {
     throw new Error("Activation code is required.");
   }
 
   const secret = serverSecretFromOptions(options);
-  const state = loadState(options);
   const hash = codeHash(secret, normalized);
   state.activationCodes[hash] = {
     codeHash: hash,
@@ -150,8 +173,14 @@ function addActivationCode(code, input = {}, options = {}) {
     createdAt: input.createdAt || nowIso(),
     updatedAt: nowIso()
   };
-  saveState(state, options);
   return state.activationCodes[hash];
+}
+
+function addActivationCode(code, input = {}, options = {}) {
+  const state = loadState(options);
+  const record = putActivationCode(state, code, input, options);
+  saveState(state, options);
+  return record;
 }
 
 function jsonResponse(response, statusCode, body) {
@@ -345,6 +374,57 @@ async function updateManifest(_request, response) {
   }
 }
 
+async function createOrder(request, response, options = {}) {
+  const body = await readRequestBody(request);
+  const state = loadState(options);
+  const plan = body.plan || "ZeroLag Pro Monthly";
+  const durationDays = Number(body.durationDays || 30);
+  const amountCents = Number(body.amountCents || 3000);
+  const orderId = randomId("ord");
+  const deviceHash = validateDeviceHash(body.deviceHash) ? String(body.deviceHash).trim() : "";
+  const order = {
+    orderId,
+    status: "pending",
+    plan,
+    durationDays: Number.isFinite(durationDays) && durationDays > 0 ? durationDays : 30,
+    maxUses: 1,
+    amountCents: Number.isFinite(amountCents) && amountCents > 0 ? amountCents : 3000,
+    currency: body.currency || "CNY",
+    deviceHash,
+    channel: String(body.channel || ""),
+    createdAt: nowIso(),
+    paidAt: "",
+    providerTradeId: "",
+    activationCode: ""
+  };
+
+  state.orders[orderId] = order;
+  saveState(state, options);
+  jsonResponse(response, 201, {
+    ok: true,
+    order: safeOrderRecord(order),
+    payment: {
+      provider: "manual",
+      paymentUrl: `zerolag://pay/${orderId}`,
+      message: "Manual payment confirmation is required in the MVP."
+    }
+  });
+}
+
+async function getOrderStatus(_request, response, options = {}, orderId = "") {
+  const state = loadState(options);
+  const order = state.orders[String(orderId || "")];
+  if (!order) {
+    jsonResponse(response, 404, { message: "Order not found." });
+    return;
+  }
+
+  jsonResponse(response, 200, {
+    ok: true,
+    order: safeOrderRecord(order)
+  });
+}
+
 async function createActivationCodeAdmin(request, response, options = {}) {
   if (!requireAdmin(request, response, options)) return;
 
@@ -362,6 +442,42 @@ async function createActivationCodeAdmin(request, response, options = {}) {
     ok: true,
     code,
     activationCode: safeActivationCodeRecord(record)
+  });
+}
+
+async function completeOrderAdmin(request, response, options = {}) {
+  if (!requireAdmin(request, response, options)) return;
+
+  const body = await readRequestBody(request);
+  const orderId = String(body.orderId || "").trim();
+  const state = loadState(options);
+  const order = state.orders[orderId];
+
+  if (!order) {
+    jsonResponse(response, 404, { message: "Order not found." });
+    return;
+  }
+
+  if (!order.activationCode) {
+    const code = normalizeCode(body.activationCode || generateActivationCode());
+    putActivationCode(state, code, {
+      label: `order:${orderId}`,
+      plan: order.plan || "ZeroLag Pro Monthly",
+      durationDays: Number(order.durationDays || 30),
+      maxUses: Number(order.maxUses || 1),
+      enabled: true
+    }, options);
+    order.activationCode = code;
+  }
+
+  order.status = "paid";
+  order.paidAt = order.paidAt || nowIso();
+  order.providerTradeId = String(body.providerTradeId || order.providerTradeId || "");
+  saveState(state, options);
+
+  jsonResponse(response, 200, {
+    ok: true,
+    order: safeOrderRecord(order)
   });
 }
 
@@ -384,8 +500,24 @@ async function routeRequest(request, response, options = {}) {
       return;
     }
 
+    if (request.method === "POST" && url.pathname === "/v1/orders/create") {
+      await createOrder(request, response, options);
+      return;
+    }
+
+    const orderStatusMatch = url.pathname.match(/^\/v1\/orders\/([^/]+)$/);
+    if (request.method === "GET" && orderStatusMatch) {
+      await getOrderStatus(request, response, options, orderStatusMatch[1]);
+      return;
+    }
+
     if (request.method === "POST" && url.pathname === "/v1/admin/activation-codes") {
       await createActivationCodeAdmin(request, response, options);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/admin/orders/complete") {
+      await completeOrderAdmin(request, response, options);
       return;
     }
 
