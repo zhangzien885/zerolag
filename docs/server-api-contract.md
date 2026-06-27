@@ -206,6 +206,60 @@ Response:
 
 The endpoint is idempotent by `eventId`, so payment providers can safely retry the same event.
 
+Refund request:
+
+```json
+{
+  "type": "payment.refunded",
+  "eventId": "evt_refund_123",
+  "orderId": "ord_123",
+  "provider": "wechat_pay",
+  "refundTradeId": "provider_refund_123"
+}
+```
+
+Refund response:
+
+```json
+{
+  "ok": true,
+  "order": {
+    "orderId": "ord_123",
+    "status": "refunded",
+    "refundedAt": "2026-07-27T00:00:00.000Z"
+  }
+}
+```
+
+Refunds disable the related activation code, revoke subscriptions created from that code, and invalidate active server tokens.
+
+## POST `/v1/admin/orders/refund`
+
+Marks an order as refunded and revokes the related access. This is kept for private testing and manual support fixes.
+
+Request:
+
+```json
+{
+  "orderId": "ord_123",
+  "refundTradeId": "manual_refund_123",
+  "reason": "manual_refund"
+}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "order": {
+    "orderId": "ord_123",
+    "status": "refunded",
+    "refundedAt": "2026-07-27T00:00:00.000Z"
+  }
+}
+```
+
 ## POST `/v1/admin/activation-codes`
 
 Creates an activation code after an admin action or payment callback.

@@ -10,8 +10,10 @@ function usage() {
   console.log("  node server/admin-client.js create-code [code] [durationDays] [maxUses]");
   console.log("  node server/admin-client.js orders");
   console.log("  node server/admin-client.js complete-order [orderId] [providerTradeId]");
+  console.log("  node server/admin-client.js refund-order [orderId] [refundTradeId]");
   console.log("  node server/admin-client.js complete-latest [providerTradeId]");
   console.log("  node server/admin-client.js send-webhook [orderId] [providerTradeId]");
+  console.log("  node server/admin-client.js send-refund-webhook [orderId] [refundTradeId]");
   console.log("  node server/admin-client.js summary");
 }
 
@@ -123,6 +125,17 @@ async function main() {
     return;
   }
 
+  if (command === "refund-order") {
+    const response = await requestJson("/v1/admin/orders/refund", {
+      orderId: process.argv[3],
+      refundTradeId: process.argv[4] || "manual_refund",
+      reason: "manual_refund"
+    });
+    console.log(JSON.stringify(response.body, null, 2));
+    process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
   if (command === "complete-latest") {
     const orders = await requestJson("/v1/admin/orders");
     const latestPending = orders.body && Array.isArray(orders.body.orders)
@@ -160,6 +173,28 @@ async function main() {
       orderId,
       provider: "manual-signed-webhook",
       providerTradeId
+    });
+    console.log(JSON.stringify(response.body, null, 2));
+    process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
+  if (command === "send-refund-webhook") {
+    const orderId = process.argv[3];
+    const refundTradeId = process.argv[4] || `manual_refund_${Date.now()}`;
+
+    if (!orderId) {
+      console.log(JSON.stringify({ ok: false, message: "Order id is required." }, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+
+    const response = await requestSignedWebhook({
+      type: "payment.refunded",
+      eventId: `evt_${refundTradeId}`,
+      orderId,
+      provider: "manual-signed-webhook",
+      refundTradeId
     });
     console.log(JSON.stringify(response.body, null, 2));
     process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;

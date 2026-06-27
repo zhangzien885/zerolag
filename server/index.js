@@ -112,9 +112,10 @@ function safeOrderRecord(order) {
     plan: order.plan,
     amountCents: Number(order.amountCents || 0),
     currency: order.currency || "CNY",
-    activationCode: order.activationCode || "",
+    activationCode: order.status === "paid" ? order.activationCode || "" : "",
     createdAt: order.createdAt || "",
-    paidAt: order.paidAt || ""
+    paidAt: order.paidAt || "",
+    refundedAt: order.refundedAt || ""
   };
 }
 
@@ -131,7 +132,8 @@ function stateSummary(state) {
     orders: {
       total: orders.length,
       pending: orders.filter((order) => order.status === "pending").length,
-      paid: orders.filter((order) => order.status === "paid").length
+      paid: orders.filter((order) => order.status === "paid").length,
+      refunded: orders.filter((order) => order.status === "refunded").length
     },
     paymentEvents: {
       total: Object.keys(state.paymentEvents || {}).length
@@ -371,8 +373,17 @@ async function validateLicense(request, response, options = {}) {
     return;
   }
 
+  if (subscription.status === "revoked") {
+    delete state.tokens[tokenHash(secret, token)];
+    saveState(state, options);
+    jsonResponse(response, 403, { active: false, message: "Membership is no longer active." });
+    return;
+  }
+
   if (!activeSubscription(subscription)) {
-    subscription.status = "expired";
+    if (subscription.status !== "revoked") {
+      subscription.status = "expired";
+    }
     saveState(state, options);
     jsonResponse(response, 200, { active: false, message: "Membership expired." });
     return;
@@ -419,8 +430,10 @@ async function createOrder(request, response, options = {}) {
     channel: String(body.channel || ""),
     createdAt: nowIso(),
     paidAt: "",
+    refundedAt: "",
     paymentProvider: "",
     providerTradeId: "",
+    refundTradeId: "",
     activationCode: ""
   };
 
@@ -474,6 +487,44 @@ function completeOrderInState(state, orderId, input = {}, options = {}) {
   return order;
 }
 
+function refundOrderInState(state, orderId, input = {}, options = {}) {
+  const order = state.orders[String(orderId || "").trim()];
+  if (!order) return null;
+
+  order.status = "refunded";
+  order.refundedAt = order.refundedAt || nowIso();
+  order.paymentProvider = String(input.paymentProvider || order.paymentProvider || "");
+  order.refundTradeId = String(input.refundTradeId || input.providerTradeId || order.refundTradeId || "");
+
+  const activationCode = normalizeCode(order.activationCode);
+  if (!activationCode) return order;
+
+  const secret = serverSecretFromOptions(options);
+  const activationCodeHash = codeHash(secret, activationCode);
+  const activationRecord = state.activationCodes[activationCodeHash];
+  if (activationRecord) {
+    activationRecord.enabled = false;
+    activationRecord.updatedAt = nowIso();
+  }
+
+  const revokedSubscriptionIds = new Set();
+  Object.values(state.subscriptions || {}).forEach((subscription) => {
+    if (subscription.activationCodeHash !== activationCodeHash) return;
+    subscription.status = "revoked";
+    subscription.revokedAt = subscription.revokedAt || nowIso();
+    subscription.revokeReason = input.reason || "payment_refunded";
+    revokedSubscriptionIds.add(subscription.subscriptionId);
+  });
+
+  Object.entries(state.tokens || {}).forEach(([hash, token]) => {
+    if (revokedSubscriptionIds.has(token.subscriptionId)) {
+      delete state.tokens[hash];
+    }
+  });
+
+  return order;
+}
+
 async function createActivationCodeAdmin(request, response, options = {}) {
   if (!requireAdmin(request, response, options)) return;
 
@@ -519,6 +570,29 @@ async function completeOrderAdmin(request, response, options = {}) {
   });
 }
 
+async function refundOrderAdmin(request, response, options = {}) {
+  if (!requireAdmin(request, response, options)) return;
+
+  const body = await readRequestBody(request);
+  const state = loadState(options);
+  const order = refundOrderInState(state, body.orderId, {
+    paymentProvider: body.paymentProvider || "manual-admin",
+    refundTradeId: body.refundTradeId || body.providerTradeId,
+    reason: body.reason || "manual_refund"
+  }, options);
+
+  if (!order) {
+    jsonResponse(response, 404, { message: "Order not found." });
+    return;
+  }
+
+  saveState(state, options);
+  jsonResponse(response, 200, {
+    ok: true,
+    order: safeOrderRecord(order)
+  });
+}
+
 async function paymentWebhook(request, response, options = {}) {
   const rawBody = await readRawRequestBody(request);
   if (!verifyPaymentWebhookSignature(request, rawBody, options)) {
@@ -536,11 +610,12 @@ async function paymentWebhook(request, response, options = {}) {
     return;
   }
 
-  if (body.type && body.type !== "payment.succeeded") {
+  const eventType = String(body.type || "payment.succeeded");
+  if (eventType !== "payment.succeeded" && eventType !== "payment.refunded") {
     const ignoredPayload = { ok: true, ignored: true };
     state.paymentEvents[eventId] = {
       eventId,
-      type: String(body.type || ""),
+      type: eventType,
       createdAt: nowIso(),
       response: ignoredPayload
     };
@@ -549,10 +624,16 @@ async function paymentWebhook(request, response, options = {}) {
     return;
   }
 
-  const order = completeOrderInState(state, body.orderId, {
-    paymentProvider: body.provider || "signed-webhook",
-    providerTradeId: body.providerTradeId || eventId
-  }, options);
+  const order = eventType === "payment.refunded"
+    ? refundOrderInState(state, body.orderId, {
+      paymentProvider: body.provider || "signed-webhook",
+      refundTradeId: body.refundTradeId || body.providerTradeId || eventId,
+      reason: "payment_refunded"
+    }, options)
+    : completeOrderInState(state, body.orderId, {
+      paymentProvider: body.provider || "signed-webhook",
+      providerTradeId: body.providerTradeId || eventId
+    }, options);
 
   if (!order) {
     jsonResponse(response, 404, { ok: false, message: "Order not found." });
@@ -565,7 +646,7 @@ async function paymentWebhook(request, response, options = {}) {
   };
   state.paymentEvents[eventId] = {
     eventId,
-    type: String(body.type || "payment.succeeded"),
+    type: eventType,
     orderId: order.orderId,
     createdAt: nowIso(),
     response: payload
@@ -629,6 +710,11 @@ async function routeRequest(request, response, options = {}) {
 
     if (request.method === "POST" && url.pathname === "/v1/admin/orders/complete") {
       await completeOrderAdmin(request, response, options);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/admin/orders/refund") {
+      await refundOrderAdmin(request, response, options);
       return;
     }
 

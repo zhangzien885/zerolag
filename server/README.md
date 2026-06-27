@@ -52,7 +52,9 @@ npm run server:admin -- create-code ZL-PRO-TEST-002 30 1
 npm run server:admin -- orders
 npm run server:admin -- complete-latest manual_trade_id
 npm run server:admin -- complete-order ord_xxx manual_trade_id
+npm run server:admin -- refund-order ord_xxx manual_refund_id
 npm run server:admin -- send-webhook ord_xxx manual_trade_id
+npm run server:admin -- send-refund-webhook ord_xxx manual_refund_id
 npm run server:admin -- summary
 ```
 
@@ -72,9 +74,10 @@ The server now supports a provider-neutral order flow:
 
 1. Client or website calls `POST /v1/orders/create`.
 2. Payment provider completes payment.
-3. Payment provider calls `POST /v1/payments/webhook` with a verified payment-success event.
+3. Payment provider calls `POST /v1/payments/webhook` with a verified `payment.succeeded` event.
 4. The paid order receives a one-time activation code.
 5. Desktop app activates membership with that code.
+6. If the provider later sends `payment.refunded`, the related code and active membership are revoked.
 
 The admin completion endpoint is kept for private testing and manual support fixes, but the signed webhook is the main production integration seam.
 

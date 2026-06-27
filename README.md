@@ -63,7 +63,7 @@ The server also includes a provider-neutral order flow so payment callbacks can 
 
 For local desktop purchase testing, run `npm run dev:server-app`, open the purchase dialog, then use `npm run server:admin -- complete-latest manual_trade_id` or `npm run server:admin -- send-webhook ord_xxx manual_trade_id` to simulate a successful payment.
 
-The paid-flow MVP includes a signed `POST /v1/payments/webhook` endpoint. Production deployments must set a strong `ZEROLAG_PAYMENT_WEBHOOK_SECRET` and connect the final payment provider to that callback.
+The paid-flow MVP includes a signed `POST /v1/payments/webhook` endpoint for payment-success and refund events. Production deployments must set a strong `ZEROLAG_PAYMENT_WEBHOOK_SECRET` and connect the final payment provider to that callback.
 
 ## Website
 

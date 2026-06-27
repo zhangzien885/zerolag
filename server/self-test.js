@@ -215,11 +215,44 @@ async function main() {
     });
     assert(blocked.statusCode === 403 && blocked.body.active === false, "Device mismatch should be blocked.");
 
-    const summaryAfter = await requestJson(port, "/v1/admin/summary", null, {
+    const summaryPaid = await requestJson(port, "/v1/admin/summary", null, {
       "X-ZeroLag-Admin-Secret": "self-test-admin"
     });
-    assert(summaryAfter.body.summary.subscriptions.active === 1, "Admin summary should show active subscription.");
-    assert(summaryAfter.body.summary.orders.paid === 1, "Admin summary should show paid order.");
+    assert(summaryPaid.body.summary.subscriptions.active === 1, "Admin summary should show active subscription.");
+    assert(summaryPaid.body.summary.orders.paid === 1, "Admin summary should show paid order.");
+
+    const refundWebhookBody = JSON.stringify({
+      type: "payment.refunded",
+      eventId: "evt_self_test_refunded",
+      orderId: createdOrder.body.order.orderId,
+      provider: "self-test",
+      refundTradeId: "refund_self_test"
+    });
+    const refundedOrder = await requestRaw(port, "/v1/payments/webhook", refundWebhookBody, {
+      "Content-Type": "application/json",
+      "X-ZeroLag-Signature": signPaymentWebhook("self-test-payment", refundWebhookBody)
+    });
+    assert(refundedOrder.statusCode === 200 && refundedOrder.body.order.status === "refunded", "Refund webhook failed.");
+    assert(Boolean(refundedOrder.body.order.refundedAt), "Refunded order should include refundedAt.");
+
+    const orderStatusRefunded = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`);
+    assert(orderStatusRefunded.body.order.status === "refunded", "Refunded order status should be visible.");
+    assert(!orderStatusRefunded.body.order.activationCode, "Refunded order should not expose activation code.");
+
+    const revokedValidation = await requestJson(port, "/v1/licenses/validate", {
+      token: validated.body.token,
+      subscriptionId: validated.body.subscriptionId,
+      deviceHash,
+      appVersion: "0.1.0",
+      channel: "test"
+    });
+    assert(revokedValidation.statusCode === 403 && revokedValidation.body.active === false, "Refund should revoke membership access.");
+
+    const summaryRefunded = await requestJson(port, "/v1/admin/summary", null, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(summaryRefunded.body.summary.subscriptions.active === 0, "Refund should remove active subscription count.");
+    assert(summaryRefunded.body.summary.orders.refunded === 1, "Admin summary should show refunded order.");
 
     console.log("ZeroLag server self-test passed.");
   } finally {
