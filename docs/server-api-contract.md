@@ -4,6 +4,8 @@ This is the first production client contract for account and subscription valida
 
 The runnable MVP server lives in `server/`. It is suitable for local integration testing and early private trials. Before a paid public release, move its JSON state into a real database, put it behind HTTPS, and connect payment webhooks.
 
+Admin endpoints require the `X-ZeroLag-Admin-Secret` header.
+
 ## Configuration
 
 The desktop client reads production endpoints from `assets/app-config.json`.
@@ -108,6 +110,54 @@ If the subscription is expired, refunded, revoked, moved to another device, or p
 ```
 
 Production builds should sign update metadata and configure `updatePublicKeyPem`.
+
+## POST `/v1/admin/activation-codes`
+
+Creates an activation code after an admin action or payment callback.
+
+Request:
+
+```json
+{
+  "code": "ZL-PRO-TEST-001",
+  "plan": "ZeroLag Pro Monthly",
+  "durationDays": 30,
+  "maxUses": 1
+}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "code": "ZL-PRO-TEST-001",
+  "activationCode": {
+    "plan": "ZeroLag Pro Monthly",
+    "durationDays": 30,
+    "maxUses": 1,
+    "useCount": 0,
+    "enabled": true
+  }
+}
+```
+
+## GET `/v1/admin/summary`
+
+Returns a minimal operational summary for private testing.
+
+Response:
+
+```json
+{
+  "ok": true,
+  "summary": {
+    "activationCodes": { "total": 1, "enabled": 1, "used": 0 },
+    "subscriptions": { "total": 0, "active": 0, "expired": 0 },
+    "tokens": { "active": 0 }
+  }
+}
+```
 
 ## Payment Integration Point
 

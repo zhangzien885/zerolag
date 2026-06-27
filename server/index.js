@@ -54,6 +54,10 @@ function serverSecretFromOptions(options = {}) {
   return options.serverSecret || process.env.ZEROLAG_SERVER_SECRET || "zerolag-dev-server-secret-change-before-production";
 }
 
+function adminSecretFromOptions(options = {}) {
+  return options.adminSecret || process.env.ZEROLAG_ADMIN_SECRET || "zerolag-dev-admin-secret-change-before-production";
+}
+
 function loadState(options = {}) {
   const statePath = statePathFromOptions(options);
   if (!fs.existsSync(statePath)) {
@@ -74,6 +78,56 @@ function saveState(state, options = {}) {
   const statePath = statePathFromOptions(options);
   fs.mkdirSync(path.dirname(statePath), { recursive: true });
   fs.writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+}
+
+function safeActivationCodeRecord(record) {
+  return {
+    label: record.label || "",
+    plan: record.plan || "ZeroLag Pro Monthly",
+    durationDays: Number(record.durationDays || 30),
+    maxUses: Number(record.maxUses || 1),
+    useCount: Number(record.useCount || 0),
+    enabled: record.enabled !== false,
+    createdAt: record.createdAt || "",
+    updatedAt: record.updatedAt || ""
+  };
+}
+
+function stateSummary(state) {
+  const activationCodes = Object.values(state.activationCodes || {});
+  const subscriptions = Object.values(state.subscriptions || {});
+  return {
+    activationCodes: {
+      total: activationCodes.length,
+      enabled: activationCodes.filter((code) => code.enabled !== false).length,
+      used: activationCodes.filter((code) => Number(code.useCount || 0) > 0).length
+    },
+    subscriptions: {
+      total: subscriptions.length,
+      active: subscriptions.filter(activeSubscription).length,
+      expired: subscriptions.filter((subscription) => !activeSubscription(subscription)).length
+    },
+    tokens: {
+      active: Object.keys(state.tokens || {}).length
+    }
+  };
+}
+
+function timingSafeEqualText(left, right) {
+  const leftBuffer = Buffer.from(String(left || ""));
+  const rightBuffer = Buffer.from(String(right || ""));
+  if (leftBuffer.length !== rightBuffer.length) return false;
+  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function requireAdmin(request, response, options = {}) {
+  const expected = adminSecretFromOptions(options);
+  const provided = request.headers["x-zerolag-admin-secret"];
+  if (!expected || !timingSafeEqualText(provided, expected)) {
+    jsonResponse(response, 401, { message: "Admin authorization required." });
+    return false;
+  }
+  return true;
 }
 
 function addActivationCode(code, input = {}, options = {}) {
@@ -291,12 +345,52 @@ async function updateManifest(_request, response) {
   }
 }
 
+async function createActivationCodeAdmin(request, response, options = {}) {
+  if (!requireAdmin(request, response, options)) return;
+
+  const body = await readRequestBody(request);
+  const code = normalizeCode(body.code || `ZL-PRO-${crypto.randomBytes(3).toString("hex").toUpperCase()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`);
+  const record = addActivationCode(code, {
+    label: body.label || "admin-created",
+    plan: body.plan || "ZeroLag Pro Monthly",
+    durationDays: Number(body.durationDays || 30),
+    maxUses: Number(body.maxUses || 1),
+    enabled: body.enabled !== false
+  }, options);
+
+  jsonResponse(response, 201, {
+    ok: true,
+    code,
+    activationCode: safeActivationCodeRecord(record)
+  });
+}
+
+async function adminSummary(request, response, options = {}) {
+  if (!requireAdmin(request, response, options)) return;
+
+  const state = loadState(options);
+  jsonResponse(response, 200, {
+    ok: true,
+    summary: stateSummary(state)
+  });
+}
+
 async function routeRequest(request, response, options = {}) {
   const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
 
   try {
     if (request.method === "GET" && url.pathname === "/health") {
       jsonResponse(response, 200, { ok: true, product: "ZeroLag", time: nowIso() });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/admin/activation-codes") {
+      await createActivationCodeAdmin(request, response, options);
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/v1/admin/summary") {
+      await adminSummary(request, response, options);
       return;
     }
 

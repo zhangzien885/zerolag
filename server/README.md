@@ -6,6 +6,8 @@ It provides:
 
 - `POST /v1/licenses/activate`
 - `POST /v1/licenses/validate`
+- `POST /v1/admin/activation-codes`
+- `GET /v1/admin/summary`
 - `GET /v1/updates/manifest`
 - local activation-code creation for early testing
 - device binding and token rotation
@@ -36,6 +38,18 @@ Arguments:
 
 The server stores local state in `server/data/server-state.json`. This file is intentionally ignored by Git.
 
+## Admin API
+
+Start the server, then create a code through the admin API:
+
+```powershell
+$env:ZEROLAG_ADMIN_SECRET="change-this-before-production"
+npm run server:admin -- create-code ZL-PRO-TEST-002 30 1
+npm run server:admin -- summary
+```
+
+The admin API requires the `X-ZeroLag-Admin-Secret` header. In production this must be a strong secret stored outside the repo.
+
 ## Connect The Desktop App Locally
 
 Fast path:
@@ -64,6 +78,7 @@ For a paid release:
 - Set `releaseMode` to `production`.
 - Set `allowLocalDemoLicense` to `false`.
 - Use a strong `ZEROLAG_SERVER_SECRET`.
+- Use a strong `ZEROLAG_ADMIN_SECRET`.
 - Move state from JSON to a real database.
 - Add payment webhooks that create subscriptions or activation codes.
 

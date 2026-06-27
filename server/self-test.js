@@ -4,7 +4,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { addActivationCode, createAppServer } = require("./index");
 
-function requestJson(port, pathname, body) {
+function requestJson(port, pathname, body, headers = {}) {
   return new Promise((resolve, reject) => {
     const payload = body ? JSON.stringify(body) : "";
     const request = require("http").request({
@@ -12,10 +12,13 @@ function requestJson(port, pathname, body) {
       port,
       path: pathname,
       method: body ? "POST" : "GET",
-      headers: payload ? {
+      headers: {
+        ...headers,
+        ...(payload ? {
         "Content-Type": "application/json",
         "Content-Length": Buffer.byteLength(payload)
-      } : {}
+        } : {})
+      }
     }, (response) => {
       let raw = "";
       response.setEncoding("utf8");
@@ -58,9 +61,11 @@ async function main() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-server-test-"));
   const options = {
     statePath: path.join(tempDir, "server-state.json"),
-    serverSecret: "self-test-secret"
+    serverSecret: "self-test-secret",
+    adminSecret: "self-test-admin"
   };
   const code = "ZL-PRO-SELF-TEST";
+  const adminCode = "ZL-PRO-ADMIN-TEST";
   const deviceHash = crypto.createHash("sha256").update("device-a").digest("hex");
   const otherDeviceHash = crypto.createHash("sha256").update("device-b").digest("hex");
 
@@ -72,8 +77,27 @@ async function main() {
     const health = await requestJson(port, "/health");
     assert(health.statusCode === 200 && health.body.ok, "Health check failed.");
 
+    const deniedAdmin = await requestJson(port, "/v1/admin/activation-codes", {
+      code: adminCode
+    });
+    assert(deniedAdmin.statusCode === 401, "Admin endpoint should reject missing secret.");
+
+    const createdByAdmin = await requestJson(port, "/v1/admin/activation-codes", {
+      code: adminCode,
+      durationDays: 30,
+      maxUses: 1
+    }, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(createdByAdmin.statusCode === 201 && createdByAdmin.body.code === adminCode, "Admin code creation failed.");
+
+    const summaryBefore = await requestJson(port, "/v1/admin/summary", null, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(summaryBefore.statusCode === 200 && summaryBefore.body.summary.activationCodes.total >= 2, "Admin summary failed.");
+
     const activated = await requestJson(port, "/v1/licenses/activate", {
-      activationCode: code,
+      activationCode: adminCode,
       deviceHash,
       appVersion: "0.1.0",
       channel: "test"
@@ -99,6 +123,11 @@ async function main() {
       channel: "test"
     });
     assert(blocked.statusCode === 403 && blocked.body.active === false, "Device mismatch should be blocked.");
+
+    const summaryAfter = await requestJson(port, "/v1/admin/summary", null, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(summaryAfter.body.summary.subscriptions.active === 1, "Admin summary should show active subscription.");
 
     console.log("ZeroLag server self-test passed.");
   } finally {
