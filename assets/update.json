@@ -1,0 +1,13 @@
+{
+  "latest": "0.1.1",
+  "minSupported": "0.1.0",
+  "force": false,
+  "title": "发现 ZeroLag 新版本",
+  "message": "新版本包含启动动画修复、后台减负体验优化和更新检测能力。",
+  "releaseNotes": [
+    "启动窗口动画播放更完整",
+    "优化后台减负流程稳定性",
+    "为正式版自动更新做好接口预留"
+  ],
+  "downloadUrl": "https://example.com/zerolag/download"
+}

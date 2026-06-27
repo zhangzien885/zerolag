@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZeroLag 启动中</title>
+    <style>
+      :root {
+        --bg: #070b09;
+        --text: #e8f0eb;
+        --muted: #84928a;
+        --green: #a7ff5a;
+        --green-2: #4ee88f;
+        font-family: "Microsoft YaHei UI", "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 50% 42%, rgba(167, 255, 90, 0.18), transparent 24%),
+          radial-gradient(circle at 50% 58%, rgba(78, 232, 143, 0.09), transparent 46%),
+          linear-gradient(145deg, #070b09 0%, #0e1512 52%, #050706 100%);
+      }
+
+      .boot {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(196, 255, 220, 0.2);
+        overflow: hidden;
+      }
+
+      .boot::before {
+        content: "";
+        position: absolute;
+        inset: -28%;
+        background:
+          linear-gradient(rgba(167, 255, 90, 0.055) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(167, 255, 90, 0.055) 1px, transparent 1px);
+        background-size: 34px 34px;
+        mask-image: radial-gradient(circle, black 0 34%, transparent 72%);
+        opacity: 0.6;
+        transform: perspective(620px) rotateX(58deg) translateY(14%);
+        animation: gridMove 3000ms linear both;
+      }
+
+      .boot::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(120deg, transparent 18%, rgba(255, 255, 255, 0.08), transparent 36%);
+        transform: translateX(-100%);
+        animation: sheen 1800ms ease 420ms both;
+      }
+
+      .core {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        justify-items: center;
+        gap: 20px;
+        text-align: center;
+        animation: lift 620ms cubic-bezier(0.18, 0.9, 0.2, 1) both;
+      }
+
+      .orb {
+        position: relative;
+        width: 132px;
+        height: 132px;
+        border: 1px solid rgba(167, 255, 90, 0.32);
+        box-shadow:
+          0 0 62px rgba(78, 232, 143, 0.18),
+          inset 0 0 40px rgba(167, 255, 90, 0.08);
+        transform: rotate(45deg);
+        animation: orb 2800ms ease-in-out both;
+      }
+
+      .orb img {
+        position: absolute;
+        inset: 19px;
+        width: 94px;
+        height: 94px;
+        object-fit: contain;
+        transform: rotate(-45deg);
+        filter:
+          drop-shadow(0 0 14px rgba(167, 255, 90, 0.45))
+          drop-shadow(0 0 26px rgba(78, 232, 143, 0.2));
+      }
+
+      .orb::before,
+      .orb::after,
+      .orb span {
+        content: "";
+        position: absolute;
+        inset: 16px;
+        border: 1px solid rgba(167, 255, 90, 0.34);
+      }
+
+      .orb::after {
+        inset: 38px;
+        background: linear-gradient(135deg, rgba(167, 255, 90, 0.96), rgba(78, 232, 143, 0.42));
+        box-shadow: 0 0 30px rgba(167, 255, 90, 0.4);
+      }
+
+      .orb span:nth-child(1) {
+        inset: -18px;
+        opacity: 0.28;
+        animation: ring 2800ms ease-out both;
+      }
+
+      .orb span:nth-child(2) {
+        inset: 58px -30px;
+        border-width: 0;
+        border-top: 1px solid rgba(196, 255, 220, 0.5);
+        animation: scan 2200ms ease-in-out 260ms both;
+      }
+
+      .orb span:nth-child(3) {
+        inset: -30px 58px;
+        border-width: 0;
+        border-left: 1px solid rgba(196, 255, 220, 0.4);
+        animation: scan 2200ms ease-in-out 460ms both;
+      }
+
+      small {
+        display: block;
+        color: var(--green);
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.28em;
+      }
+
+      strong {
+        display: block;
+        margin-top: 7px;
+        font-size: 44px;
+        line-height: 0.9;
+        font-weight: 950;
+        text-shadow: 0 0 34px rgba(167, 255, 90, 0.18);
+      }
+
+      p {
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .progress {
+        width: 284px;
+        height: 3px;
+        overflow: hidden;
+        background: rgba(196, 255, 220, 0.12);
+      }
+
+      .progress i {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, var(--green), var(--green-2));
+        box-shadow: 0 0 20px rgba(167, 255, 90, 0.44);
+        transform-origin: left;
+        animation: progress 2900ms cubic-bezier(0.2, 0.82, 0.18, 1) both;
+      }
+
+      @keyframes lift {
+        from { opacity: 0; transform: translateY(16px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      @keyframes gridMove {
+        from { transform: perspective(620px) rotateX(58deg) translateY(18%); }
+        to { transform: perspective(620px) rotateX(58deg) translateY(8%); }
+      }
+
+      @keyframes sheen {
+        to { transform: translateX(100%); }
+      }
+
+      @keyframes orb {
+        0% { opacity: 0; transform: rotate(45deg) scale(0.72); }
+        38% { opacity: 1; transform: rotate(45deg) scale(1.08); }
+        100% { opacity: 1; transform: rotate(45deg) scale(1); }
+      }
+
+      @keyframes ring {
+        0% { opacity: 0; transform: scale(0.72); }
+        48% { opacity: 0.42; }
+        100% { opacity: 0; transform: scale(1.34); }
+      }
+
+      @keyframes scan {
+        0% { opacity: 0; transform: translateX(-22px); }
+        42% { opacity: 1; }
+        100% { opacity: 0; transform: translateX(22px); }
+      }
+
+      @keyframes progress {
+        from { transform: scaleX(0); }
+        to { transform: scaleX(1); }
+      }
+    </style>
+  </head>
+  <body>
+    <section class="boot">
+      <div class="core">
+        <div class="orb" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <img src="../assets/zerolag-logo.svg" alt="" />
+        </div>
+        <div>
+          <small>ZERO LAG BOOT SEQUENCE</small>
+          <strong>ZeroLag</strong>
+          <p>正在初始化游戏性能核心</p>
+        </div>
+        <div class="progress">
+          <i></i>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>

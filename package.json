@@ -1,0 +1,19 @@
+{
+  "name": "zerolag",
+  "version": "0.1.0",
+  "description": "ZeroLag gaming performance optimizer prototype.",
+  "main": "main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check main.js && node --check preload.js && node --check src/renderer.js && node --check scripts/integrity.js && node --check scripts/protect-template.js && node --check scripts/runtime-watchdog.js && node --check scripts/production-check.js",
+    "protect-template": "node scripts/protect-template.js",
+    "integrity": "node scripts/integrity.js",
+    "integrity:verify": "node scripts/integrity.js --verify",
+    "production:check": "node scripts/production-check.js",
+    "production:check:strict": "node scripts/production-check.js --strict"
+  },
+  "devDependencies": {
+    "electron": "^42.5.0"
+  }
+}

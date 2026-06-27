@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-27T15:11:40.726Z",
+  "files": [
+    {
+      "path": "package.json",
+      "sha256": "497563740c335750dcf4bdd04e8ad42befc119c7d4ffca4fe420f92a2616b3cc"
+    },
+    {
+      "path": "main.js",
+      "sha256": "2c907b43839902d56f8507663b9b2a7eb2b8eeda306d36ed664bafc84f31a36f"
+    },
+    {
+      "path": "preload.js",
+      "sha256": "fb7b3e3c5b3470d905cea1dba3eaf6c142741e05982526b3a89494d9d230a2bb"
+    },
+    {
+      "path": "src/index.html",
+      "sha256": "fa4aa1c177ca10f2f50d21369a71497644927cf70714ab0b23f2537c5da02647"
+    },
+    {
+      "path": "src/splash.html",
+      "sha256": "0f7c333e82dc8128879c31af9cfaf07a594cdfcc3977b8d81f7280c801f18de1"
+    },
+    {
+      "path": "src/renderer.js",
+      "sha256": "5cfdd00eaa8a74be86f17107a2c17ac27eabb7ba92e532fe056e6bcb3a9d62f2"
+    },
+    {
+      "path": "src/styles.css",
+      "sha256": "a4eb84b1cb60ffa5843a3d8ae5e1ce3cffd101f57c23790d82f0e9cb48129383"
+    },
+    {
+      "path": "scripts/runtime-watchdog.js",
+      "sha256": "3f619c75102bd898fa1644b42f02e600f40a81e2733aecfef3ba8a73ef302866"
+    },
+    {
+      "path": "scripts/production-check.js",
+      "sha256": "75c53bd40920a58fb670099f5d003df72a8a1063f44a64a472911889ecdeef3c"
+    },
+    {
+      "path": "assets/zerolag-logo.svg",
+      "sha256": "03892f57191aa27235c5d6a50852ebfe3dfe65c66fa874f5a89bd20522f7a0ee"
+    },
+    {
+      "path": "assets/app-config.json",
+      "sha256": "eef49877473bccd463c4ec206ea13d702f5ab0975e60debcd0906e4b7dfb4232"
+    },
+    {
+      "path": "assets/zerolag-power-plan-template.protected.json",
+      "sha256": "03088e08120ee7508d175a61b3b6f66ee31a657ec592adfd60e5f352f890fc6d"
+    }
+  ],
+  "signature": "7cb15cbbae5f5f21b12ead84b49345fab94678978b0bce34227249a4f6047800"
+}

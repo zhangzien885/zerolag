@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZeroLag</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero-panel">
+        <nav class="topbar">
+          <div class="brand">
+            <img class="brand-mark" src="../assets/zerolag-logo.svg" alt="ZeroLag logo" />
+            <div>
+              <strong>ZeroLag</strong>
+              <span>Extreme Gaming Optimizer</span>
+            </div>
+          </div>
+          <div class="topbar-signal" aria-label="核心能力">
+            <div>
+              <span>BOOST</span>
+              <strong>一键加速</strong>
+            </div>
+            <div>
+              <span>MEMORY</span>
+              <strong>内存整理</strong>
+            </div>
+            <div>
+              <span>LATENCY</span>
+              <strong>开局检查</strong>
+            </div>
+          </div>
+          <div class="topbar-status">
+            <div class="command-dock" aria-label="快捷操作">
+              <span class="dock-label">COMMAND</span>
+              <div class="topbar-actions">
+                <button id="toolboxButton" class="website-button primary"><span>Tools</span><b>工具箱</b></button>
+                <button id="rescanButton" class="website-button"><span>Scan</span><b>扫描</b></button>
+                <button id="restoreButton" class="website-button danger" disabled><span>Reset</span><b>恢复</b></button>
+                <button id="websiteButton" class="website-button"><span>Web</span><b>官网</b></button>
+              </div>
+            </div>
+            <div class="topbar-pills" aria-label="当前状态">
+              <span id="licenseState" class="status-pill">检测授权</span>
+              <span id="adminState" class="status-pill">检测权限中</span>
+              <span id="planState" class="status-pill">检测性能模式</span>
+              <button id="updateBadge" class="status-pill update-pill" hidden>发现新版</button>
+            </div>
+          </div>
+        </nav>
+
+        <div class="hero-grid">
+          <aside class="metric-rail">
+            <div id="railLabel" class="rail-label">扫描中</div>
+            <div class="score-block">
+              <span>性能就绪度</span>
+              <strong id="scoreValue">87%</strong>
+            </div>
+            <div class="micro-metrics">
+              <div>
+                <span>FPS 预估</span>
+                <strong id="fpsEstimate">+12%</strong>
+              </div>
+              <div>
+                <span>1% Low</span>
+                <strong id="lowEstimate">+18%</strong>
+              </div>
+              <div>
+                <span>系统干扰</span>
+                <strong id="interferenceState">LOW</strong>
+              </div>
+              <div>
+                <span>Boost 时长</span>
+                <strong id="boostTimer">待启动</strong>
+              </div>
+            </div>
+          </aside>
+
+          <section class="boost-core">
+            <div class="rings" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="boost-copy">
+              <p>一键加速</p>
+              <h1>启用极限游戏性能模式<br /><em>享受超高性能</em></h1>
+              <span id="boostSummary" hidden></span>
+              <button id="boostButton" class="boost-button">
+                <span id="boostButtonText">启动 ZeroLag Boost</span>
+                <small id="boostButtonHint">PERFORMANCE MODE + VBS OFF</small>
+              </button>
+            </div>
+          </section>
+
+          <aside class="system-card">
+            <div class="section-title">
+              <span>当前状态</span>
+              <strong id="readyState">扫描中</strong>
+            </div>
+            <div class="state-list">
+              <div>
+                <span>性能模式</span>
+                <strong id="activePlan">读取中</strong>
+              </div>
+            </div>
+            <div class="diagnostic-card">
+              <div class="section-title compact">
+                <span>系统检测</span>
+                <strong id="diagnosticState">读取中</strong>
+              </div>
+              <div class="diagnostic-list">
+                <div>
+                  <span>处理器</span>
+                  <strong id="cpuState">读取中</strong>
+                </div>
+                <div>
+                  <span>显卡</span>
+                  <strong id="gpuState">读取中</strong>
+                </div>
+                <div>
+                  <span>内存占用</span>
+                  <strong id="memoryState">读取中</strong>
+                </div>
+                <div>
+                  <span>游戏模式</span>
+                  <strong id="gameModeState">读取中</strong>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="lower-grid">
+        <div class="pipeline-panel">
+          <div class="section-title">
+            <span>优化顺序</span>
+            <strong id="pipelineState">待命</strong>
+          </div>
+          <ol id="steps" class="steps">
+            <li data-step="prepare"><span></span>准备优化</li>
+            <li data-step="plan"><span></span>准备性能模式</li>
+            <li data-step="write"><span></span>应用游戏优化</li>
+            <li data-step="memory"><span></span>整理游戏内存</li>
+            <li data-step="activate"><span></span>启用性能模式</li>
+            <li data-step="vbs"><span></span>关闭 VBS / HVCI / Hypervisor</li>
+            <li data-step="reboot"><span></span>等待重启生效</li>
+          </ol>
+        </div>
+
+        <div class="result-panel">
+          <div class="section-title">
+            <span>结果输出</span>
+            <strong id="resultState">暂无结果</strong>
+          </div>
+          <div id="log" class="log">
+            <p>ZeroLag 已就绪。</p>
+            <p>点击一键加速后，将自动应用游戏性能优化。</p>
+            <p>关闭软件后，会自动恢复日常状态。</p>
+          </div>
+        </div>
+
+        <div class="membership-panel">
+          <div class="section-title">
+            <span>会员中心</span>
+            <strong id="memberState">待校验</strong>
+          </div>
+          <div id="memberCard" class="member-card">
+            <div>
+              <span>当前套餐</span>
+              <strong id="planName">ZeroLag Pro 月度</strong>
+            </div>
+            <b id="planPrice">¥30 / 月</b>
+          </div>
+          <div class="member-facts">
+            <div>
+              <span>设备绑定</span>
+              <strong id="deviceState">待校验</strong>
+            </div>
+            <div>
+              <span>到期时间</span>
+              <strong id="expiresAt">未激活</strong>
+            </div>
+          </div>
+          <div class="activation-row">
+            <input id="licenseCode" spellcheck="false" placeholder="输入会员码" autocomplete="off" />
+            <button id="activateButton">激活</button>
+          </div>
+          <button id="renewButton" class="renew-button">续费月度会员</button>
+        </div>
+      </section>
+    </main>
+    <section id="toolboxOverlay" class="purchase-overlay toolbox-overlay" hidden>
+      <div class="purchase-dialog toolbox-dialog">
+        <div class="purchase-head">
+          <div>
+            <span>游戏工具箱</span>
+            <h2>开局前的辅助工具</h2>
+          </div>
+          <button id="closeToolboxButton" class="icon-button" aria-label="关闭游戏工具箱">×</button>
+        </div>
+
+        <div class="toolbox-body">
+          <div class="toolbox-intro">
+            <span>ZERO LAG SIDE MODULE</span>
+            <strong>开局前的战术控制台</strong>
+            <p>把启动游戏、网络检测和轻量修复集中到一个独立面板里。主界面专注一键加速，工具箱负责赛前检查。</p>
+            <div class="toolbox-tags" aria-hidden="true">
+              <b>GAME LAUNCH</b>
+              <b>NETWORK CHECK</b>
+              <b>QUICK REPAIR</b>
+            </div>
+          </div>
+
+          <div class="tool-block">
+            <div class="tool-label">
+              <span>常用游戏</span>
+              <strong id="gameCount">0 个</strong>
+            </div>
+            <select id="gameSelect" aria-label="选择常用游戏">
+              <option>还没有添加游戏</option>
+            </select>
+            <div class="tool-actions">
+              <button id="addGameButton">添加游戏</button>
+              <button id="launchGameButton">启动游戏</button>
+            </div>
+          </div>
+
+          <div class="tool-block network-block">
+            <div class="tool-label">
+              <span>网络状态</span>
+              <strong id="networkState">未检测</strong>
+            </div>
+            <p id="networkDetail">开局前测一下延迟，顺手刷新 DNS。</p>
+            <div class="tool-actions">
+              <button id="networkCheckButton">网络检测</button>
+              <button id="flushDnsButton">刷新 DNS</button>
+            </div>
+          </div>
+
+          <div class="toolbox-status">
+            <span>工具箱状态</span>
+            <strong id="toolState">待命</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="purchaseOverlay" class="purchase-overlay" hidden>
+      <div class="purchase-dialog">
+        <div class="purchase-head">
+          <div>
+            <span>购买会员</span>
+            <h2>ZeroLag Pro 月度</h2>
+          </div>
+          <button id="closePurchaseButton" class="icon-button" aria-label="关闭购买界面">×</button>
+        </div>
+
+        <div class="purchase-body">
+          <div class="price-block">
+            <span>月度订阅</span>
+            <strong>¥30</strong>
+            <b>每 30 天</b>
+          </div>
+
+          <div class="benefit-list">
+            <div><span></span>极限游戏性能模式</div>
+            <div><span></span>一键关闭 VBS 相关性能开销</div>
+            <div><span></span>绑定本机设备，订阅有效期内可用</div>
+            <div><span></span>后续低延迟模块优先开放</div>
+          </div>
+
+          <div class="payment-box">
+            <div class="qr-placeholder">
+              <i></i>
+              <i></i>
+              <i></i>
+              <i></i>
+            </div>
+            <div>
+              <span>支付占位</span>
+              <strong>正式版接入微信/支付宝</strong>
+              <p>当前原型可使用会员码激活：ZL-PRO-DEMO-2026</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="purchase-actions">
+          <button id="paidButton" class="confirm-pay-button">我已完成支付</button>
+          <button id="copyDemoCodeButton" class="ghost-button">复制演示会员码</button>
+        </div>
+      </div>
+    </section>
+    <section id="updateOverlay" class="purchase-overlay update-overlay" hidden>
+      <div class="purchase-dialog update-dialog">
+        <div class="purchase-head">
+          <div>
+            <span id="updateKicker">版本更新</span>
+            <h2 id="updateTitle">发现新版本</h2>
+          </div>
+          <button id="closeUpdateButton" class="icon-button" aria-label="稍后更新">×</button>
+        </div>
+
+        <div class="update-body">
+          <div class="version-strip">
+            <div>
+              <span>当前版本</span>
+              <strong id="currentVersion">0.0.0</strong>
+            </div>
+            <i></i>
+            <div>
+              <span>最新版本</span>
+              <strong id="latestVersion">0.0.0</strong>
+            </div>
+          </div>
+          <p id="updateMessage">ZeroLag 有可用更新。</p>
+          <ul id="updateNotes" class="update-notes"></ul>
+        </div>
+
+        <div class="purchase-actions update-actions">
+          <button id="installUpdateButton" class="confirm-pay-button">立即更新</button>
+          <button id="laterUpdateButton" class="ghost-button">稍后</button>
+        </div>
+      </div>
+    </section>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

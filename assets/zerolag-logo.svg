@@ -1,0 +1,41 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ZeroLag logo">
+  <defs>
+    <linearGradient id="zl-core" x1="18" y1="12" x2="78" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C7FF68"/>
+      <stop offset="0.42" stop-color="#8EFF50"/>
+      <stop offset="1" stop-color="#35E58B"/>
+    </linearGradient>
+    <linearGradient id="zl-dark" x1="18" y1="14" x2="80" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#19351D"/>
+      <stop offset="1" stop-color="#06110B"/>
+    </linearGradient>
+    <filter id="zl-glow" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.56 0 0 0 0 1 0 0 0 0 0.32 0 0 0 0.75 0"/>
+      <feBlend in="SourceGraphic" mode="screen"/>
+    </filter>
+  </defs>
+
+  <path d="M18 12H78L86 20V78L78 86H18L10 78V20L18 12Z" fill="url(#zl-dark)"/>
+  <path d="M19 13H77L85 21V77L77 85H19L11 77V21L19 13Z" stroke="#C4FFDC" stroke-opacity="0.26" stroke-width="2"/>
+  <path d="M23 19H73L79 25V73L73 79H23L17 73V25L23 19Z" stroke="#A7FF5A" stroke-opacity="0.18"/>
+
+  <g opacity="0.42">
+    <path d="M20 33H76" stroke="#C7FF68" stroke-opacity="0.22"/>
+    <path d="M20 49H76" stroke="#C7FF68" stroke-opacity="0.18"/>
+    <path d="M20 65H76" stroke="#C7FF68" stroke-opacity="0.14"/>
+    <path d="M33 20V78" stroke="#C7FF68" stroke-opacity="0.12"/>
+    <path d="M49 20V78" stroke="#C7FF68" stroke-opacity="0.12"/>
+    <path d="M65 20V78" stroke="#C7FF68" stroke-opacity="0.12"/>
+  </g>
+
+  <g filter="url(#zl-glow)">
+    <path d="M64 24H30L25 36H52L30 72H45L70 36H57L64 24Z" fill="url(#zl-core)"/>
+    <path d="M64 24H30L25 36H52L30 72H45L70 36H57L64 24Z" stroke="#ECFFE5" stroke-opacity="0.68" stroke-width="1.4" stroke-linejoin="round"/>
+  </g>
+
+  <path d="M72 28L82 18" stroke="#A7FF5A" stroke-opacity="0.7" stroke-width="2" stroke-linecap="square"/>
+  <path d="M14 78L27 65" stroke="#4EE88F" stroke-opacity="0.5" stroke-width="2" stroke-linecap="square"/>
+  <path d="M16 15H36" stroke="#D8FF9A" stroke-opacity="0.7" stroke-width="2"/>
+  <path d="M60 82H80" stroke="#4EE88F" stroke-opacity="0.55" stroke-width="2"/>
+</svg>
