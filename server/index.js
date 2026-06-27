@@ -253,6 +253,26 @@ function activeSubscription(subscription) {
     && new Date(subscription.expiresAt).getTime() > Date.now();
 }
 
+function subscriptionUsesActivationHash(subscription, hash) {
+  const hashes = Array.isArray(subscription.activationCodeHashes)
+    ? subscription.activationCodeHashes
+    : [];
+  return subscription.activationCodeHash === hash || hashes.includes(hash);
+}
+
+function addActivationHashToSubscription(subscription, hash) {
+  const hashes = Array.isArray(subscription.activationCodeHashes)
+    ? subscription.activationCodeHashes
+    : [];
+  const nextHashes = new Set([
+    subscription.activationCodeHash,
+    ...hashes,
+    hash
+  ].filter(Boolean));
+  subscription.activationCodeHash = subscription.activationCodeHash || hash;
+  subscription.activationCodeHashes = Array.from(nextHashes);
+}
+
 function issueToken(state, subscription, options = {}) {
   const secret = serverSecretFromOptions(options);
   const token = `zl_${crypto.randomBytes(32).toString("base64url")}`;
@@ -281,8 +301,16 @@ function successLicensePayload(subscription, token) {
 
 function findExistingSubscriptionByCodeAndDevice(state, hash, deviceHash) {
   return Object.values(state.subscriptions).find((subscription) => (
-    subscription.activationCodeHash === hash
+    subscriptionUsesActivationHash(subscription, hash)
     && subscription.deviceHash === deviceHash
+    && activeSubscription(subscription)
+  ));
+}
+
+function findRenewableSubscriptionByDevice(state, deviceHash, plan) {
+  return Object.values(state.subscriptions).find((subscription) => (
+    subscription.deviceHash === deviceHash
+    && subscription.plan === plan
     && activeSubscription(subscription)
   ));
 }
@@ -326,11 +354,36 @@ async function activateLicense(request, response, options = {}) {
   }
 
   const durationMs = Math.max(1, Number(code.durationDays || 30)) * 24 * 60 * 60 * 1000;
+  const plan = code.plan || "ZeroLag Pro Monthly";
+  const renewable = findRenewableSubscriptionByDevice(state, deviceHash, plan);
+
+  if (renewable) {
+    const currentExpiry = new Date(renewable.expiresAt).getTime();
+    const renewalBase = Number.isFinite(currentExpiry) && currentExpiry > Date.now()
+      ? currentExpiry
+      : Date.now();
+    addActivationHashToSubscription(renewable, hash);
+    renewable.expiresAt = new Date(renewalBase + durationMs).toISOString();
+    renewable.lastValidatedAt = nowIso();
+    renewable.renewedAt = nowIso();
+    renewable.renewalCount = Number(renewable.renewalCount || 0) + 1;
+    renewable.appVersion = String(body.appVersion || renewable.appVersion || "");
+    renewable.channel = String(body.channel || renewable.channel || "");
+    code.useCount = Number(code.useCount || 0) + 1;
+    code.updatedAt = nowIso();
+
+    const token = issueToken(state, renewable, options);
+    saveState(state, options);
+    jsonResponse(response, 200, successLicensePayload(renewable, token));
+    return;
+  }
+
   const subscription = {
     subscriptionId: randomId("sub"),
     activationCodeHash: hash,
+    activationCodeHashes: [hash],
     deviceHash,
-    plan: code.plan || "ZeroLag Pro Monthly",
+    plan,
     status: "active",
     createdAt: nowIso(),
     expiresAt: new Date(Date.now() + durationMs).toISOString(),
@@ -509,7 +562,7 @@ function refundOrderInState(state, orderId, input = {}, options = {}) {
 
   const revokedSubscriptionIds = new Set();
   Object.values(state.subscriptions || {}).forEach((subscription) => {
-    if (subscription.activationCodeHash !== activationCodeHash) return;
+    if (!subscriptionUsesActivationHash(subscription, activationCodeHash)) return;
     subscription.status = "revoked";
     subscription.revokedAt = subscription.revokedAt || nowIso();
     subscription.revokeReason = input.reason || "payment_refunded";

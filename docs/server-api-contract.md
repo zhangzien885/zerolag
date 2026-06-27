@@ -27,6 +27,8 @@ The desktop client reads production endpoints from `assets/app-config.json`.
 
 Exchanges a member code or payment-issued activation code for a server-backed device license.
 
+If the same device already has an active subscription for the same plan, activating a new unused paid code extends the existing subscription and returns the same `subscriptionId` with a later `expiresAt`.
+
 Request:
 
 ```json

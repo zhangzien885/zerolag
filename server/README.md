@@ -77,7 +77,8 @@ The server now supports a provider-neutral order flow:
 3. Payment provider calls `POST /v1/payments/webhook` with a verified `payment.succeeded` event.
 4. The paid order receives a one-time activation code.
 5. Desktop app activates membership with that code.
-6. If the provider later sends `payment.refunded`, the related code and active membership are revoked.
+6. If the device already has the same active plan, the new code extends the existing subscription.
+7. If the provider later sends `payment.refunded`, the related code and active membership are revoked.
 
 The admin completion endpoint is kept for private testing and manual support fixes, but the signed webhook is the main production integration seam.
 

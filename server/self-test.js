@@ -195,6 +195,7 @@ async function main() {
     });
     assert(activated.statusCode === 200 && activated.body.active, "Activation failed.");
     assert(Boolean(activated.body.token), "Activation did not return a token.");
+    const firstExpiresAt = new Date(activated.body.expiresAt).getTime();
 
     const validated = await requestJson(port, "/v1/licenses/validate", {
       token: activated.body.token,
@@ -205,6 +206,39 @@ async function main() {
     });
     assert(validated.statusCode === 200 && validated.body.active, "Validation failed.");
     assert(validated.body.token !== activated.body.token, "Validation should rotate token.");
+
+    const renewalOrder = await requestJson(port, "/v1/orders/create", {
+      plan: "ZeroLag Pro Monthly",
+      deviceHash,
+      channel: "test-renewal"
+    });
+    assert(renewalOrder.statusCode === 201 && renewalOrder.body.order.status === "pending", "Renewal order creation failed.");
+
+    const renewalWebhookBody = JSON.stringify({
+      type: "payment.succeeded",
+      eventId: "evt_self_test_renewal_paid",
+      orderId: renewalOrder.body.order.orderId,
+      provider: "self-test",
+      providerTradeId: "trade_self_test_renewal"
+    });
+    const completedRenewalOrder = await requestRaw(port, "/v1/payments/webhook", renewalWebhookBody, {
+      "Content-Type": "application/json",
+      "X-ZeroLag-Signature": signPaymentWebhook("self-test-payment", renewalWebhookBody)
+    });
+    assert(completedRenewalOrder.statusCode === 200 && completedRenewalOrder.body.order.status === "paid", "Renewal order completion failed.");
+
+    const renewed = await requestJson(port, "/v1/licenses/activate", {
+      activationCode: completedRenewalOrder.body.order.activationCode,
+      deviceHash,
+      appVersion: "0.1.0",
+      channel: "test-renewal"
+    });
+    assert(renewed.statusCode === 200 && renewed.body.active, "Renewal activation failed.");
+    assert(renewed.body.subscriptionId === activated.body.subscriptionId, "Renewal should extend the existing subscription.");
+    assert(
+      new Date(renewed.body.expiresAt).getTime() >= firstExpiresAt + 29 * 24 * 60 * 60 * 1000,
+      "Renewal should extend the subscription expiry."
+    );
 
     const blocked = await requestJson(port, "/v1/licenses/validate", {
       token: validated.body.token,
@@ -219,7 +253,7 @@ async function main() {
       "X-ZeroLag-Admin-Secret": "self-test-admin"
     });
     assert(summaryPaid.body.summary.subscriptions.active === 1, "Admin summary should show active subscription.");
-    assert(summaryPaid.body.summary.orders.paid === 1, "Admin summary should show paid order.");
+    assert(summaryPaid.body.summary.orders.paid === 2, "Admin summary should show paid orders.");
 
     const refundWebhookBody = JSON.stringify({
       type: "payment.refunded",
