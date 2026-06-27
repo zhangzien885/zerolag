@@ -102,8 +102,10 @@ async function main() {
   };
   const code = "ZL-PRO-SELF-TEST";
   const adminCode = "ZL-PRO-ADMIN-TEST";
+  const revokeCode = "ZL-PRO-REVOKE-TEST";
   const deviceHash = crypto.createHash("sha256").update("device-a").digest("hex");
   const otherDeviceHash = crypto.createHash("sha256").update("device-b").digest("hex");
+  const revokeDeviceHash = crypto.createHash("sha256").update("device-c").digest("hex");
 
   addActivationCode(code, { durationDays: 30, maxUses: 1 }, options);
   const server = createAppServer(options);
@@ -240,6 +242,20 @@ async function main() {
       "Renewal should extend the subscription expiry."
     );
 
+    const adminSubscriptions = await requestJson(port, "/v1/admin/subscriptions", null, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(adminSubscriptions.statusCode === 200, "Admin subscription list failed.");
+    assert(adminSubscriptions.body.subscriptions.length === 1, "Admin subscription list should show one renewed subscription.");
+    assert(adminSubscriptions.body.subscriptions[0].subscriptionId === activated.body.subscriptionId, "Admin subscription list should include the active subscription.");
+    assert(adminSubscriptions.body.subscriptions[0].activationCount === 2, "Renewed subscription should show two activation links.");
+
+    const adminSubscriptionDetail = await requestJson(port, `/v1/admin/subscriptions/${activated.body.subscriptionId}`, null, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(adminSubscriptionDetail.statusCode === 200, "Admin subscription detail failed.");
+    assert(adminSubscriptionDetail.body.orders.length === 2, "Admin subscription detail should include linked paid orders.");
+
     const blocked = await requestJson(port, "/v1/licenses/validate", {
       token: validated.body.token,
       subscriptionId: validated.body.subscriptionId,
@@ -286,7 +302,51 @@ async function main() {
       "X-ZeroLag-Admin-Secret": "self-test-admin"
     });
     assert(summaryRefunded.body.summary.subscriptions.active === 0, "Refund should remove active subscription count.");
+    assert(summaryRefunded.body.summary.subscriptions.revoked === 1, "Refund should show revoked subscription count.");
     assert(summaryRefunded.body.summary.orders.refunded === 1, "Admin summary should show refunded order.");
+
+    const createdRevokeCode = await requestJson(port, "/v1/admin/activation-codes", {
+      code: revokeCode,
+      durationDays: 30,
+      maxUses: 1
+    }, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(createdRevokeCode.statusCode === 201 && createdRevokeCode.body.code === revokeCode, "Admin revoke-test code creation failed.");
+
+    const revokable = await requestJson(port, "/v1/licenses/activate", {
+      activationCode: revokeCode,
+      deviceHash: revokeDeviceHash,
+      appVersion: "0.1.0",
+      channel: "test-revoke"
+    });
+    assert(revokable.statusCode === 200 && revokable.body.active, "Revokable activation failed.");
+
+    const activeSubscriptions = await requestJson(port, "/v1/admin/subscriptions?status=active", null, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(
+      activeSubscriptions.body.subscriptions.some((subscription) => subscription.subscriptionId === revokable.body.subscriptionId),
+      "Active subscription filter should include revokable subscription."
+    );
+
+    const manuallyRevoked = await requestJson(port, "/v1/admin/subscriptions/revoke", {
+      subscriptionId: revokable.body.subscriptionId,
+      reason: "support_revoke"
+    }, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(manuallyRevoked.statusCode === 200, "Admin subscription revoke failed.");
+    assert(manuallyRevoked.body.subscription.status === "revoked", "Admin revoke should mark subscription revoked.");
+
+    const manuallyRevokedValidation = await requestJson(port, "/v1/licenses/validate", {
+      token: revokable.body.token,
+      subscriptionId: revokable.body.subscriptionId,
+      deviceHash: revokeDeviceHash,
+      appVersion: "0.1.0",
+      channel: "test-revoke"
+    });
+    assert(manuallyRevokedValidation.statusCode === 403 && manuallyRevokedValidation.body.active === false, "Admin revoke should invalidate token.");
 
     console.log("ZeroLag server self-test passed.");
   } finally {

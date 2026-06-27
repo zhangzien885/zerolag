@@ -357,6 +357,89 @@ Response:
 }
 ```
 
+## GET `/v1/admin/subscriptions`
+
+Lists memberships for private testing and support. Optional filters:
+
+```text
+?status=active
+?deviceHash=<full_sha256_device_hash>
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "subscriptions": [
+    {
+      "subscriptionId": "sub_123",
+      "status": "active",
+      "active": true,
+      "plan": "ZeroLag Pro Monthly",
+      "expiresAt": "2026-07-27T00:00:00.000Z",
+      "renewalCount": 1,
+      "activationCount": 2,
+      "device": "12345678...abcdef12"
+    }
+  ]
+}
+```
+
+## GET `/v1/admin/subscriptions/:subscriptionId`
+
+Returns one membership and its linked paid orders.
+
+Response:
+
+```json
+{
+  "ok": true,
+  "subscription": {
+    "subscriptionId": "sub_123",
+    "status": "active",
+    "active": true,
+    "expiresAt": "2026-07-27T00:00:00.000Z"
+  },
+  "orders": [
+    {
+      "orderId": "ord_123",
+      "status": "paid",
+      "amountCents": 3000,
+      "currency": "CNY"
+    }
+  ]
+}
+```
+
+## POST `/v1/admin/subscriptions/revoke`
+
+Manually revokes a membership, disables its related activation codes by default, and invalidates active server tokens.
+
+Request:
+
+```json
+{
+  "subscriptionId": "sub_123",
+  "reason": "support_revoke",
+  "disableActivationCodes": true
+}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "subscription": {
+    "subscriptionId": "sub_123",
+    "status": "revoked",
+    "active": false,
+    "revokedAt": "2026-07-27T00:00:00.000Z"
+  }
+}
+```
+
 ## Payment Integration Point
 
 The current MVP supports the activation-code path first because it is the fastest way to test paid membership without committing to a payment provider too early. A future account system can switch paid webhooks from issuing codes to creating account-bound subscriptions directly.

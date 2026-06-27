@@ -65,6 +65,8 @@ For local desktop purchase testing, run `npm run dev:server-app`, open the purch
 
 The paid-flow MVP includes a signed `POST /v1/payments/webhook` endpoint for payment-success and refund events. Same-device renewals extend the existing subscription instead of creating a separate membership record. Production deployments must set a strong `ZEROLAG_PAYMENT_WEBHOOK_SECRET` and connect the final payment provider to that callback.
 
+The server also includes admin membership support endpoints for listing subscriptions, inspecting linked orders, and manually revoking access during private testing or support.
+
 ## Website
 
 The first official website landing page is available under `website/`.

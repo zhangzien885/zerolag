@@ -119,6 +119,41 @@ function safeOrderRecord(order) {
   };
 }
 
+function maskDeviceHash(deviceHash) {
+  const value = String(deviceHash || "");
+  if (value.length < 16) return "";
+  return `${value.slice(0, 8)}...${value.slice(-8)}`;
+}
+
+function subscriptionEffectiveStatus(subscription) {
+  if (!subscription) return "unknown";
+  if (subscription.status === "revoked") return "revoked";
+  if (activeSubscription(subscription)) return "active";
+  if (subscription.status === "active") return "expired";
+  return subscription.status || "unknown";
+}
+
+function safeSubscriptionRecord(subscription) {
+  return {
+    subscriptionId: subscription.subscriptionId,
+    status: subscriptionEffectiveStatus(subscription),
+    active: activeSubscription(subscription),
+    plan: subscription.plan,
+    expiresAt: subscription.expiresAt || "",
+    createdAt: subscription.createdAt || "",
+    renewedAt: subscription.renewedAt || "",
+    revokedAt: subscription.revokedAt || "",
+    renewalCount: Number(subscription.renewalCount || 0),
+    activationCount: Array.isArray(subscription.activationCodeHashes)
+      ? subscription.activationCodeHashes.length
+      : Number(Boolean(subscription.activationCodeHash)),
+    device: maskDeviceHash(subscription.deviceHash),
+    appVersion: subscription.appVersion || "",
+    channel: subscription.channel || "",
+    lastValidatedAt: subscription.lastValidatedAt || ""
+  };
+}
+
 function stateSummary(state) {
   const activationCodes = Object.values(state.activationCodes || {});
   const orders = Object.values(state.orders || {});
@@ -141,7 +176,8 @@ function stateSummary(state) {
     subscriptions: {
       total: subscriptions.length,
       active: subscriptions.filter(activeSubscription).length,
-      expired: subscriptions.filter((subscription) => !activeSubscription(subscription)).length
+      revoked: subscriptions.filter((subscription) => subscription.status === "revoked").length,
+      expired: subscriptions.filter((subscription) => subscriptionEffectiveStatus(subscription) === "expired").length
     },
     tokens: {
       active: Object.keys(state.tokens || {}).length
@@ -273,6 +309,16 @@ function addActivationHashToSubscription(subscription, hash) {
   subscription.activationCodeHashes = Array.from(nextHashes);
 }
 
+function subscriptionActivationHashes(subscription) {
+  const hashes = Array.isArray(subscription.activationCodeHashes)
+    ? subscription.activationCodeHashes
+    : [];
+  return Array.from(new Set([
+    subscription.activationCodeHash,
+    ...hashes
+  ].filter(Boolean)));
+}
+
 function issueToken(state, subscription, options = {}) {
   const secret = serverSecretFromOptions(options);
   const token = `zl_${crypto.randomBytes(32).toString("base64url")}`;
@@ -286,6 +332,36 @@ function issueToken(state, subscription, options = {}) {
     lastUsedAt: nowIso()
   };
   return token;
+}
+
+function invalidateSubscriptionTokens(state, subscriptionId) {
+  Object.entries(state.tokens || {}).forEach(([hash, token]) => {
+    if (token.subscriptionId === subscriptionId) {
+      delete state.tokens[hash];
+    }
+  });
+}
+
+function revokeSubscriptionInState(state, subscriptionId, input = {}) {
+  const subscription = state.subscriptions[String(subscriptionId || "").trim()];
+  if (!subscription) return null;
+
+  subscription.status = "revoked";
+  subscription.revokedAt = subscription.revokedAt || nowIso();
+  subscription.revokeReason = input.reason || "manual_revoke";
+
+  if (input.disableActivationCodes !== false) {
+    subscriptionActivationHashes(subscription).forEach((hash) => {
+      const activationRecord = state.activationCodes[hash];
+      if (activationRecord) {
+        activationRecord.enabled = false;
+        activationRecord.updatedAt = nowIso();
+      }
+    });
+  }
+
+  invalidateSubscriptionTokens(state, subscription.subscriptionId);
+  return subscription;
 }
 
 function successLicensePayload(subscription, token) {
@@ -563,19 +639,27 @@ function refundOrderInState(state, orderId, input = {}, options = {}) {
   const revokedSubscriptionIds = new Set();
   Object.values(state.subscriptions || {}).forEach((subscription) => {
     if (!subscriptionUsesActivationHash(subscription, activationCodeHash)) return;
-    subscription.status = "revoked";
-    subscription.revokedAt = subscription.revokedAt || nowIso();
-    subscription.revokeReason = input.reason || "payment_refunded";
+    revokeSubscriptionInState(state, subscription.subscriptionId, {
+      reason: input.reason || "payment_refunded",
+      disableActivationCodes: false
+    });
     revokedSubscriptionIds.add(subscription.subscriptionId);
   });
 
-  Object.entries(state.tokens || {}).forEach(([hash, token]) => {
-    if (revokedSubscriptionIds.has(token.subscriptionId)) {
-      delete state.tokens[hash];
-    }
+  revokedSubscriptionIds.forEach((subscriptionId) => {
+    invalidateSubscriptionTokens(state, subscriptionId);
   });
 
   return order;
+}
+
+function ordersForSubscription(state, subscription, options = {}) {
+  const secret = serverSecretFromOptions(options);
+  const hashes = new Set(subscriptionActivationHashes(subscription));
+  return Object.values(state.orders || {})
+    .filter((order) => order.activationCode && hashes.has(codeHash(secret, order.activationCode)))
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .map(safeOrderRecord);
 }
 
 async function createActivationCodeAdmin(request, response, options = {}) {
@@ -721,6 +805,64 @@ async function listOrdersAdmin(request, response, options = {}) {
   });
 }
 
+async function listSubscriptionsAdmin(request, response, options = {}) {
+  if (!requireAdmin(request, response, options)) return;
+
+  const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
+  const statusFilter = String(url.searchParams.get("status") || "").trim();
+  const deviceHash = String(url.searchParams.get("deviceHash") || "").trim();
+  const state = loadState(options);
+  const subscriptions = Object.values(state.subscriptions || {})
+    .filter((subscription) => !statusFilter || subscriptionEffectiveStatus(subscription) === statusFilter)
+    .filter((subscription) => !deviceHash || subscription.deviceHash === deviceHash)
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .map(safeSubscriptionRecord);
+
+  jsonResponse(response, 200, {
+    ok: true,
+    subscriptions
+  });
+}
+
+async function getSubscriptionAdmin(request, response, options = {}, subscriptionId = "") {
+  if (!requireAdmin(request, response, options)) return;
+
+  const state = loadState(options);
+  const subscription = state.subscriptions[String(subscriptionId || "").trim()];
+  if (!subscription) {
+    jsonResponse(response, 404, { message: "Subscription not found." });
+    return;
+  }
+
+  jsonResponse(response, 200, {
+    ok: true,
+    subscription: safeSubscriptionRecord(subscription),
+    orders: ordersForSubscription(state, subscription, options)
+  });
+}
+
+async function revokeSubscriptionAdmin(request, response, options = {}) {
+  if (!requireAdmin(request, response, options)) return;
+
+  const body = await readRequestBody(request);
+  const state = loadState(options);
+  const subscription = revokeSubscriptionInState(state, body.subscriptionId, {
+    reason: body.reason || "manual_revoke",
+    disableActivationCodes: body.disableActivationCodes !== false
+  });
+
+  if (!subscription) {
+    jsonResponse(response, 404, { message: "Subscription not found." });
+    return;
+  }
+
+  saveState(state, options);
+  jsonResponse(response, 200, {
+    ok: true,
+    subscription: safeSubscriptionRecord(subscription)
+  });
+}
+
 async function adminSummary(request, response, options = {}) {
   if (!requireAdmin(request, response, options)) return;
 
@@ -773,6 +915,22 @@ async function routeRequest(request, response, options = {}) {
 
     if (request.method === "GET" && url.pathname === "/v1/admin/orders") {
       await listOrdersAdmin(request, response, options);
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/v1/admin/subscriptions") {
+      await listSubscriptionsAdmin(request, response, options);
+      return;
+    }
+
+    const subscriptionAdminMatch = url.pathname.match(/^\/v1\/admin\/subscriptions\/([^/]+)$/);
+    if (request.method === "GET" && subscriptionAdminMatch) {
+      await getSubscriptionAdmin(request, response, options, subscriptionAdminMatch[1]);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/admin/subscriptions/revoke") {
+      await revokeSubscriptionAdmin(request, response, options);
       return;
     }
 

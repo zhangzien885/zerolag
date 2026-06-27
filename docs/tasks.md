@@ -96,6 +96,7 @@
 - Added signed payment webhook MVP for payment-success callbacks, with HMAC verification, idempotent event handling, automatic order completion, and local `send-webhook` testing helper.
 - Added refund handling for paid orders: signed refund webhook, admin refund helper, activation-code disablement, subscription revocation, and active token invalidation.
 - Added same-device renewal handling so a newly paid monthly code extends the existing active subscription instead of creating duplicate membership records.
+- Added admin membership support endpoints and CLI helpers for listing subscriptions, inspecting linked orders, filtering active memberships, and manually revoking access.
 
 ## Known Boundaries
 

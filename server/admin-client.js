@@ -14,6 +14,9 @@ function usage() {
   console.log("  node server/admin-client.js complete-latest [providerTradeId]");
   console.log("  node server/admin-client.js send-webhook [orderId] [providerTradeId]");
   console.log("  node server/admin-client.js send-refund-webhook [orderId] [refundTradeId]");
+  console.log("  node server/admin-client.js subscriptions [status]");
+  console.log("  node server/admin-client.js subscription [subscriptionId]");
+  console.log("  node server/admin-client.js revoke-subscription [subscriptionId] [reason]");
   console.log("  node server/admin-client.js summary");
 }
 
@@ -195,6 +198,38 @@ async function main() {
       orderId,
       provider: "manual-signed-webhook",
       refundTradeId
+    });
+    console.log(JSON.stringify(response.body, null, 2));
+    process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
+  if (command === "subscriptions") {
+    const status = process.argv[3] ? `?status=${encodeURIComponent(process.argv[3])}` : "";
+    const response = await requestJson(`/v1/admin/subscriptions${status}`);
+    console.log(JSON.stringify(response.body, null, 2));
+    process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
+  if (command === "subscription") {
+    const subscriptionId = process.argv[3];
+    if (!subscriptionId) {
+      console.log(JSON.stringify({ ok: false, message: "Subscription id is required." }, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+
+    const response = await requestJson(`/v1/admin/subscriptions/${encodeURIComponent(subscriptionId)}`);
+    console.log(JSON.stringify(response.body, null, 2));
+    process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
+  if (command === "revoke-subscription") {
+    const response = await requestJson("/v1/admin/subscriptions/revoke", {
+      subscriptionId: process.argv[3],
+      reason: process.argv[4] || "manual_revoke"
     });
     console.log(JSON.stringify(response.body, null, 2));
     process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;

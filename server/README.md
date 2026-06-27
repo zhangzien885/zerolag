@@ -11,6 +11,10 @@ It provides:
 - `POST /v1/payments/webhook`
 - `POST /v1/admin/activation-codes`
 - `POST /v1/admin/orders/complete`
+- `POST /v1/admin/orders/refund`
+- `GET /v1/admin/subscriptions`
+- `GET /v1/admin/subscriptions/:subscriptionId`
+- `POST /v1/admin/subscriptions/revoke`
 - `GET /v1/admin/summary`
 - `GET /v1/updates/manifest`
 - local activation-code creation for early testing
@@ -55,6 +59,10 @@ npm run server:admin -- complete-order ord_xxx manual_trade_id
 npm run server:admin -- refund-order ord_xxx manual_refund_id
 npm run server:admin -- send-webhook ord_xxx manual_trade_id
 npm run server:admin -- send-refund-webhook ord_xxx manual_refund_id
+npm run server:admin -- subscriptions
+npm run server:admin -- subscriptions active
+npm run server:admin -- subscription sub_xxx
+npm run server:admin -- revoke-subscription sub_xxx support_revoke
 npm run server:admin -- summary
 ```
 
