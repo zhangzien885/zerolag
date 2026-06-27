@@ -1,0 +1,113 @@
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const crypto = require("crypto");
+const { addActivationCode, createAppServer } = require("./index");
+
+function requestJson(port, pathname, body) {
+  return new Promise((resolve, reject) => {
+    const payload = body ? JSON.stringify(body) : "";
+    const request = require("http").request({
+      hostname: "127.0.0.1",
+      port,
+      path: pathname,
+      method: body ? "POST" : "GET",
+      headers: payload ? {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(payload)
+      } : {}
+    }, (response) => {
+      let raw = "";
+      response.setEncoding("utf8");
+      response.on("data", (chunk) => {
+        raw += chunk;
+      });
+      response.on("end", () => {
+        try {
+          resolve({
+            statusCode: response.statusCode,
+            body: raw ? JSON.parse(raw) : null
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+
+    request.on("error", reject);
+    if (payload) request.write(payload);
+    request.end();
+  });
+}
+
+function assert(condition, message) {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
+function listen(server) {
+  return new Promise((resolve) => {
+    server.listen(0, "127.0.0.1", () => {
+      resolve(server.address().port);
+    });
+  });
+}
+
+async function main() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-server-test-"));
+  const options = {
+    statePath: path.join(tempDir, "server-state.json"),
+    serverSecret: "self-test-secret"
+  };
+  const code = "ZL-PRO-SELF-TEST";
+  const deviceHash = crypto.createHash("sha256").update("device-a").digest("hex");
+  const otherDeviceHash = crypto.createHash("sha256").update("device-b").digest("hex");
+
+  addActivationCode(code, { durationDays: 30, maxUses: 1 }, options);
+  const server = createAppServer(options);
+  const port = await listen(server);
+
+  try {
+    const health = await requestJson(port, "/health");
+    assert(health.statusCode === 200 && health.body.ok, "Health check failed.");
+
+    const activated = await requestJson(port, "/v1/licenses/activate", {
+      activationCode: code,
+      deviceHash,
+      appVersion: "0.1.0",
+      channel: "test"
+    });
+    assert(activated.statusCode === 200 && activated.body.active, "Activation failed.");
+    assert(Boolean(activated.body.token), "Activation did not return a token.");
+
+    const validated = await requestJson(port, "/v1/licenses/validate", {
+      token: activated.body.token,
+      subscriptionId: activated.body.subscriptionId,
+      deviceHash,
+      appVersion: "0.1.0",
+      channel: "test"
+    });
+    assert(validated.statusCode === 200 && validated.body.active, "Validation failed.");
+    assert(validated.body.token !== activated.body.token, "Validation should rotate token.");
+
+    const blocked = await requestJson(port, "/v1/licenses/validate", {
+      token: validated.body.token,
+      subscriptionId: validated.body.subscriptionId,
+      deviceHash: otherDeviceHash,
+      appVersion: "0.1.0",
+      channel: "test"
+    });
+    assert(blocked.statusCode === 403 && blocked.body.active === false, "Device mismatch should be blocked.");
+
+    console.log("ZeroLag server self-test passed.");
+  } finally {
+    server.close();
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+main().catch((error) => {
+  console.error(error.message);
+  process.exitCode = 1;
+});

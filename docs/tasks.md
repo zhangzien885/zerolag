@@ -87,6 +87,7 @@
 - Added remote update manifest support while keeping local update JSON as development fallback.
 - Added `scripts/production-check.js` and npm scripts for production readiness checks.
 - Added `docs/server-api-contract.md` for backend implementation.
+- Added runnable `server/` license-server MVP with activation-code creation, device binding, subscription validation, token rotation, update manifest endpoint, and self-test.
 
 ## Known Boundaries
 

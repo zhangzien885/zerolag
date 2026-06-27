@@ -2,6 +2,8 @@
 
 This is the first production client contract for account and subscription validation.
 
+The runnable MVP server lives in `server/`. It is suitable for local integration testing and early private trials. Before a paid public release, move its JSON state into a real database, put it behind HTTPS, and connect payment webhooks.
+
 ## Configuration
 
 The desktop client reads production endpoints from `assets/app-config.json`.
@@ -106,3 +108,12 @@ If the subscription is expired, refunded, revoked, moved to another device, or p
 ```
 
 Production builds should sign update metadata and configure `updatePublicKeyPem`.
+
+## Payment Integration Point
+
+Payment providers should call the backend after successful payment and either:
+
+- create a subscription directly for the user's account and device; or
+- create a one-time activation code that the desktop app can redeem.
+
+The current MVP supports the activation-code path first because it is the fastest way to test paid membership without committing to a payment provider too early.

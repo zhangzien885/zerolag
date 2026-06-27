@@ -46,6 +46,16 @@ npm run production:check:strict
 
 `production:check` gives a readiness report. `production:check:strict` should be used before a real paid release.
 
+## License server MVP
+
+```powershell
+npm run server:test
+npm run server:create-code -- ZL-PRO-TEST-001 30 1
+npm run server:start
+```
+
+The local MVP server implements activation and validation endpoints used by the desktop app. See `server/README.md` and `docs/server-api-contract.md`.
+
 ## Website
 
 The first official website landing page is available under `website/`.
