@@ -17,6 +17,7 @@ function usage() {
   console.log("  node server/admin-client.js subscriptions [status]");
   console.log("  node server/admin-client.js subscription [subscriptionId]");
   console.log("  node server/admin-client.js revoke-subscription [subscriptionId] [reason]");
+  console.log("  node server/admin-client.js audit-events [limit] [type]");
   console.log("  node server/admin-client.js summary");
 }
 
@@ -231,6 +232,17 @@ async function main() {
       subscriptionId: process.argv[3],
       reason: process.argv[4] || "manual_revoke"
     });
+    console.log(JSON.stringify(response.body, null, 2));
+    process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
+  if (command === "audit-events") {
+    const params = new URLSearchParams();
+    if (process.argv[3]) params.set("limit", process.argv[3]);
+    if (process.argv[4]) params.set("type", process.argv[4]);
+    const query = params.toString() ? `?${params.toString()}` : "";
+    const response = await requestJson(`/v1/admin/audit-events${query}`);
     console.log(JSON.stringify(response.body, null, 2));
     process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
     return;

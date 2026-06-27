@@ -15,6 +15,7 @@ It provides:
 - `GET /v1/admin/subscriptions`
 - `GET /v1/admin/subscriptions/:subscriptionId`
 - `POST /v1/admin/subscriptions/revoke`
+- `GET /v1/admin/audit-events`
 - `GET /v1/admin/summary`
 - `GET /v1/updates/manifest`
 - local activation-code creation for early testing
@@ -63,6 +64,8 @@ npm run server:admin -- subscriptions
 npm run server:admin -- subscriptions active
 npm run server:admin -- subscription sub_xxx
 npm run server:admin -- revoke-subscription sub_xxx support_revoke
+npm run server:admin -- audit-events 50
+npm run server:admin -- audit-events 50 payment.succeeded
 npm run server:admin -- summary
 ```
 

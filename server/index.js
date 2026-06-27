@@ -7,6 +7,7 @@ const rootDir = path.join(__dirname, "..");
 const defaultDataDir = path.join(__dirname, "data");
 const defaultStatePath = path.join(defaultDataDir, "server-state.json");
 const updateManifestPath = path.join(rootDir, "assets", "update.json");
+const maxAuditEvents = 2000;
 
 function nowIso() {
   return new Date().toISOString();
@@ -41,6 +42,7 @@ function createEmptyState() {
     version: 1,
     createdAt: nowIso(),
     activationCodes: {},
+    auditEvents: [],
     orders: {},
     paymentEvents: {},
     subscriptions: {},
@@ -154,6 +156,35 @@ function safeSubscriptionRecord(subscription) {
   };
 }
 
+function safeAuditEventRecord(event) {
+  return {
+    eventId: event.eventId,
+    type: event.type,
+    actor: event.actor || "system",
+    targetType: event.targetType || "",
+    targetId: event.targetId || "",
+    createdAt: event.createdAt || "",
+    metadata: event.metadata || {}
+  };
+}
+
+function appendAuditEvent(state, type, input = {}) {
+  state.auditEvents = Array.isArray(state.auditEvents) ? state.auditEvents : [];
+  state.auditEvents.push({
+    eventId: randomId("aud"),
+    type,
+    actor: input.actor || "system",
+    targetType: input.targetType || "",
+    targetId: input.targetId || "",
+    createdAt: nowIso(),
+    metadata: input.metadata || {}
+  });
+
+  if (state.auditEvents.length > maxAuditEvents) {
+    state.auditEvents = state.auditEvents.slice(-maxAuditEvents);
+  }
+}
+
 function stateSummary(state) {
   const activationCodes = Object.values(state.activationCodes || {});
   const orders = Object.values(state.orders || {});
@@ -172,6 +203,9 @@ function stateSummary(state) {
     },
     paymentEvents: {
       total: Object.keys(state.paymentEvents || {}).length
+    },
+    auditEvents: {
+      total: Array.isArray(state.auditEvents) ? state.auditEvents.length : 0
     },
     subscriptions: {
       total: subscriptions.length,
@@ -200,6 +234,10 @@ function requireAdmin(request, response, options = {}) {
     return false;
   }
   return true;
+}
+
+function adminActor(request) {
+  return String(request.headers["x-zerolag-admin-actor"] || "admin").trim() || "admin";
 }
 
 function signPaymentWebhook(secret, bodyText) {
@@ -419,6 +457,17 @@ async function activateLicense(request, response, options = {}) {
   if (existing) {
     const token = issueToken(state, existing, options);
     existing.lastValidatedAt = nowIso();
+    appendAuditEvent(state, "license.reused", {
+      actor: "client",
+      targetType: "subscription",
+      targetId: existing.subscriptionId,
+      metadata: {
+        device: maskDeviceHash(deviceHash),
+        plan: existing.plan,
+        channel: String(body.channel || ""),
+        appVersion: String(body.appVersion || "")
+      }
+    });
     saveState(state, options);
     jsonResponse(response, 200, successLicensePayload(existing, token));
     return;
@@ -449,6 +498,19 @@ async function activateLicense(request, response, options = {}) {
     code.updatedAt = nowIso();
 
     const token = issueToken(state, renewable, options);
+    appendAuditEvent(state, "license.renewed", {
+      actor: "client",
+      targetType: "subscription",
+      targetId: renewable.subscriptionId,
+      metadata: {
+        device: maskDeviceHash(deviceHash),
+        plan: renewable.plan,
+        expiresAt: renewable.expiresAt,
+        renewalCount: Number(renewable.renewalCount || 0),
+        channel: renewable.channel,
+        appVersion: renewable.appVersion
+      }
+    });
     saveState(state, options);
     jsonResponse(response, 200, successLicensePayload(renewable, token));
     return;
@@ -472,6 +534,18 @@ async function activateLicense(request, response, options = {}) {
   code.updatedAt = nowIso();
 
   const token = issueToken(state, subscription, options);
+  appendAuditEvent(state, "license.activated", {
+    actor: "client",
+    targetType: "subscription",
+    targetId: subscription.subscriptionId,
+    metadata: {
+      device: maskDeviceHash(deviceHash),
+      plan: subscription.plan,
+      expiresAt: subscription.expiresAt,
+      channel: subscription.channel,
+      appVersion: subscription.appVersion
+    }
+  });
   saveState(state, options);
   jsonResponse(response, 200, successLicensePayload(subscription, token));
 }
@@ -567,6 +641,18 @@ async function createOrder(request, response, options = {}) {
   };
 
   state.orders[orderId] = order;
+  appendAuditEvent(state, "order.created", {
+    actor: "client",
+    targetType: "order",
+    targetId: orderId,
+    metadata: {
+      plan: order.plan,
+      amountCents: order.amountCents,
+      currency: order.currency,
+      channel: order.channel,
+      device: maskDeviceHash(deviceHash)
+    }
+  });
   saveState(state, options);
   jsonResponse(response, 201, {
     ok: true,
@@ -667,13 +753,27 @@ async function createActivationCodeAdmin(request, response, options = {}) {
 
   const body = await readRequestBody(request);
   const code = normalizeCode(body.code || `ZL-PRO-${crypto.randomBytes(3).toString("hex").toUpperCase()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`);
-  const record = addActivationCode(code, {
+  const state = loadState(options);
+  const record = putActivationCode(state, code, {
     label: body.label || "admin-created",
     plan: body.plan || "ZeroLag Pro Monthly",
     durationDays: Number(body.durationDays || 30),
     maxUses: Number(body.maxUses || 1),
     enabled: body.enabled !== false
   }, options);
+  appendAuditEvent(state, "activation_code.created", {
+    actor: adminActor(request),
+    targetType: "activation_code",
+    targetId: record.codeHash,
+    metadata: {
+      label: record.label,
+      plan: record.plan,
+      durationDays: record.durationDays,
+      maxUses: record.maxUses,
+      enabled: record.enabled
+    }
+  });
+  saveState(state, options);
 
   jsonResponse(response, 201, {
     ok: true,
@@ -699,6 +799,16 @@ async function completeOrderAdmin(request, response, options = {}) {
     return;
   }
 
+  appendAuditEvent(state, "order.completed", {
+    actor: adminActor(request),
+    targetType: "order",
+    targetId: order.orderId,
+    metadata: {
+      source: "admin",
+      paymentProvider: order.paymentProvider,
+      hasActivationCode: Boolean(order.activationCode)
+    }
+  });
   saveState(state, options);
 
   jsonResponse(response, 200, {
@@ -723,6 +833,16 @@ async function refundOrderAdmin(request, response, options = {}) {
     return;
   }
 
+  appendAuditEvent(state, "order.refunded", {
+    actor: adminActor(request),
+    targetType: "order",
+    targetId: order.orderId,
+    metadata: {
+      source: "admin",
+      paymentProvider: order.paymentProvider,
+      reason: body.reason || "manual_refund"
+    }
+  });
   saveState(state, options);
   jsonResponse(response, 200, {
     ok: true,
@@ -756,6 +876,14 @@ async function paymentWebhook(request, response, options = {}) {
       createdAt: nowIso(),
       response: ignoredPayload
     };
+    appendAuditEvent(state, "payment.webhook_ignored", {
+      actor: "webhook",
+      targetType: "payment_event",
+      targetId: eventId,
+      metadata: {
+        type: eventType
+      }
+    });
     saveState(state, options);
     jsonResponse(response, 202, ignoredPayload);
     return;
@@ -788,6 +916,16 @@ async function paymentWebhook(request, response, options = {}) {
     createdAt: nowIso(),
     response: payload
   };
+  appendAuditEvent(state, eventType === "payment.refunded" ? "payment.refunded" : "payment.succeeded", {
+    actor: "webhook",
+    targetType: "order",
+    targetId: order.orderId,
+    metadata: {
+      eventId,
+      paymentProvider: order.paymentProvider,
+      hasActivationCode: Boolean(order.activationCode)
+    }
+  });
   saveState(state, options);
   jsonResponse(response, 200, payload);
 }
@@ -856,10 +994,41 @@ async function revokeSubscriptionAdmin(request, response, options = {}) {
     return;
   }
 
+  appendAuditEvent(state, "subscription.revoked", {
+    actor: adminActor(request),
+    targetType: "subscription",
+    targetId: subscription.subscriptionId,
+    metadata: {
+      reason: body.reason || "manual_revoke",
+      disableActivationCodes: body.disableActivationCodes !== false
+    }
+  });
   saveState(state, options);
   jsonResponse(response, 200, {
     ok: true,
     subscription: safeSubscriptionRecord(subscription)
+  });
+}
+
+async function listAuditEventsAdmin(request, response, options = {}) {
+  if (!requireAdmin(request, response, options)) return;
+
+  const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
+  const typeFilter = String(url.searchParams.get("type") || "").trim();
+  const targetIdFilter = String(url.searchParams.get("targetId") || "").trim();
+  const rawLimit = Number(url.searchParams.get("limit") || 50);
+  const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 50;
+  const state = loadState(options);
+  const events = (Array.isArray(state.auditEvents) ? state.auditEvents : [])
+    .filter((event) => !typeFilter || event.type === typeFilter)
+    .filter((event) => !targetIdFilter || event.targetId === targetIdFilter)
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .slice(0, limit)
+    .map(safeAuditEventRecord);
+
+  jsonResponse(response, 200, {
+    ok: true,
+    events
   });
 }
 
@@ -931,6 +1100,11 @@ async function routeRequest(request, response, options = {}) {
 
     if (request.method === "POST" && url.pathname === "/v1/admin/subscriptions/revoke") {
       await revokeSubscriptionAdmin(request, response, options);
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/v1/admin/audit-events") {
+      await listAuditEventsAdmin(request, response, options);
       return;
     }
 

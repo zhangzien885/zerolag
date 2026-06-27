@@ -348,6 +348,29 @@ async function main() {
     });
     assert(manuallyRevokedValidation.statusCode === 403 && manuallyRevokedValidation.body.active === false, "Admin revoke should invalidate token.");
 
+    const auditEvents = await requestJson(port, "/v1/admin/audit-events?limit=200", null, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(auditEvents.statusCode === 200, "Admin audit events failed.");
+    const auditTypes = new Set(auditEvents.body.events.map((event) => event.type));
+    assert(auditTypes.has("activation_code.created"), "Audit log should include admin activation-code creation.");
+    assert(auditTypes.has("order.created"), "Audit log should include order creation.");
+    assert(auditTypes.has("payment.succeeded"), "Audit log should include successful payment.");
+    assert(auditTypes.has("license.activated"), "Audit log should include license activation.");
+    assert(auditTypes.has("license.renewed"), "Audit log should include license renewal.");
+    assert(auditTypes.has("payment.refunded"), "Audit log should include refund.");
+    assert(auditTypes.has("subscription.revoked"), "Audit log should include manual subscription revoke.");
+    assert(
+      !JSON.stringify(auditEvents.body.events).includes(completedOrder.body.order.activationCode),
+      "Audit log should not expose activation codes."
+    );
+
+    const renewalAuditEvents = await requestJson(port, "/v1/admin/audit-events?limit=10&type=license.renewed", null, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(renewalAuditEvents.statusCode === 200, "Filtered audit events failed.");
+    assert(renewalAuditEvents.body.events.length === 1, "Filtered audit events should return renewal event.");
+
     console.log("ZeroLag server self-test passed.");
   } finally {
     server.close();

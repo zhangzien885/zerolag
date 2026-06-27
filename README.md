@@ -67,6 +67,8 @@ The paid-flow MVP includes a signed `POST /v1/payments/webhook` endpoint for pay
 
 The server also includes admin membership support endpoints for listing subscriptions, inspecting linked orders, and manually revoking access during private testing or support.
 
+Operational audit events are recorded for important order, payment, license, renewal, refund, and admin actions, without storing activation codes or tokens in the audit feed.
+
 ## Website
 
 The first official website landing page is available under `website/`.

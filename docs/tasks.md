@@ -97,6 +97,7 @@
 - Added refund handling for paid orders: signed refund webhook, admin refund helper, activation-code disablement, subscription revocation, and active token invalidation.
 - Added same-device renewal handling so a newly paid monthly code extends the existing active subscription instead of creating duplicate membership records.
 - Added admin membership support endpoints and CLI helpers for listing subscriptions, inspecting linked orders, filtering active memberships, and manually revoking access.
+- Added operational audit events and admin audit log queries for order, payment, activation, renewal, refund, and manual revoke actions without exposing activation codes or tokens.
 
 ## Known Boundaries
 

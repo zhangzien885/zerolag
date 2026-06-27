@@ -440,6 +440,40 @@ Response:
 }
 ```
 
+## GET `/v1/admin/audit-events`
+
+Lists recent operational audit events for private testing, support, and payment troubleshooting. Events are intentionally compact and should not include activation codes or tokens.
+
+Optional filters:
+
+```text
+?limit=50
+?type=payment.succeeded
+?targetId=ord_123
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "events": [
+    {
+      "eventId": "aud_123",
+      "type": "payment.succeeded",
+      "actor": "webhook",
+      "targetType": "order",
+      "targetId": "ord_123",
+      "createdAt": "2026-07-27T00:00:00.000Z",
+      "metadata": {
+        "paymentProvider": "wechat_pay",
+        "hasActivationCode": true
+      }
+    }
+  ]
+}
+```
+
 ## Payment Integration Point
 
 The current MVP supports the activation-code path first because it is the fastest way to test paid membership without committing to a payment provider too early. A future account system can switch paid webhooks from issuing codes to creating account-bound subscriptions directly.
