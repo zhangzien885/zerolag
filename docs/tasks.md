@@ -91,6 +91,8 @@
 - Added `npm run dev:server-app` for local desktop-plus-license-server integration testing without mutating protected production config.
 - Added admin-protected activation-code creation and summary endpoints for the future payment callback path.
 - Added provider-neutral order flow MVP: create order, query order status, manually complete paid order, and issue a one-time activation code.
+- Connected the desktop purchase dialog to server order creation and order-status refresh, with automatic activation after a paid order returns an activation code.
+- Added admin order listing and `complete-latest` helper for local payment-flow testing.
 
 ## Known Boundaries
 

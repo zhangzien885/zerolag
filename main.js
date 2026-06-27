@@ -692,6 +692,71 @@ async function activateLicenseV2(code) {
   return activateLicense(code);
 }
 
+async function createMembershipOrder() {
+  const config = readAppConfig();
+  const apiBaseUrl = normalizeBaseUrl(config.apiBaseUrl);
+  if (!apiBaseUrl) {
+    return {
+      ok: false,
+      reason: "PAYMENT_SERVER_NOT_CONFIGURED"
+    };
+  }
+
+  const machineHash = await getMachineFingerprint();
+  const response = await requestJson(`${apiBaseUrl}/v1/orders/create`, {
+    body: {
+      plan: "ZeroLag Pro Monthly",
+      durationDays: 30,
+      amountCents: 3000,
+      currency: "CNY",
+      deviceHash: machineHash,
+      channel: config.releaseChannel || "desktop"
+    },
+    timeoutMs: 8000
+  });
+
+  if (!response.ok || !response.data) {
+    return {
+      ok: false,
+      reason: response.error || "ORDER_CREATE_FAILED"
+    };
+  }
+
+  return {
+    ok: true,
+    ...response.data
+  };
+}
+
+async function getMembershipOrderStatus(orderId) {
+  const config = readAppConfig();
+  const apiBaseUrl = normalizeBaseUrl(config.apiBaseUrl);
+  const id = String(orderId || "").trim();
+  if (!apiBaseUrl || !id) {
+    return {
+      ok: false,
+      reason: "ORDER_STATUS_UNAVAILABLE"
+    };
+  }
+
+  const response = await requestJson(`${apiBaseUrl}/v1/orders/${encodeURIComponent(id)}`, {
+    method: "GET",
+    timeoutMs: 8000
+  });
+
+  if (!response.ok || !response.data) {
+    return {
+      ok: false,
+      reason: response.error || "ORDER_STATUS_FAILED"
+    };
+  }
+
+  return {
+    ok: true,
+    ...response.data
+  };
+}
+
 function gameDisplayName(filePath) {
   return path.basename(filePath, path.extname(filePath)).replace(/[-_]+/g, " ").trim() || "未命名游戏";
 }
@@ -1859,6 +1924,8 @@ app.whenReady().then(async () => {
     };
   });
   ipcMain.handle("zerolag:get-update-status", async () => readUpdateStatusV2());
+  ipcMain.handle("zerolag:create-order", async () => createMembershipOrder());
+  ipcMain.handle("zerolag:get-order-status", async (_event, orderId) => getMembershipOrderStatus(orderId));
   ipcMain.handle("zerolag:open-website", async () => {
     const target = readAppConfig().websiteUrl;
     if (!isHttpUrl(target)) return false;

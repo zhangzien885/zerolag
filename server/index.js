@@ -481,6 +481,19 @@ async function completeOrderAdmin(request, response, options = {}) {
   });
 }
 
+async function listOrdersAdmin(request, response, options = {}) {
+  if (!requireAdmin(request, response, options)) return;
+
+  const state = loadState(options);
+  const orders = Object.values(state.orders || {})
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .map(safeOrderRecord);
+  jsonResponse(response, 200, {
+    ok: true,
+    orders
+  });
+}
+
 async function adminSummary(request, response, options = {}) {
   if (!requireAdmin(request, response, options)) return;
 
@@ -518,6 +531,11 @@ async function routeRequest(request, response, options = {}) {
 
     if (request.method === "POST" && url.pathname === "/v1/admin/orders/complete") {
       await completeOrderAdmin(request, response, options);
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/v1/admin/orders") {
+      await listOrdersAdmin(request, response, options);
       return;
     }
 

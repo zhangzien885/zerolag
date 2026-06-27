@@ -48,6 +48,8 @@ Start the server, then create a code through the admin API:
 ```powershell
 $env:ZEROLAG_ADMIN_SECRET="change-this-before-production"
 npm run server:admin -- create-code ZL-PRO-TEST-002 30 1
+npm run server:admin -- orders
+npm run server:admin -- complete-latest manual_trade_id
 npm run server:admin -- complete-order ord_xxx manual_trade_id
 npm run server:admin -- summary
 ```

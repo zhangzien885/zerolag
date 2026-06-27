@@ -61,6 +61,8 @@ The local MVP server implements activation and validation endpoints used by the 
 
 The server also includes a provider-neutral order flow so payment callbacks can later complete orders and issue one-time activation codes.
 
+For local desktop purchase testing, run `npm run dev:server-app`, open the purchase dialog, then use `npm run server:admin -- complete-latest manual_trade_id` to simulate a successful payment.
+
 ## Website
 
 The first official website landing page is available under `website/`.

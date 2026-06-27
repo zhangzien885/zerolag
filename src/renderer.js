@@ -49,6 +49,11 @@ const els = {
   closePurchaseButton: document.querySelector("#closePurchaseButton"),
   paidButton: document.querySelector("#paidButton"),
   copyDemoCodeButton: document.querySelector("#copyDemoCodeButton"),
+  paymentState: document.querySelector("#paymentState"),
+  paymentTitle: document.querySelector("#paymentTitle"),
+  paymentMessage: document.querySelector("#paymentMessage"),
+  orderState: document.querySelector("#orderState"),
+  orderCode: document.querySelector("#orderCode"),
   updateOverlay: document.querySelector("#updateOverlay"),
   updateKicker: document.querySelector("#updateKicker"),
   updateTitle: document.querySelector("#updateTitle"),
@@ -70,6 +75,8 @@ let pendingUpdateUrl = "";
 let pendingUpdate = null;
 let forceUpdateRequired = false;
 let boostStartedAt = "";
+let pendingPurchaseOrderId = "";
+let pendingPurchaseActivationCode = "";
 
 function setText(node, value) {
   node.textContent = value;
@@ -358,6 +365,101 @@ async function checkForUpdates() {
   }
 }
 
+function renderPurchaseFallback() {
+  pendingPurchaseOrderId = "";
+  pendingPurchaseActivationCode = "";
+  setText(els.paymentState, "演示模式");
+  setText(els.paymentTitle, "ZeroLag Pro 月度");
+  setText(els.paymentMessage, "当前未连接正式支付服务，可使用演示会员码体验。");
+  setText(els.orderState, "待接入");
+  setText(els.orderCode, "演示会员码");
+  setText(els.paidButton, "刷新开通状态");
+  setText(els.copyDemoCodeButton, "复制演示会员码");
+}
+
+function renderPurchaseOrder(order) {
+  const status = order && order.status ? order.status : "pending";
+  const code = order && order.activationCode ? order.activationCode : "";
+  pendingPurchaseOrderId = order && order.orderId ? order.orderId : pendingPurchaseOrderId;
+  pendingPurchaseActivationCode = code;
+  setText(els.paymentState, status === "paid" ? "已完成" : "等待支付");
+  setText(els.paymentTitle, "ZeroLag Pro 月度");
+  setText(els.paymentMessage, status === "paid"
+    ? "会员开通信息已准备好，正在为你完成激活。"
+    : "订单已创建。完成支付后点击刷新开通状态。");
+  setText(els.orderState, status === "paid" ? "已开通" : "待支付");
+  els.orderState.title = pendingPurchaseOrderId || "";
+  setText(els.orderCode, code ? shorten(code, 18) : "支付后生成");
+  els.orderCode.title = code || "";
+  setText(els.paidButton, "刷新开通状态");
+  setText(els.copyDemoCodeButton, code ? "复制激活码" : "复制演示会员码");
+}
+
+async function activateFromPurchaseCode(code) {
+  if (!code) return false;
+
+  const license = await window.zeroLag.activateLicense(code);
+  if (license.active) {
+    setPill(els.licenseState, "订阅有效", "good");
+    setText(els.memberState, "激活成功");
+    setText(els.expiresAt, formatDate(license.expiresAt));
+    els.licenseCode.value = "";
+    els.purchaseOverlay.hidden = true;
+    addLog("会员已开通成功。", "good");
+    await refreshStatus();
+    return true;
+  }
+
+  els.licenseCode.value = code;
+  addLog(license.reason || "会员激活暂未完成，请稍后刷新。", "warn");
+  return false;
+}
+
+async function refreshPurchaseOrder() {
+  if (!pendingPurchaseOrderId) {
+    renderPurchaseFallback();
+    return;
+  }
+
+  setText(els.paymentState, "正在刷新");
+  setText(els.orderState, "查询中");
+  const result = await window.zeroLag.getOrderStatus(pendingPurchaseOrderId);
+  if (!result || !result.ok || !result.order) {
+    setText(els.paymentState, "等待支付");
+    setText(els.orderState, "待支付");
+    addLog("暂未检测到会员开通结果。", "warn");
+    return;
+  }
+
+  renderPurchaseOrder(result.order);
+  if (result.order.activationCode) {
+    await activateFromPurchaseCode(result.order.activationCode);
+  }
+}
+
+async function openPurchaseOverlay() {
+  els.purchaseOverlay.hidden = false;
+  setText(els.memberState, "等待支付");
+  setText(els.paymentState, "准备中");
+  setText(els.paymentTitle, "ZeroLag Pro 月度");
+  setText(els.paymentMessage, "正在准备会员开通信息，请稍等。");
+  setText(els.orderState, "创建中");
+  setText(els.orderCode, "等待开通");
+  setText(els.paidButton, "刷新开通状态");
+
+  try {
+    const result = await window.zeroLag.createOrder();
+    if (!result || !result.ok || !result.order) {
+      renderPurchaseFallback();
+      return;
+    }
+
+    renderPurchaseOrder(result.order);
+  } catch {
+    renderPurchaseFallback();
+  }
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -370,8 +472,7 @@ async function runBoost() {
   }
 
   if (!(currentStatus.license && currentStatus.license.active)) {
-    els.purchaseOverlay.hidden = false;
-    setText(els.memberState, "等待支付");
+    await openPurchaseOverlay();
     return;
   }
 
@@ -505,8 +606,7 @@ els.activateButton.addEventListener("click", () => {
 });
 
 els.renewButton.addEventListener("click", () => {
-  els.purchaseOverlay.hidden = false;
-  setText(els.memberState, "等待支付");
+  openPurchaseOverlay();
 });
 
 els.toolboxButton.addEventListener("click", () => {
@@ -600,18 +700,17 @@ els.purchaseOverlay.addEventListener("click", (event) => {
   }
 });
 
-els.paidButton.addEventListener("click", () => {
-  els.purchaseOverlay.hidden = true;
-  addLog("支付确认已提交。正式版会等待服务器回调后自动开通。", "warn");
+els.paidButton.addEventListener("click", async () => {
+  await refreshPurchaseOrder();
 });
 
 els.copyDemoCodeButton.addEventListener("click", async () => {
-  const demoCode = "ZL-PRO-DEMO-2026";
+  const demoCode = pendingPurchaseActivationCode || "ZL-PRO-DEMO-2026";
   try {
     await navigator.clipboard.writeText(demoCode);
-    addLog("演示会员码已复制。", "good");
+    addLog(pendingPurchaseActivationCode ? "激活码已复制。" : "演示会员码已复制。", "good");
   } catch {
-    addLog(`演示会员码：${demoCode}`, "good");
+    addLog(`会员码：${demoCode}`, "good");
   }
 });
 

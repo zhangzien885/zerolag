@@ -236,6 +236,27 @@ Response:
 }
 ```
 
+## GET `/v1/admin/orders`
+
+Lists recent orders for private testing and support.
+
+Response:
+
+```json
+{
+  "ok": true,
+  "orders": [
+    {
+      "orderId": "ord_123",
+      "status": "pending",
+      "plan": "ZeroLag Pro Monthly",
+      "amountCents": 3000,
+      "currency": "CNY"
+    }
+  ]
+}
+```
+
 ## Payment Integration Point
 
 Payment providers should call the backend after successful payment and either:

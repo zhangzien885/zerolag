@@ -106,6 +106,11 @@ async function main() {
     const orderStatusBefore = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`);
     assert(orderStatusBefore.statusCode === 200 && !orderStatusBefore.body.order.activationCode, "Pending order should not expose a code.");
 
+    const adminOrders = await requestJson(port, "/v1/admin/orders", null, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(adminOrders.statusCode === 200 && adminOrders.body.orders.length === 1, "Admin order list failed.");
+
     const completedOrder = await requestJson(port, "/v1/admin/orders/complete", {
       orderId: createdOrder.body.order.orderId,
       providerTradeId: "test_trade"

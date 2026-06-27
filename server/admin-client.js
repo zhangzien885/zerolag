@@ -6,7 +6,9 @@ const adminSecret = process.env.ZEROLAG_ADMIN_SECRET || "zerolag-dev-admin-secre
 function usage() {
   console.log("Usage:");
   console.log("  node server/admin-client.js create-code [code] [durationDays] [maxUses]");
+  console.log("  node server/admin-client.js orders");
   console.log("  node server/admin-client.js complete-order [orderId] [providerTradeId]");
+  console.log("  node server/admin-client.js complete-latest [providerTradeId]");
   console.log("  node server/admin-client.js summary");
 }
 
@@ -66,10 +68,38 @@ async function main() {
     return;
   }
 
+  if (command === "orders") {
+    const response = await requestJson("/v1/admin/orders");
+    console.log(JSON.stringify(response.body, null, 2));
+    process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
   if (command === "complete-order") {
     const response = await requestJson("/v1/admin/orders/complete", {
       orderId: process.argv[3],
       providerTradeId: process.argv[4] || "manual"
+    });
+    console.log(JSON.stringify(response.body, null, 2));
+    process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
+  if (command === "complete-latest") {
+    const orders = await requestJson("/v1/admin/orders");
+    const latestPending = orders.body && Array.isArray(orders.body.orders)
+      ? orders.body.orders.find((order) => order.status === "pending")
+      : null;
+
+    if (!latestPending) {
+      console.log(JSON.stringify({ ok: false, message: "No pending order found." }, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+
+    const response = await requestJson("/v1/admin/orders/complete", {
+      orderId: latestPending.orderId,
+      providerTradeId: process.argv[3] || "manual"
     });
     console.log(JSON.stringify(response.body, null, 2));
     process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;

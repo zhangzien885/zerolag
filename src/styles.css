@@ -1370,6 +1370,10 @@ body.ready-mid .metric-rail {
   padding: 14px;
 }
 
+.payment-copy + div {
+  display: none;
+}
+
 .qr-placeholder {
   position: relative;
   width: 104px;
@@ -1423,6 +1427,39 @@ body.ready-mid .metric-rail {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.6;
+}
+
+.order-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.order-strip div {
+  min-width: 0;
+  border: 1px solid rgba(196, 255, 220, 0.12);
+  background: rgba(167, 255, 90, 0.045);
+  padding: 9px 10px;
+}
+
+.order-strip span,
+.order-strip b {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-strip span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.order-strip b {
+  margin-top: 5px;
+  color: var(--green);
+  font-size: 12px;
 }
 
 .update-dialog {

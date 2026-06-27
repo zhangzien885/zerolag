@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld("zeroLag", {
   flushDns: () => ipcRenderer.invoke("zerolag:flush-dns"),
   getAppConfig: () => ipcRenderer.invoke("zerolag:get-app-config"),
   getUpdateStatus: () => ipcRenderer.invoke("zerolag:get-update-status"),
+  createOrder: () => ipcRenderer.invoke("zerolag:create-order"),
+  getOrderStatus: (orderId) => ipcRenderer.invoke("zerolag:get-order-status", orderId),
   openWebsite: () => ipcRenderer.invoke("zerolag:open-website"),
   openUpdateUrl: (url) => ipcRenderer.invoke("zerolag:open-update-url", url),
   openExternalUrl: (url) => ipcRenderer.invoke("zerolag:open-update-url", url),
