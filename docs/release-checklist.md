@@ -2,6 +2,12 @@
 
 Use this checklist before preparing a paid public build.
 
+Generate the current machine-readable checklist first:
+
+```powershell
+npm run deploy:checklist
+```
+
 ## 1. Desktop Release Config
 
 - Set `assets/app-config.json` `releaseMode` to `production`.
@@ -13,6 +19,7 @@ Use this checklist before preparing a paid public build.
 
 - Generate private server secrets with `npm run server:secrets -- --write`.
 - Keep `.secrets/server.env` private and outside Git.
+- Configure `ZEROLAG_PAYMENT_PROVIDER`, `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS`, `ZEROLAG_PAYMENT_URL_TEMPLATE`, and `ZEROLAG_PAYMENT_MESSAGE` for the real payment provider.
 - Run `npm run server:check:strict`.
 - Run `npm run server:smoke`.
 - Confirm backups, rate limiting, and maintenance cleanup are enabled.

@@ -146,6 +146,7 @@
 - Added a private local HTML analytics report for visual review of website conversion metrics and daily trends.
 - Added private operator summaries and CSV exports for paid orders, refunds, memberships, renewals, and upcoming expirations without exposing activation codes or tokens.
 - Added configurable payment-provider readiness with checkout URL templates and signed webhook provider allowlisting for future WeChat Pay / Alipay integration.
+- Added a generated deployment checklist command that consolidates desktop config, server secrets, payment provider, update metadata, signing, and final release gates.
 
 ## Known Boundaries
 
