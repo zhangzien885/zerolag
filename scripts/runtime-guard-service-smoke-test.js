@@ -1,8 +1,15 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const crypto = require("crypto");
 const { spawnSync } = require("child_process");
-const { signRuntimeSessionPayload, verifyRuntimeSessionPayload } = require("./runtime-guard-core");
+const {
+  runtimeSessionServerProofBody,
+  shouldCleanupSession,
+  signRuntimeSessionPayload,
+  verifyRuntimeSessionPayload,
+  verifyRuntimeSessionServerProof
+} = require("./runtime-guard-core");
 
 const rootDir = path.join(__dirname, "..");
 
@@ -30,6 +37,13 @@ function runService(args, env = {}) {
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
+function signRsaSessionProof(session, privateKeyPem) {
+  const signer = crypto.createSign("RSA-SHA256");
+  signer.update(runtimeSessionServerProofBody(session));
+  signer.end();
+  return `rsa-sha256=${signer.sign(privateKeyPem).toString("base64url")}`;
 }
 
 function main() {
@@ -69,6 +83,45 @@ function main() {
     ...signedServerSession,
     runtimeSessionProof: `sha256=${"c".repeat(64)}`
   }), "Runtime guard should reject tampered runtime session proofs.");
+
+  const rsaKeys = crypto.generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const rsaPrivateKeyPem = rsaKeys.privateKey.export({ type: "pkcs8", format: "pem" });
+  const rsaPublicKeyPem = rsaKeys.publicKey.export({ type: "spki", format: "pem" });
+  const rsaSession = {
+    ...legacySession,
+    version: 2,
+    subscriptionId: "sub_runtime_guard_rsa",
+    licenseSessionId: "rsess_runtime_guard_rsa",
+    runtimeSessionKeyVersion: "runtime-session-v1",
+    runtimeSessionRevision: 1,
+    runtimeSessionProofAlgorithm: "RSA-SHA256"
+  };
+  rsaSession.runtimeSessionProof = signRsaSessionProof(rsaSession, rsaPrivateKeyPem);
+  const signedRsaSession = {
+    ...rsaSession,
+    signature: signRuntimeSessionPayload(rsaSession)
+  };
+  const verifiedRsaSession = {
+    ...signedRsaSession,
+    signatureValid: true
+  };
+  assertOk(verifyRuntimeSessionPayload(signedRsaSession), "Runtime guard should verify locally signed RSA runtime sessions.");
+  assertOk(
+    verifyRuntimeSessionServerProof(signedRsaSession, { publicKeyPem: rsaPublicKeyPem }).ok,
+    "Runtime guard should verify RSA runtime session proofs with the public key."
+  );
+  assertOk(
+    !verifyRuntimeSessionServerProof({ ...signedRsaSession, runtimeSessionRevision: 2 }, { publicKeyPem: rsaPublicKeyPem }).ok,
+    "Runtime guard should reject tampered RSA runtime session proof bodies."
+  );
+  assertOk(
+    shouldCleanupSession(verifiedRsaSession, { publicKeyPem: rsaPublicKeyPem, isAlive: () => true }).cleanup === false,
+    "Runtime guard should keep an active RSA-authorized session."
+  );
+  assertOk(
+    shouldCleanupSession(verifiedRsaSession, { isAlive: () => true }).reason === "invalid-server-proof",
+    "Runtime guard should require a public key for RSA-authorized sessions."
+  );
 
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-runtime-guard-service-smoke-"));
 
@@ -122,6 +175,23 @@ function main() {
     ]);
     assertOk(idle.status === 0, `Service worker idle run failed: ${idle.stderr || idle.stdout}`);
     assertOk(readJson(idleHealthPath).action === "idle", "Missing session should be reported as idle.");
+
+    const rsaSessionPath = path.join(tempDir, "rsa-runtime-session.json");
+    const rsaHealthPath = path.join(tempDir, "rsa-health.json");
+    fs.writeFileSync(rsaSessionPath, `${JSON.stringify(signedRsaSession, null, 2)}\n`, "utf8");
+    const rsaKeep = runService([
+      "--session",
+      rsaSessionPath,
+      "--once",
+      "--dry-run",
+      "--health-file",
+      rsaHealthPath
+    ], {
+      ZEROLAG_RUNTIME_SESSION_PUBLIC_KEY: rsaPublicKeyPem
+    });
+    assertOk(rsaKeep.status === 0, `Service worker RSA keep run failed: ${rsaKeep.stderr || rsaKeep.stdout}`);
+    assertOk(readJson(rsaHealthPath).action === "keep", "Service worker should keep valid RSA runtime sessions.");
+    assertOk(fs.existsSync(rsaSessionPath), "Service worker should not remove valid RSA runtime sessions.");
 
     console.log("ZeroLag runtime guard service smoke test passed.");
   } finally {

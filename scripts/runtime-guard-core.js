@@ -31,6 +31,7 @@ function runtimeSessionSigningBody(session) {
     runtimePowerPlanGuid: session.runtimePowerPlanGuid || "",
     originalPowerPlanGuid: session.originalPowerPlanGuid || "",
     machineHash: session.machineHash || "",
+    subscriptionId: session.subscriptionId || "",
     licenseSessionId: session.licenseSessionId || "",
     createdAt: session.createdAt || "",
     expiresAt: session.expiresAt || ""
@@ -38,6 +39,7 @@ function runtimeSessionSigningBody(session) {
 
   if (Number(session.version || 1) >= 2 || session.runtimeSessionKeyVersion) {
     body.runtimeSessionKeyVersion = session.runtimeSessionKeyVersion || "";
+    body.runtimeSessionRevision = Number(session.runtimeSessionRevision || 0);
     body.runtimeSessionProofAlgorithm = session.runtimeSessionProofAlgorithm || "";
     body.runtimeSessionProof = session.runtimeSessionProof || "";
   }
@@ -51,6 +53,69 @@ function signRuntimeSessionPayload(session) {
 
 function verifyRuntimeSessionPayload(session) {
   return Boolean(session && session.signature && signRuntimeSessionPayload(session) === session.signature);
+}
+
+function normalizePem(value) {
+  return String(value || "").replace(/\\n/g, "\n").trim();
+}
+
+function runtimeSessionServerProofBody(session) {
+  return JSON.stringify({
+    subscriptionId: session.subscriptionId || "",
+    deviceHash: session.machineHash || "",
+    expiresAt: session.expiresAt || "",
+    sessionId: session.licenseSessionId || "",
+    keyVersion: session.runtimeSessionKeyVersion || "",
+    revision: Number(session.runtimeSessionRevision || 0)
+  });
+}
+
+function verifyRuntimeSessionServerProof(session, input = {}) {
+  const algorithm = String(session && session.runtimeSessionProofAlgorithm || "").trim().toUpperCase();
+  if (algorithm !== "RSA-SHA256") {
+    return {
+      required: false,
+      ok: true,
+      reason: algorithm ? "not-rsa" : "missing-algorithm"
+    };
+  }
+
+  const publicKeyPem = normalizePem(input.publicKeyPem || input.runtimeSessionPublicKeyPem || process.env.ZEROLAG_RUNTIME_SESSION_PUBLIC_KEY);
+  if (!publicKeyPem) {
+    return {
+      required: true,
+      ok: false,
+      reason: "missing-public-key"
+    };
+  }
+
+  const proof = String(session.runtimeSessionProof || "");
+  const signature = proof.startsWith("rsa-sha256=") ? proof.slice("rsa-sha256=".length) : "";
+  if (!signature) {
+    return {
+      required: true,
+      ok: false,
+      reason: "missing-rsa-proof"
+    };
+  }
+
+  try {
+    const verifier = crypto.createVerify("RSA-SHA256");
+    verifier.update(runtimeSessionServerProofBody(session));
+    verifier.end();
+    const ok = verifier.verify(publicKeyPem, Buffer.from(signature, "base64url"));
+    return {
+      required: true,
+      ok,
+      reason: ok ? "verified" : "invalid-rsa-proof"
+    };
+  } catch {
+    return {
+      required: true,
+      ok: false,
+      reason: "invalid-rsa-proof"
+    };
+  }
 }
 
 function isSessionExpired(session) {
@@ -156,6 +221,7 @@ function shouldCleanupSession(session, input = {}) {
   const alive = input.isAlive || isProcessAlive;
   if (!session) return { cleanup: false, reason: "missing" };
   if (!session.signatureValid) return { cleanup: true, reason: "invalid-signature" };
+  if (!verifyRuntimeSessionServerProof(session, input).ok) return { cleanup: true, reason: "invalid-server-proof" };
   if (isSessionExpired(session)) return { cleanup: true, reason: "expired" };
   if (!alive(Number(session.parentPid))) return { cleanup: true, reason: "desktop-missing" };
   return { cleanup: false, reason: "active" };
@@ -199,5 +265,7 @@ module.exports = {
   runGuardLoop,
   shouldCleanupSession,
   signRuntimeSessionPayload,
-  verifyRuntimeSessionPayload
+  runtimeSessionServerProofBody,
+  verifyRuntimeSessionPayload,
+  verifyRuntimeSessionServerProof
 };

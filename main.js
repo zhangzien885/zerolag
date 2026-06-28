@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const http = require("http");
 const https = require("https");
 const { execFile, spawn } = require("child_process");
+const { verifyRuntimeSessionServerProof } = require("./scripts/runtime-guard-core");
 
 const appConfigPath = path.join(__dirname, "assets", "app-config.json");
 const protectedTemplatePath = path.join(__dirname, "assets", "zerolag-power-plan-template.protected.json");
@@ -41,6 +42,7 @@ function defaultAppConfig() {
     apiBaseUrl: "",
     updateManifestUrl: "",
     updatePublicKeyPem: "",
+    runtimeSessionPublicKeyPem: "",
     allowLocalDemoLicense: true,
     offlineGraceHours: 24,
     supportUrl: ""
@@ -70,6 +72,7 @@ function readAppConfig() {
     apiBaseUrl: process.env.ZEROLAG_API_BASE_URL || config.apiBaseUrl,
     updateManifestUrl: process.env.ZEROLAG_UPDATE_MANIFEST_URL || config.updateManifestUrl,
     updatePublicKeyPem: process.env.ZEROLAG_UPDATE_PUBLIC_KEY || config.updatePublicKeyPem,
+    runtimeSessionPublicKeyPem: process.env.ZEROLAG_RUNTIME_SESSION_PUBLIC_KEY || config.runtimeSessionPublicKeyPem,
     supportUrl: process.env.ZEROLAG_SUPPORT_URL || config.supportUrl,
     allowLocalDemoLicense: process.env.ZEROLAG_ALLOW_LOCAL_DEMO
       ? /^(1|true|yes)$/i.test(process.env.ZEROLAG_ALLOW_LOCAL_DEMO)
@@ -265,6 +268,7 @@ function runtimeSessionSigningBody(session) {
     runtimePowerPlanGuid: session.runtimePowerPlanGuid || "",
     originalPowerPlanGuid: session.originalPowerPlanGuid || "",
     machineHash: session.machineHash || "",
+    subscriptionId: session.subscriptionId || "",
     licenseSessionId: session.licenseSessionId || "",
     createdAt: session.createdAt || "",
     expiresAt: session.expiresAt || ""
@@ -272,6 +276,7 @@ function runtimeSessionSigningBody(session) {
 
   if (Number(session.version || 1) >= 2 || session.runtimeSessionKeyVersion) {
     body.runtimeSessionKeyVersion = session.runtimeSessionKeyVersion || "";
+    body.runtimeSessionRevision = Number(session.runtimeSessionRevision || 0);
     body.runtimeSessionProofAlgorithm = session.runtimeSessionProofAlgorithm || "";
     body.runtimeSessionProof = session.runtimeSessionProof || "";
   }
@@ -965,6 +970,7 @@ function supportConfigSnapshot(config) {
     websiteConfigured: isHttpUrl(config.websiteUrl),
     updateManifestConfigured: isHttpUrl(config.updateManifestUrl),
     updatePublicKeyConfigured: Boolean(normalizePem(config.updatePublicKeyPem)),
+    runtimeSessionPublicKeyConfigured: Boolean(normalizePem(config.runtimeSessionPublicKeyPem)),
     supportConfigured: isHttpUrl(config.supportUrl),
     localDemoAllowed: Boolean(config.allowLocalDemoLicense),
     offlineGraceHours: Number(config.offlineGraceHours || 0)
@@ -1285,13 +1291,22 @@ async function writeRuntimeSession(plan) {
     runtimePowerPlanGuid: plan.guid,
     originalPowerPlanGuid,
     machineHash,
+    subscriptionId: license.subscriptionId || "",
     licenseSessionId: serverSessionId || sha256([machineHash, license.plan || "", expiresAt].join("|")),
     runtimeSessionKeyVersion: license.runtimeSessionKeyVersion || "",
+    runtimeSessionRevision: Number(license.runtimeSessionRevision || 0),
     runtimeSessionProofAlgorithm: license.runtimeSessionProofAlgorithm || "",
     runtimeSessionProof: license.runtimeSessionProof || "",
     createdAt,
     expiresAt
   };
+  const serverProof = verifyRuntimeSessionServerProof(session, {
+    publicKeyPem: readAppConfig().runtimeSessionPublicKeyPem
+  });
+  if (serverProof.required && !serverProof.ok) {
+    throw new Error(`Runtime session server proof verification failed: ${serverProof.reason}`);
+  }
+
   const signedSession = {
     ...session,
     signature: signRuntimeSessionPayload(session)

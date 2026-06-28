@@ -319,11 +319,12 @@ For a paid release:
 - Use HTTPS.
 - Set `releaseMode` to `production`.
 - Set `allowLocalDemoLicense` to `false`.
+- Set `runtimeSessionPublicKeyPem` to the public key that matches the server-only RSA runtime-session private key.
 - Configure real HTTPS `websiteUrl`, `purchaseUrl`, `analyticsUrl`, `supportUrl`, `apiBaseUrl`, and `updateManifestUrl` values.
 - Use a strong `ZEROLAG_SERVER_SECRET`.
 - Use a strong `ZEROLAG_ADMIN_SECRET`.
 - Use a strong `ZEROLAG_PAYMENT_WEBHOOK_SECRET`.
-- Configure `ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM=RSA-SHA256` and keep the runtime-session private key on the server only.
+- Configure `ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM=RSA-SHA256`, keep the runtime-session private key on the server only, and ship only its matching public key in `runtimeSessionPublicKeyPem`.
 - Configure `ZEROLAG_PAYMENT_PROVIDER`, `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS`, and `ZEROLAG_PAYMENT_URL_TEMPLATE` for the real payment provider.
 - Keep rate limiting enabled and add reverse-proxy protection for public traffic.
 - Keep server state backups enabled until JSON state is replaced by a real database.

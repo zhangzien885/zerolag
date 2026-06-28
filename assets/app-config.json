@@ -7,6 +7,7 @@
   "apiBaseUrl": "",
   "updateManifestUrl": "",
   "updatePublicKeyPem": "",
+  "runtimeSessionPublicKeyPem": "",
   "allowLocalDemoLicense": true,
   "offlineGraceHours": 24,
   "supportUrl": ""

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T17:00:00.877Z",
+  "generatedAt": "2026-06-28T17:13:57.246Z",
   "files": [
     {
       "path": "package.json",
@@ -8,7 +8,7 @@
     },
     {
       "path": "main.js",
-      "sha256": "3de49c9d2a610f725764d0c33635845ffd7764785788a6dbaf81002d73820ab1"
+      "sha256": "3f609dfb4137521a413815c531f9c19d5bd64215c54c06990c051e88cd26030a"
     },
     {
       "path": "preload.js",
@@ -32,15 +32,15 @@
     },
     {
       "path": "scripts/runtime-guard-core.js",
-      "sha256": "1da219261368b82572c22958c10918d44aa55efa1d5bb5e7d5fdde6794608ba3"
+      "sha256": "eb3df5204b062c949ee1b2284b2e72e8acc1d75aa70fbfa223e2ef43b158cac1"
     },
     {
       "path": "scripts/runtime-guard-service.js",
-      "sha256": "326e85369291c09f463e808b305b90df7e8aa77540d9d4767e316fe197c2257e"
+      "sha256": "b99e665863817cf8a2aa669eed4d5334158255c29d08e400f2caa61555ee9d11"
     },
     {
       "path": "scripts/runtime-guard-service-smoke-test.js",
-      "sha256": "0001b65998854d95a0b3226c24ebfdf733acd30fd070caa050e735365b408bed"
+      "sha256": "13ff2aab49b825681d77d31f4afb3c1c781b87b48ff3665db1c0b80b1e9ae7e4"
     },
     {
       "path": "scripts/runtime-watchdog.js",
@@ -84,7 +84,7 @@
     },
     {
       "path": "scripts/generate-release-report.js",
-      "sha256": "ecdf7ccd619729adf05e7b32c5584ce7a62ab09d6feb2be5b7e337c13959ecb4"
+      "sha256": "d34fc15801bba409d5cc06fea9d7fff7769a6a775daa98220f28aa127996df11"
     },
     {
       "path": "scripts/release-report-smoke-test.js",
@@ -116,11 +116,11 @@
     },
     {
       "path": "scripts/production-check.js",
-      "sha256": "660e223e19264e3c9bb8d0c3af22a7511ba674fd08340da67d0b4978d623946a"
+      "sha256": "b3c0f01854cc2d6e5b604de067b0da4f0d7acf9906e8c8f6bb128430e4d2c009"
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "feed749e05054bd0626805a217d1b74f66dbe6457475e727a96682aa3acac6dc"
+      "sha256": "1a28c523a59681e4ce48293857b17231da71314e7b93f0068d2ab60e55656736"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -132,7 +132,7 @@
     },
     {
       "path": "scripts/generate-deployment-checklist.js",
-      "sha256": "21d6e3768775e39870aef652d5197013afc7f8bd47a15eef06491203ab771b83"
+      "sha256": "f5a75312a6c2b6fd9671f686b5caa6e6fce2b06ccd04dfbf0f128f8d00de3e18"
     },
     {
       "path": "scripts/generate-server-deployment-report.js",
@@ -180,7 +180,7 @@
     },
     {
       "path": "assets/app-config.json",
-      "sha256": "87df83cd68cb794d17ce613a6149e43718c5e3d7fe5e566bde38e3d5f83f110e"
+      "sha256": "b7dbcb614086757e09626ac6dce6c38948b87e27c4f4a5532fdbe10b154684a9"
     },
     {
       "path": "assets/zerolag-power-plan-template.protected.json",
@@ -211,5 +211,5 @@
       "sha256": "4c2f2e026519154d9549d810f6ecbd0cc2028d2aeb09ff35c37c03869cb70a67"
     }
   ],
-  "signature": "d29e3351e33df0bbbe8f5b8ec7b6798b25b24c49b8c2adbfacf8267c79495801"
+  "signature": "5f24a41ef4923eb16867a0d387be43107a59b5563c10d7b7096831158bf5e91a"
 }

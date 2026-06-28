@@ -4,6 +4,7 @@ const path = require("path");
 const { guardOnce, runCommand } = require("./runtime-guard-core");
 
 const serviceName = "ZeroLagRuntimeGuard";
+const appConfigPath = path.join(__dirname, "..", "assets", "app-config.json");
 
 function argValue(name, fallback = "") {
   const equalsArg = process.argv.find((arg) => arg.startsWith(`${name}=`));
@@ -15,6 +16,25 @@ function argValue(name, fallback = "") {
 function defaultSessionPath() {
   const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
   return path.join(localAppData, "ZeroLag", "runtime-session.json");
+}
+
+function readAppConfig() {
+  try {
+    if (fs.existsSync(appConfigPath)) {
+      return JSON.parse(fs.readFileSync(appConfigPath, "utf8"));
+    }
+  } catch {
+    // The guard can still operate on local session signatures without app config.
+  }
+
+  return {};
+}
+
+function runtimeSessionPublicKeyPem() {
+  return argValue("--runtime-session-public-key", "")
+    || process.env.ZEROLAG_RUNTIME_SESSION_PUBLIC_KEY
+    || readAppConfig().runtimeSessionPublicKeyPem
+    || "";
 }
 
 function safeMkdirFor(filePath) {
@@ -59,9 +79,10 @@ async function main() {
   const logFile = argValue("--log-file", "");
   const stopFile = argValue("--stop-file", "");
   const run = dryRun ? dryRunCommand : runCommand;
+  const publicKeyPem = runtimeSessionPublicKeyPem();
 
   while (true) {
-    const result = await guardOnce(sessionPath, { run });
+    const result = await guardOnce(sessionPath, { run, publicKeyPem });
     const event = {
       serviceName,
       timestamp: new Date().toISOString(),

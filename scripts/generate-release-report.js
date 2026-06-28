@@ -71,6 +71,7 @@ function buildReadiness(packageJson, appConfig, updateManifest, releaseArtifacts
     ["API URL", isHttpsUrl(appConfig.apiBaseUrl) && !isPlaceholderUrl(appConfig.apiBaseUrl), "Configure a real HTTPS apiBaseUrl"],
     ["Update manifest URL", isHttpsUrl(appConfig.updateManifestUrl) && !isPlaceholderUrl(appConfig.updateManifestUrl), "Configure a real HTTPS updateManifestUrl"],
     ["Update public key", Boolean(appConfig.updatePublicKeyPem), "Add production updatePublicKeyPem"],
+    ["Runtime session public key", Boolean(appConfig.runtimeSessionPublicKeyPem), "Add production runtimeSessionPublicKeyPem"],
     ["Manifest version", updateManifest.latest === packageJson.version, "Match assets/update.json latest with package.json version"],
     ["Manifest download URL", isHttpsUrl(updateManifest.downloadUrl) && !isPlaceholderUrl(updateManifest.downloadUrl), "Set a real HTTPS update downloadUrl"],
     ["Manifest signature", updateManifest.signatureAlgorithm === "RSA-SHA256" && Boolean(updateManifest.signature), "Sign assets/update.json"],

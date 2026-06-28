@@ -52,6 +52,7 @@ The session file should contain only what the guard needs:
 - Subscription session ID.
 - Runtime session key version.
 - Server-issued runtime session proof.
+- Runtime session revision and subscription ID for public-key proof verification.
 - Creation timestamp.
 - Signed payload signature.
 
@@ -79,6 +80,7 @@ Implemented in prototype:
 - Signed runtime session file with tamper rejection.
 - Runtime-session expiry cleanup.
 - Server-issued runtime session IDs, key-version labels, and HMAC/RSA proofs, written into the signed desktop runtime session when server membership is active.
+- Runtime guard RSA proof verification using the shipped runtime-session public key when RSA proofs are present.
 - Temporary Task Scheduler fallback while Boost is active.
 - Encrypted tuning package instead of a plain JSON template.
 - Integrity verification for protected files.
@@ -98,6 +100,6 @@ Still required for paid production:
 - Native Windows Service wrapper executable.
 - Installer service registration without the private-validation guard after the native wrapper is ready.
 - Enable the NSIS guard hook in the final signed installer after the native service wrapper is ready and privately validated.
-- Native guard verification of the RSA runtime-session public key and full production key rotation.
+- Native wrapper embedding/locking of the RSA runtime-session public key and full production key rotation.
 - Server-side subscription/session validation.
 - Uninstaller cleanup.

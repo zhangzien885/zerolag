@@ -78,6 +78,7 @@ The desktop client reads production endpoints from `assets/app-config.json`.
 - `updateManifestUrl`: HTTPS update metadata URL.
 - `allowLocalDemoLicense`: must be `false` in production.
 - `offlineGraceHours`: short validation grace window when the server is temporarily unreachable.
+- `runtimeSessionPublicKeyPem`: public key used by the desktop runtime guard to verify `RSA-SHA256` runtime session proofs. This is public key material only; never ship the matching private key.
 
 The license server reads deployment settings from environment variables. Before public release, run:
 
@@ -92,7 +93,7 @@ npm run server:check:strict
 
 Server-side commands automatically load `.secrets/server.env` when it exists. Existing system environment variables remain higher priority, so deployment hosts can override file values without editing the repository. Set `ZEROLAG_ENV_FILE` to use a different private env file for staging or deployment checks.
 
-Runtime session proofs default to `HMAC-SHA256` so local development remains simple. Before a paid public release, switch `ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM` to `RSA-SHA256` and keep the private key only on the license server. Desktop clients and support reports should only receive the proof string and non-secret key-version label.
+Runtime session proofs default to `HMAC-SHA256` so local development remains simple. Before a paid public release, switch `ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM` to `RSA-SHA256`, keep the private key only on the license server, and ship the matching public key in desktop `runtimeSessionPublicKeyPem`. Desktop clients and support reports should only receive the proof string, non-secret key-version label, and public key.
 
 Minimum production server variables:
 

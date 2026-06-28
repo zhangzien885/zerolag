@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-28T16:56:28.787Z",
+  "generatedAt": "2026-06-28T17:13:38.040Z",
   "ready": false,
   "strictFailureSummary": "Private env file passes validation, SQLite storage and backup paths are configured, Payment provider is no longer local manual mode, Payment provider allowlist excludes test webhook providers, Checkout URL template is configured, Public website, purchase, API, update, and support URLs are production HTTPS",
   "snapshot": {

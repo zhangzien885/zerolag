@@ -55,6 +55,8 @@ function main() {
   addIssue(issues, !productionMode || isHttpsUrl(config.updateManifestUrl), "Production updateManifestUrl must be HTTPS.");
   addIssue(issues, !productionMode || Boolean(config.updatePublicKeyPem), "Production updatePublicKeyPem is required for signed update metadata.");
   addIssue(issues, !productionMode || isPublicKeyPem(config.updatePublicKeyPem), "Production updatePublicKeyPem must be a PEM public key.");
+  addIssue(issues, !productionMode || Boolean(config.runtimeSessionPublicKeyPem), "Production runtimeSessionPublicKeyPem is required for RSA runtime session proof verification.");
+  addIssue(issues, !productionMode || isPublicKeyPem(config.runtimeSessionPublicKeyPem), "Production runtimeSessionPublicKeyPem must be a PEM public key.");
   addIssue(issues, !productionMode || config.allowLocalDemoLicense === false, "Production must disable local demo license activation.");
 
   console.log("ZeroLag production readiness");

@@ -118,7 +118,8 @@ function buildChecklist() {
     checkbox(isRealHttpsUrl(appConfig.supportUrl), "Support URL is real HTTPS", `current: ${code(appConfig.supportUrl || "missing")}`),
     checkbox(isRealHttpsUrl(appConfig.apiBaseUrl), "API base URL is real HTTPS", `current: ${code(appConfig.apiBaseUrl || "missing")}`),
     checkbox(isRealHttpsUrl(appConfig.updateManifestUrl), "Update manifest URL is real HTTPS", `current: ${code(appConfig.updateManifestUrl || "missing")}`),
-    checkbox(Boolean(appConfig.updatePublicKeyPem), "Update public key is configured")
+    checkbox(Boolean(appConfig.updatePublicKeyPem), "Update public key is configured"),
+    checkbox(Boolean(appConfig.runtimeSessionPublicKeyPem), "Runtime session public key is configured")
   ];
 
   const serverItems = [
