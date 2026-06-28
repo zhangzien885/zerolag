@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T02:01:41.495Z",
+  "generatedAt": "2026-06-28T02:11:50.824Z",
   "files": [
     {
       "path": "package.json",
@@ -8,11 +8,11 @@
     },
     {
       "path": "main.js",
-      "sha256": "c8d20fe6188de875aa09ab7af966ef343e635dbbf50cdbe16f59f495d8469089"
+      "sha256": "dcdd409a829453c89440197ff3b40b97e830bf1adde31b573a3107c1d4aee4d3"
     },
     {
       "path": "preload.js",
-      "sha256": "66cfd7f8fc32e031f26c24a9d2b0e7d5096094df52684aab30aa5941b6a66cc3"
+      "sha256": "7e729402f5bdea10e2ecc335d91e15d461e59e2389eba519160eb101f90db901"
     },
     {
       "path": "src/index.html",
@@ -24,7 +24,7 @@
     },
     {
       "path": "src/renderer.js",
-      "sha256": "8024d135ce96c93a2937e7943e53e8319e1afed5e0a4b6a7e61960da9e381789"
+      "sha256": "d0810b3145a34f5a68689a8bf48911051cfecc7c19f55ce6c46c5aaf1e2fed92"
     },
     {
       "path": "src/styles.css",
@@ -55,5 +55,5 @@
       "sha256": "03088e08120ee7508d175a61b3b6f66ee31a657ec592adfd60e5f352f890fc6d"
     }
   ],
-  "signature": "a392c26360424eef758815d5822eec92d50ca07eca6ba39656260effba4859aa"
+  "signature": "bfc33138ab4f4ca7fcbcb035b6cf3ea53f229f4396cad083454a485378556810"
 }

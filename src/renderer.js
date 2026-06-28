@@ -99,6 +99,9 @@ function addLog(message, type = "") {
   item.textContent = message;
   els.log.appendChild(item);
   els.log.scrollTop = els.log.scrollHeight;
+  if (window.zeroLag && typeof window.zeroLag.recordSupportLog === "function") {
+    window.zeroLag.recordSupportLog(message, type || "info").catch(() => {});
+  }
 }
 
 function setPill(node, text, className = "") {
@@ -697,7 +700,7 @@ els.supportBundleButton.addEventListener("click", async () => {
   els.supportBundleButton.disabled = true;
   setText(els.toolState, "生成诊断");
   setText(els.supportState, "生成中");
-  setText(els.supportDetail, "正在整理版本、会员、权限、系统检测和更新状态。");
+  setText(els.supportDetail, "正在整理版本、会员、权限、系统检测、更新状态和最近操作记录。");
 
   try {
     const result = await window.zeroLag.createSupportBundle();

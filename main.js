@@ -30,6 +30,7 @@ let appIntegrityStatus = { ok: true, reason: "完整性正常" };
 let splashWindow = null;
 let mainWindow = null;
 let tray = null;
+let supportLogWriteQueue = Promise.resolve();
 
 function defaultAppConfig() {
   return {
@@ -193,8 +194,66 @@ function gameLibraryPath() {
   return path.join(app.getPath("userData"), "game-library.json");
 }
 
+function supportLogPath() {
+  return path.join(app.getPath("userData"), "support-log.json");
+}
+
 function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function sanitizeSupportLogMessage(value) {
+  return String(value || "")
+    .replace(/会员码[:：]\s*[^\s。；;，,]+/g, "会员码：[已隐藏]")
+    .replace(/\bZL-[A-Z0-9-]{6,}\b/gi, "[会员码已隐藏]")
+    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, "[ID已隐藏]")
+    .replace(/[A-Za-z]:\\[^\s"'<>|]+/g, "[路径已隐藏]")
+    .replace(/https?:\/\/[^\s"'<>]+/gi, "[链接已隐藏]")
+    .replace(/\b(token|accessToken|licenseToken)\s*[:=]\s*[^\s"'<>]+/gi, "$1=[已隐藏]")
+    .slice(0, 240);
+}
+
+function readSupportLog() {
+  try {
+    if (!fs.existsSync(supportLogPath())) return [];
+    const entries = JSON.parse(fs.readFileSync(supportLogPath(), "utf8"));
+    return Array.isArray(entries)
+      ? entries.filter((entry) => entry && typeof entry.message === "string").slice(-200)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSupportLog(entries) {
+  const nextEntries = Array.isArray(entries) ? entries.slice(-200) : [];
+  const filePath = supportLogPath();
+  const tempPath = `${filePath}.tmp`;
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(tempPath, `${JSON.stringify(nextEntries, null, 2)}\n`, "utf8");
+  fs.renameSync(tempPath, filePath);
+}
+
+function recordSupportLog(message, type = "info") {
+  const cleanedMessage = sanitizeSupportLogMessage(message);
+  if (!cleanedMessage) return { ok: false };
+
+  const cleanedType = ["info", "good", "warn", "fail"].includes(type) ? type : "info";
+  const entry = {
+    at: new Date().toISOString(),
+    type: cleanedType,
+    message: cleanedMessage
+  };
+
+  supportLogWriteQueue = supportLogWriteQueue.catch(() => {}).then(() => {
+    const entries = readSupportLog();
+    entries.push(entry);
+    writeSupportLog(entries);
+  });
+
+  return supportLogWriteQueue
+    .then(() => ({ ok: true }))
+    .catch(() => ({ ok: false }));
 }
 
 function runtimeSessionSigningBody(session) {
@@ -937,10 +996,12 @@ async function buildSupportDiagnosticPayload() {
   const update = await readUpdateStatusV2().catch(() => ({}));
   const memory = getMemorySnapshot();
   const games = readGameLibrary();
+  await supportLogWriteQueue.catch(() => {});
+  const supportLog = readSupportLog();
 
   return {
     product: "ZeroLag",
-    supportBundleVersion: 1,
+    supportBundleVersion: 2,
     createdAt: new Date().toISOString(),
     app: {
       version: app.getVersion(),
@@ -972,6 +1033,7 @@ async function buildSupportDiagnosticPayload() {
       status: vbs.status ?? null
     },
     update: supportUpdateSnapshot(update),
+    supportLog: supportLog.slice(-80),
     gameLibrary: {
       count: games.length
     }
@@ -1006,7 +1068,8 @@ async function createSupportBundle() {
       licenseActive: payload.license.active,
       admin: payload.permissions.admin,
       boostActive: payload.runtime.boostActive,
-      readinessScore: payload.diagnostics ? payload.diagnostics.readinessScore : null
+      readinessScore: payload.diagnostics ? payload.diagnostics.readinessScore : null,
+      supportLogCount: payload.supportLog.length
     }
   };
 }
@@ -2147,6 +2210,7 @@ app.whenReady().then(async () => {
   ipcMain.handle("zerolag:get-network-diagnostics", async () => getNetworkDiagnostics());
   ipcMain.handle("zerolag:flush-dns", async () => flushDnsCache());
   ipcMain.handle("zerolag:create-support-bundle", async () => createSupportBundle());
+  ipcMain.handle("zerolag:record-support-log", async (_event, entry) => recordSupportLog(entry && entry.message, entry && entry.type));
   ipcMain.handle("zerolag:get-app-config", async () => {
     const config = readAppConfig();
     return {
