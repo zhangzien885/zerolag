@@ -171,6 +171,62 @@ function inspect(entries, profile) {
   };
 }
 
+function checkServerEnvFile(filePath, input = {}) {
+  const strict = input.strict === true;
+  const profile = normalizeProfile(input.profile || "any");
+  if (!fs.existsSync(filePath)) {
+    return {
+      ok: false,
+      strict,
+      profile,
+      filePath,
+      keyCount: 0,
+      duplicateKeys: [],
+      invalidLines: [],
+      missingKeys: [],
+      warnings: [],
+      issues: [`Env file does not exist: ${filePath}`],
+      summary: {}
+    };
+  }
+
+  if (!fs.statSync(filePath).isFile()) {
+    return {
+      ok: false,
+      strict,
+      profile,
+      filePath,
+      keyCount: 0,
+      duplicateKeys: [],
+      invalidLines: [],
+      missingKeys: [],
+      warnings: [],
+      issues: [`Env path is not a file: ${filePath}`],
+      summary: {}
+    };
+  }
+
+  const parsed = readEnvFile(filePath);
+  const inspected = inspect(parsed.entries, profile);
+  const issues = [...inspected.issues];
+  if (parsed.duplicateKeys.length) issues.push(`Duplicate env keys: ${parsed.duplicateKeys.join(", ")}`);
+  if (parsed.invalidLines.length) issues.push(`Invalid env lines: ${parsed.invalidLines.join(", ")}`);
+
+  return {
+    ok: issues.length === 0 && (!strict || inspected.warnings.length === 0),
+    strict,
+    profile,
+    filePath,
+    keyCount: parsed.entries.size,
+    duplicateKeys: parsed.duplicateKeys,
+    invalidLines: parsed.invalidLines,
+    missingKeys: inspected.missingKeys,
+    warnings: inspected.warnings,
+    issues,
+    summary: inspected.summary
+  };
+}
+
 function printResult(result, strict) {
   console.log(JSON.stringify(result, null, 2));
   if (result.issues.length || (strict && result.warnings.length)) process.exitCode = 1;
@@ -185,60 +241,13 @@ function main() {
   const strict = process.argv.includes("--strict");
   const profile = normalizeProfile(argValue("--profile", "any"));
   const filePath = path.resolve(argValue("--file", process.env.ZEROLAG_ENV_FILE || defaultServerEnvPath));
-
-  if (!fs.existsSync(filePath)) {
-    printResult({
-      ok: false,
-      strict,
-      profile,
-      filePath,
-      keyCount: 0,
-      duplicateKeys: [],
-      invalidLines: [],
-      missingKeys: [],
-      warnings: [],
-      issues: [`Env file does not exist: ${filePath}`],
-      summary: {}
-    }, strict);
-    return;
-  }
-
-  if (!fs.statSync(filePath).isFile()) {
-    printResult({
-      ok: false,
-      strict,
-      profile,
-      filePath,
-      keyCount: 0,
-      duplicateKeys: [],
-      invalidLines: [],
-      missingKeys: [],
-      warnings: [],
-      issues: [`Env path is not a file: ${filePath}`],
-      summary: {}
-    }, strict);
-    return;
-  }
-
-  const parsed = readEnvFile(filePath);
-  const inspected = inspect(parsed.entries, profile);
-  const issues = [...inspected.issues];
-  if (parsed.duplicateKeys.length) issues.push(`Duplicate env keys: ${parsed.duplicateKeys.join(", ")}`);
-  if (parsed.invalidLines.length) issues.push(`Invalid env lines: ${parsed.invalidLines.join(", ")}`);
-
-  printResult({
-    ok: issues.length === 0 && (!strict || inspected.warnings.length === 0),
-    strict,
-    profile,
-    filePath,
-    keyCount: parsed.entries.size,
-    duplicateKeys: parsed.duplicateKeys,
-    invalidLines: parsed.invalidLines,
-    missingKeys: inspected.missingKeys,
-    warnings: inspected.warnings,
-    issues,
-    summary: inspected.summary
-  }, strict);
+  printResult(checkServerEnvFile(filePath, { profile, strict }), strict);
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  checkServerEnvFile
+};

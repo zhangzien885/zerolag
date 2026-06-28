@@ -149,6 +149,7 @@
 - Added a generated deployment checklist command that consolidates desktop config, server secrets, payment provider, update metadata, signing, and final release gates.
 - Expanded private server env generation with JSON and SQLite profiles, payment placeholders, SQLite backup freshness settings, and overwrite protection.
 - Added a redacted private server env checker for missing keys, weak secrets, unsafe switches, storage profile mismatches, and payment placeholder warnings.
+- Integrated redacted private env-file validation into strict server production checks so deployment config drift is caught automatically.
 - Added a state storage abstraction seam plus contract docs so the server can migrate from JSON files toward SQLite/PostgreSQL without rewriting every route at once.
 - Added an optional SQLite state store prototype using Node's built-in SQLite module, while keeping JSON file storage as the default.
 - Added a JSON-to-SQLite migration command with read-back checksum verification and overwrite protection.

@@ -70,7 +70,7 @@ npm run server:secrets -- --profile sqlite --write
 npm run server:env-check -- --profile sqlite
 ```
 
-Server commands automatically load `.secrets/server.env` when it exists, including `server:start`, `server:create-code`, `server:admin`, and `server:check`. Existing system environment variables stay higher priority, so a host provider or Windows service can still override file values.
+Server commands automatically load `.secrets/server.env` when it exists, including `server:start`, `server:create-code`, `server:admin`, and `server:check`. Existing system environment variables stay higher priority, so a host provider or Windows service can still override file values. `server:check:strict` also validates the private env file itself with redacted output.
 
 To test with a different env file:
 

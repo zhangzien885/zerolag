@@ -478,6 +478,7 @@ async function main() {
         ZEROLAG_ADMIN_SECRET: "self-test-admin-secret-123456789012345678901",
         ZEROLAG_PAYMENT_WEBHOOK_SECRET: "self-test-payment-secret-12345678901234567",
         ZEROLAG_SERVER_HOST: "0.0.0.0",
+        ZEROLAG_SERVER_PORT: "8787",
         ZEROLAG_SERVER_STATE_PATH: migrationJsonPath,
         ZEROLAG_SERVER_BACKUP_DIR: migrationTempDir,
         ZEROLAG_STATE_STORE: "sqlite",
@@ -486,12 +487,23 @@ async function main() {
         ZEROLAG_SQLITE_BACKUP_MAX_AGE_HOURS: "1",
         ZEROLAG_PAYMENT_PROVIDER: "wechat_pay",
         ZEROLAG_PAYMENT_ALLOWED_PROVIDERS: "wechat_pay",
-        ZEROLAG_PAYMENT_URL_TEMPLATE: "https://pay.zerolag.test/checkout/{orderId}"
+        ZEROLAG_PAYMENT_URL_TEMPLATE: "https://pay.zerolag.test/checkout/{orderId}",
+        ZEROLAG_RATE_LIMIT_DISABLED: "0",
+        ZEROLAG_SERVER_BACKUP_DISABLED: "0",
+        ZEROLAG_MAINTENANCE_DISABLED: "0"
       };
+      const sqliteCheckEnvPath = path.join(migrationTempDir, "sqlite-check.env");
+      fs.writeFileSync(
+        sqliteCheckEnvPath,
+        `${Object.entries(sqliteCheckEnv).map(([key, value]) => `${key}=${value}`).join("\n")}\n`,
+        "utf8"
+      );
+      sqliteCheckEnv.ZEROLAG_ENV_FILE = sqliteCheckEnvPath;
       const sqliteProductionCheck = await runNodeScript("scripts/server-production-check.js", ["--strict"], {
         env: sqliteCheckEnv
       });
       assert(sqliteProductionCheck.status === 0, `SQLite production check should pass: ${sqliteProductionCheck.stderr || sqliteProductionCheck.stdout}`);
+      assert(sqliteProductionCheck.stdout.includes("Env file summary: stateStore=sqlite"), "SQLite production check should include the private env file summary.");
       assert(sqliteProductionCheck.stdout.includes("SQLite summary: activationCodes="), "SQLite production check should print a safe state summary.");
       assert(sqliteProductionCheck.stdout.includes("SQLite latest backup: backup-state.sqlite"), "SQLite production check should include the latest backup file.");
       assert(sqliteProductionCheck.stdout.includes("SQLite latest backup summary: activationCodes="), "SQLite production check should print a safe latest-backup summary.");

@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { loadServerEnvFile } = require("../server/env");
+const { checkServerEnvFile } = require("./check-server-env");
 
 const rootDir = path.join(__dirname, "..");
 const strict = process.argv.includes("--strict");
@@ -10,7 +11,7 @@ const defaultPaymentWebhookSecret = "zerolag-dev-payment-webhook-secret-change-b
 const defaultPaymentProvider = "manual";
 const defaultPaymentUrlTemplate = "zerolag://pay/{orderId}";
 
-loadServerEnvFile();
+const envFileLoad = loadServerEnvFile();
 
 function env(name, fallback = "") {
   return process.env[name] || fallback;
@@ -18,6 +19,12 @@ function env(name, fallback = "") {
 
 function addIssue(issues, ok, message) {
   if (!ok) issues.push(message);
+}
+
+function addMessages(target, messages, prefix) {
+  for (const message of messages || []) {
+    target.push(`${prefix}: ${message}`);
+  }
 }
 
 function isStrongSecret(value, defaultValue) {
@@ -209,6 +216,12 @@ function main() {
   const paymentUrlTemplate = env("ZEROLAG_PAYMENT_URL_TEMPLATE", defaultPaymentUrlTemplate);
   const sqliteInspection = stateStore === "sqlite" && sqliteStatePath ? inspectSqliteState(sqliteStatePath) : null;
   const sqliteBackupInspection = stateStore === "sqlite" ? inspectLatestSqliteBackup(sqliteBackupDir) : null;
+  const envFileCheck = checkServerEnvFile(envFileLoad.path, {
+    profile: stateStore === "sqlite" ? "sqlite" : "json",
+    strict
+  });
+  addMessages(issues, envFileCheck.issues, "Private env file");
+  addMessages(warnings, envFileCheck.warnings, "Private env file");
 
   addIssue(issues, isStrongSecret(env("ZEROLAG_SERVER_SECRET", defaultServerSecret), defaultServerSecret), "ZEROLAG_SERVER_SECRET must be a custom strong secret.");
   addIssue(issues, isStrongSecret(env("ZEROLAG_ADMIN_SECRET", defaultAdminSecret), defaultAdminSecret), "ZEROLAG_ADMIN_SECRET must be a custom strong secret.");
@@ -289,6 +302,8 @@ function main() {
   console.log("ZeroLag server production readiness");
   console.log(`Host: ${host}`);
   console.log(`Port: ${port}`);
+  console.log(`Env file: ${envFileLoad.loaded ? envFileLoad.path : `${envFileLoad.path} (not loaded)`}`);
+  console.log(`Env file summary: ${envFileCheck.summary && envFileCheck.summary.stateStore ? `stateStore=${envFileCheck.summary.stateStore}, paymentProvider=${envFileCheck.summary.paymentProvider}` : "unavailable"}`);
   console.log(`State store: ${stateStore}`);
   console.log(`State: ${statePath}`);
   if (stateStore === "sqlite") console.log(`SQLite state: ${sqliteStatePath}`);
