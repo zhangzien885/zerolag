@@ -63,6 +63,12 @@ Generate strong local secrets for private testing or deployment preparation:
 npm run server:secrets -- --write
 ```
 
+For wider paid testing after migrating to SQLite, generate the private env file with the SQLite profile:
+
+```powershell
+npm run server:secrets -- --profile sqlite --write
+```
+
 Server commands automatically load `.secrets/server.env` when it exists, including `server:start`, `server:create-code`, `server:admin`, and `server:check`. Existing system environment variables stay higher priority, so a host provider or Windows service can still override file values.
 
 To test with a different env file:

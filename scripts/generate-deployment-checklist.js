@@ -173,6 +173,7 @@ Run these in order before a paid public release:
 
 \`\`\`powershell
 npm run deploy:checklist
+npm run server:secrets -- --profile sqlite --write
 npm run server:migrate-sqlite -- --input <json-state> --output <sqlite-state>
 npm run server:backup-sqlite -- --input <sqlite-state> --output <sqlite-backup>
 npm run server:check-sqlite-backups -- --dir <sqlite-backup-dir> --max-age-hours 24
@@ -195,6 +196,7 @@ npm run server:restore-sqlite -- --input <sqlite-backup> --output <sqlite-state>
 ## Notes
 
 - Keep \`.secrets/server.env\` private and out of Git.
+- Use \`--force\` with \`server:secrets\` only when intentionally replacing a private env file.
 - Default \`server:smoke\` uses isolated state; use \`-- --live-state\` only during planned private maintenance.
 - Do not upload private analytics or operations CSV exports to the public website.
 - Replace the JSON state store with a real database before broad public traffic.

@@ -318,6 +318,29 @@ async function main() {
       fs.rmSync(sqliteTempDir, { recursive: true, force: true });
     }
 
+    const envTemplate = await runNodeScript("scripts/generate-server-secrets.js");
+    assert(envTemplate.status === 0, `Server env template command failed: ${envTemplate.stderr || envTemplate.stdout}`);
+    assert(envTemplate.stdout.includes("# Profile: json"), "Default server env template should use the JSON profile.");
+    assert(envTemplate.stdout.includes("ZEROLAG_PAYMENT_ALLOWED_PROVIDERS=manual,manual-admin"), "Server env template should use a safer payment allowlist.");
+    assert(envTemplate.stdout.includes("# ZEROLAG_STATE_STORE=sqlite"), "Default server env template should document SQLite opt-in.");
+    const sqliteEnvPath = path.join(tempDir, "sqlite-server.env");
+    const sqliteEnvTemplate = await runNodeScript("scripts/generate-server-secrets.js", [
+      "--profile",
+      "sqlite",
+      "--write",
+      sqliteEnvPath
+    ]);
+    assert(sqliteEnvTemplate.status === 0, `SQLite server env template write failed: ${sqliteEnvTemplate.stderr || sqliteEnvTemplate.stdout}`);
+    const sqliteEnvFile = fs.readFileSync(sqliteEnvPath, "utf8");
+    assert(sqliteEnvFile.includes("# Profile: sqlite"), "SQLite server env template should record its profile.");
+    assert(sqliteEnvFile.includes("ZEROLAG_STATE_STORE=sqlite"), "SQLite server env template should activate SQLite storage.");
+    assert(sqliteEnvFile.includes("ZEROLAG_SQLITE_BACKUP_MAX_AGE_HOURS=24"), "SQLite server env template should include backup freshness settings.");
+    const refusedEnvOverwrite = await runNodeScript("scripts/generate-server-secrets.js", [
+      "--write",
+      sqliteEnvPath
+    ]);
+    assert(refusedEnvOverwrite.status === 1, "Server env template write should refuse to overwrite without --force.");
+
     const migrationTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-sqlite-migration-test-"));
     try {
       const migrationJsonPath = path.join(migrationTempDir, "source-state.json");

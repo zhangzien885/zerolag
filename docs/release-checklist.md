@@ -18,6 +18,7 @@ npm run deploy:checklist
 ## 2. Server Readiness
 
 - Generate private server secrets with `npm run server:secrets -- --write`.
+- For SQLite paid testing, generate the private env template with `npm run server:secrets -- --profile sqlite --write`.
 - Keep `.secrets/server.env` private and outside Git.
 - If migrating existing JSON state, run `npm run server:migrate-sqlite -- --input <json> --output <sqlite>` before enabling SQLite mode.
 - After migration, run `npm run server:backup-sqlite -- --input <sqlite> --output <sqlite-backup>` and keep the backup private.
