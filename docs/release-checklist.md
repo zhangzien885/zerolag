@@ -63,6 +63,7 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 - Run `npm run dist:win` only after the strict release gates are satisfied.
 - Run `npm run installer:smoke` to verify the installer executable, blockmap, update metadata, and Windows installer settings.
 - Run `npm run release:artifacts` to generate public checksum and artifact metadata files for the download page.
+- Run `npm run release:report:smoke` to verify the release candidate report renders desktop readiness, server deployment gates, and redacted JSON safely.
 - Run `npm run release:report` to generate a release candidate report with Git state, readiness checks, installer checksum status, and server deployment gate status.
 - Run `npm run website:release` to publish sanitized version, download, and checksum metadata to the static website.
 - Run `npm run website:smoke` to verify the website download panel, release manifest, checksum display, and public copy guardrails.

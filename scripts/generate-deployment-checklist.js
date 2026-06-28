@@ -185,6 +185,7 @@ npm run server:check-sqlite-backups -- --dir <sqlite-backup-dir> --max-age-hours
 npm run production:check:strict
 npm run server:check:strict
 npm run server:smoke
+npm run release:report:smoke
 npm run release:preflight:strict
 npm run ci
 npm run release:build

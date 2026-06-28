@@ -3,11 +3,17 @@ const path = require("path");
 const cp = require("child_process");
 
 const rootDir = path.join(__dirname, "..");
-const distDir = path.join(rootDir, "dist");
+const defaultDistDir = path.join(rootDir, "dist");
 const packageJsonPath = path.join(rootDir, "package.json");
 const appConfigPath = path.join(rootDir, "assets", "app-config.json");
 const updateManifestPath = path.join(rootDir, "assets", "update.json");
-const releaseArtifactsPath = path.join(distDir, "release-artifacts.json");
+
+function argValue(name, fallback = "") {
+  const equalsArg = process.argv.find((arg) => arg.startsWith(`${name}=`));
+  if (equalsArg) return equalsArg.slice(name.length + 1);
+  const index = process.argv.indexOf(name);
+  return index >= 0 && process.argv[index + 1] ? process.argv[index + 1] : fallback;
+}
 
 function readJson(filePath, fallback = {}) {
   if (!fs.existsSync(filePath)) return fallback;
@@ -157,6 +163,8 @@ function renderMarkdown(report) {
 }
 
 function main() {
+  const distDir = path.resolve(argValue("--output-dir", defaultDistDir));
+  const releaseArtifactsPath = path.join(distDir, "release-artifacts.json");
   const packageJson = readJson(packageJsonPath);
   const appConfig = readJson(appConfigPath);
   const updateManifest = readJson(updateManifestPath);
