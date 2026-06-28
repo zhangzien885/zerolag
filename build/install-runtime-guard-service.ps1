@@ -4,7 +4,8 @@ param(
   [string]$DisplayName = "ZeroLag Runtime Guard",
   [string]$ServiceBinary = "",
   [string]$SessionPath = "$env:LOCALAPPDATA\ZeroLag\runtime-session.json",
-  [string]$GuardDataDir = "$env:ProgramData\ZeroLag\guard"
+  [string]$GuardDataDir = "$env:ProgramData\ZeroLag\guard",
+  [switch]$AllowElectronWorkerService
 )
 
 Set-StrictMode -Version Latest
@@ -14,10 +15,19 @@ if (-not $ServiceBinary) {
   throw "ServiceBinary is required. Pass the installed ZeroLag.exe path from the installer."
 }
 
+if (-not $AllowElectronWorkerService) {
+  throw "Native Windows Service wrapper is not implemented yet. Pass -AllowElectronWorkerService only for private validation of the Electron worker-mode service entry."
+}
+
 $resolvedBinary = Resolve-Path -LiteralPath $ServiceBinary
-$resolvedGuardDataDir = New-Item -ItemType Directory -Force -Path $GuardDataDir
-$healthFile = Join-Path $resolvedGuardDataDir.FullName "health.json"
-$logFile = Join-Path $resolvedGuardDataDir.FullName "events.log"
+if ($WhatIfPreference) {
+  $resolvedGuardDataDirPath = [System.IO.Path]::GetFullPath($GuardDataDir)
+} else {
+  New-Item -ItemType Directory -Force -Path $GuardDataDir | Out-Null
+  $resolvedGuardDataDirPath = (Resolve-Path -LiteralPath $GuardDataDir).Path
+}
+$healthFile = Join-Path $resolvedGuardDataDirPath "health.json"
+$logFile = Join-Path $resolvedGuardDataDirPath "events.log"
 $binaryPath = "`"$resolvedBinary`" --runtime-guard-service --session `"$SessionPath`" --health-file `"$healthFile`" --log-file `"$logFile`""
 
 if ($PSCmdlet.ShouldProcess($ServiceName, "Install visible ZeroLag runtime guard Windows Service")) {

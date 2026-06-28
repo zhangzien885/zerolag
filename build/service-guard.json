@@ -6,6 +6,7 @@
   "serviceBinary": "ZeroLag.exe",
   "serviceBinaryStatus": "electron-worker-mode",
   "nativeServiceWrapperStatus": "planned",
+  "installerRegistrationStatus": "explicit-private-validation-only",
   "serviceWorker": "service-guard/runtime-guard-service.js",
   "serviceCore": "service-guard/runtime-guard-core.js",
   "startupType": "Automatic",

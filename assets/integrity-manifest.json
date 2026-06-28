@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T14:52:56.846Z",
+  "generatedAt": "2026-06-28T15:03:19.725Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "71ada311071faa8cdecb7c8969508d6716b7ed2e090cf204609a616df58adea4"
+      "sha256": "9e369aa10b829e3e0ce94fee7ccf3d249366bd5b2a1f46413468cc96fc448a2f"
     },
     {
       "path": "main.js",
@@ -64,7 +64,11 @@
     },
     {
       "path": "scripts/service-guard-smoke-test.js",
-      "sha256": "b70c46a3f9604b29a285601ed9f58487ddd9c8f4569e82732529dfd77f3abcd5"
+      "sha256": "53142dbb43ae17769e0c8dac409cb31d14eb44345482bb1b04e019ab6e2c84de"
+    },
+    {
+      "path": "scripts/service-install-script-smoke-test.js",
+      "sha256": "9ceef9ece1b47a69bb8386b2b0b733e7c9f92b8763bdf9946acfdf1b85073e4d"
     },
     {
       "path": "scripts/generate-release-artifacts.js",
@@ -108,7 +112,7 @@
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "aaf0aa1fb7edb424faffacacf2e3ca8a927ef30a935d223d4d34d657015a1ba8"
+      "sha256": "4f1fb1d25794c672b4fdffc3bf6af25ae6907be5e4cc627f0a55e39c56f2a4d9"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -176,16 +180,16 @@
     },
     {
       "path": "build/service-guard.json",
-      "sha256": "1245fe6b9435cd4d9988a974ca12782e8190327d62448d4102d641b330babe84"
+      "sha256": "46d69ed9d6496f6a5646fdb0c0291875943d78687d7e04e48d67940bc783e99b"
     },
     {
       "path": "build/install-runtime-guard-service.ps1",
-      "sha256": "5e53a17631a2c0f34860ee110eb50bf03945bc77a9378f508e00ecae92c22812"
+      "sha256": "8a03af0d1d0cb01d6e24d63fccc792f6435d932dc2f554831dd65e4cbbda06f1"
     },
     {
       "path": "build/uninstall-runtime-guard-service.ps1",
       "sha256": "0d37619a7230f9b929a9f7de2d0c71991f9cba6ef7810885cae91dc31e422e56"
     }
   ],
-  "signature": "ee3f03dec71e4e86754ad28c46bdc1338322ddf7d38b23499bb6c2c07e57dc02"
+  "signature": "62e2c11f882ef42174b3e8fd3d9b41e994511874366fcf12560f9f80e00f03a6"
 }

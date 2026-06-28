@@ -92,6 +92,7 @@ function main() {
   assertOk(manifest.serviceBinary === "ZeroLag.exe", "Manifest should use the installed ZeroLag executable for worker mode.");
   assertOk(manifest.serviceBinaryStatus === "electron-worker-mode", "Manifest should mark the Electron worker-mode service entry.");
   assertOk(manifest.nativeServiceWrapperStatus === "planned", "Manifest should keep the native service wrapper status explicit.");
+  assertOk(manifest.installerRegistrationStatus === "explicit-private-validation-only", "Manifest should make service registration opt-in until the native wrapper exists.");
   assertOk(manifest.serviceWorker === "service-guard/runtime-guard-service.js", "Manifest service worker path is wrong.");
   assertOk(manifest.serviceCore === "service-guard/runtime-guard-core.js", "Manifest service core path is wrong.");
   assertOk(manifest.installScript === "build/install-runtime-guard-service.ps1", "Manifest install script path is wrong.");
@@ -102,6 +103,8 @@ function main() {
   includesAll(manifest.prohibitedBehaviors, requiredProhibitedBehaviors, "prohibitedBehaviors");
 
   assertOk(installScript.includes("sc.exe create"), "Install script must create a Windows Service.");
+  assertOk(installScript.includes("AllowElectronWorkerService"), "Install script must require an explicit private-validation switch.");
+  assertOk(installScript.includes("Native Windows Service wrapper is not implemented yet"), "Install script must explain why registration is blocked by default.");
   assertOk(installScript.includes("--runtime-guard-service"), "Install script must start ZeroLag in runtime guard service mode.");
   assertOk(installScript.includes("ProgramData\\ZeroLag\\guard"), "Install script must write guard health/log state under ProgramData.");
   assertOk(installScript.includes("NT AUTHORITY\\LocalService"), "Install script must configure LocalService.");
@@ -120,10 +123,13 @@ function main() {
   assertOk(targets.includes("scripts/runtime-guard-core.js->service-guard/runtime-guard-core.js"), "Runtime guard core must be packaged as an extra resource.");
   assertOk(targets.includes("scripts/runtime-guard-service.js->service-guard/runtime-guard-service.js"), "Runtime guard service worker must be packaged as an extra resource.");
   assertOk(packageJson.scripts && packageJson.scripts["guard:service:smoke"], "guard:service:smoke script is missing.");
+  assertOk(packageJson.scripts && packageJson.scripts["guard:install:smoke"], "guard:install:smoke script is missing.");
   assertOk(packageJson.scripts && packageJson.scripts["guard:runtime:smoke"], "guard:runtime:smoke script is missing.");
   assertOk((packageJson.scripts.ci || "").includes("npm run guard:service:smoke"), "npm run ci must include guard:service:smoke.");
+  assertOk((packageJson.scripts.ci || "").includes("npm run guard:install:smoke"), "npm run ci must include guard:install:smoke.");
   assertOk((packageJson.scripts.ci || "").includes("npm run guard:runtime:smoke"), "npm run ci must include guard:runtime:smoke.");
   assertOk((packageJson.scripts.check || "").includes("scripts/service-guard-smoke-test.js"), "npm run check must syntax-check service-guard-smoke-test.js.");
+  assertOk((packageJson.scripts.check || "").includes("scripts/service-install-script-smoke-test.js"), "npm run check must syntax-check service-install-script-smoke-test.js.");
   assertOk((packageJson.scripts.check || "").includes("scripts/runtime-guard-service.js"), "npm run check must syntax-check runtime-guard-service.js.");
   assertOk(JSON.stringify(packageJson.build.asarUnpack || []).includes("runtime-guard-core"), "runtime-guard-core must be unpacked for watchdog execution.");
   assertOk(JSON.stringify(packageJson.build.asarUnpack || []).includes("runtime-watchdog"), "runtime-watchdog must be unpacked for cleanup execution.");

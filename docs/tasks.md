@@ -124,6 +124,7 @@
 - Added transparent Windows Service guard packaging assets, install/uninstall scripts, service guard smoke checks, and release-preflight coverage for the formal cleanup layer.
 - Added a reusable runtime guard core plus service worker that can clean invalid or stale runtime sessions in dry-run-tested service mode.
 - Added a desktop `--runtime-guard-service` entry so the installed ZeroLag executable can run the guard worker without opening the UI.
+- Added service install-script gating so accidental Windows Service registration is blocked until the native service wrapper is ready.
 - Added release preflight checks and a release checklist for packaging, signing, update metadata, production config, and strict final gates.
 - Added Electron Builder packaging scripts and Windows NSIS installer configuration, with build-resource guidance for the final Windows icon and signing assets.
 - Added a reproducible ZeroLag Windows icon generator and generated `build/icon.ico` for packaged builds.
