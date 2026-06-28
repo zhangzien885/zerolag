@@ -126,6 +126,7 @@
 - Added installer smoke checks for the Windows NSIS installer executable, blockmap, update metadata, and release installer settings.
 - Added release artifact generation for installer checksums and download metadata after the Windows installer is built.
 - Added one-command release verification and release build chains for installer validation plus public artifact metadata generation.
+- Added release candidate report generation with version, Git state, installer checksum status, readiness checks, and final release commands.
 
 ## Known Boundaries
 
