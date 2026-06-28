@@ -81,7 +81,9 @@
       "package.json",
       "src/**/*",
       "assets/**/*",
-      "scripts/**/*.js",
+      "scripts/runtime-guard-core.js",
+      "scripts/runtime-guard-service.js",
+      "scripts/runtime-watchdog.js",
       "server/env.js"
     ],
     "asar": true,

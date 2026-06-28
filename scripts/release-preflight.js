@@ -140,6 +140,11 @@ function main() {
   addIssue(issues, Boolean(build.appId), "Installer packaging config must define build.appId.");
   addIssue(issues, Boolean(build.productName), "Installer packaging config must define build.productName.");
   addIssue(issues, Array.isArray(build.files) && build.files.length > 0, "Installer packaging config must define build.files.");
+  addIssue(issues, !JSON.stringify(build.files || []).includes("scripts/**/*.js"), "Installer packaging config must not ship every scripts/*.js helper.");
+  addIssue(issues, !JSON.stringify(build.files || []).includes("scripts/**"), "Installer packaging config must not use broad scripts/** globs.");
+  addIssue(issues, JSON.stringify(build.files || []).includes("scripts/runtime-guard-core.js"), "Installer packaging config must include runtime guard core in the app archive.");
+  addIssue(issues, JSON.stringify(build.files || []).includes("scripts/runtime-guard-service.js"), "Installer packaging config must include runtime guard service worker in the app archive.");
+  addIssue(issues, JSON.stringify(build.files || []).includes("scripts/runtime-watchdog.js"), "Installer packaging config must include runtime watchdog in the app archive.");
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/service-guard.json"), "Installer packaging config must include the service guard manifest as an extra resource.");
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/install-runtime-guard-service.ps1"), "Installer packaging config must include the service guard install script as an extra resource.");
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/uninstall-runtime-guard-service.ps1"), "Installer packaging config must include the service guard uninstall script as an extra resource.");

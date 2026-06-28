@@ -136,6 +136,7 @@
 - Added a reproducible ZeroLag Windows icon generator and generated `build/icon.ico` for packaged builds.
 - Added an update-manifest signing smoke test that signs, verifies, and rejects a tampered copied manifest with temporary keys.
 - Added package smoke checks for the unpacked Windows build output, including executable, app archive, icon, integrity manifest, and unpacked runtime watchdog.
+- Hardened installer packaging so the desktop app ships only runtime guard scripts, while build, test, signing, server, and key-generation helpers stay out of the customer package.
 - Added installer smoke checks for the Windows NSIS installer executable, blockmap, update metadata, and release installer settings.
 - Added release artifact generation for installer checksums and download metadata after the Windows installer is built.
 - Added one-command release verification and release build chains for installer validation plus public artifact metadata generation.

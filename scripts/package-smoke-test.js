@@ -93,6 +93,30 @@ function main() {
 
   const packageConfig = packageJson.build || {};
   assertOk(packageConfig.asar === true, "Packaged build must use asar.");
+  const packageFiles = JSON.stringify(packageConfig.files || []);
+  assertOk(!packageFiles.includes("scripts/**/*.js"), "Packaged build must not include every scripts/*.js helper.");
+  assertOk(!packageFiles.includes("scripts/**"), "Packaged build must not include broad scripts/** globs.");
+  [
+    "scripts/runtime-guard-core.js",
+    "scripts/runtime-guard-service.js",
+    "scripts/runtime-watchdog.js"
+  ].forEach((relativePath) => {
+    assertOk(packageFiles.includes(relativePath), `Packaged build must include runtime script: ${relativePath}`);
+    assertOk(asarFiles.has(relativePath), `Packaged app archive missing runtime script: ${relativePath}`);
+  });
+  [
+    "scripts/generate-runtime-session-keys.js",
+    "scripts/runtime-session-keygen-smoke-test.js",
+    "scripts/generate-server-secrets.js",
+    "scripts/check-server-env.js",
+    "scripts/sign-update-manifest.js",
+    "scripts/local-integration.js",
+    "scripts/release-preflight.js",
+    "scripts/server-smoke-test.js",
+    "scripts/package-smoke-test.js"
+  ].forEach((relativePath) => {
+    assertOk(!asarFiles.has(relativePath), `Packaged app archive must not include build/test helper: ${relativePath}`);
+  });
   assertOk(JSON.stringify(packageConfig.asarUnpack || []).includes("runtime-guard-core"), "runtime-guard-core must stay unpacked with the watchdog.");
   assertOk(JSON.stringify(packageConfig.asarUnpack || []).includes("runtime-watchdog"), "runtime-watchdog must stay unpacked.");
   assertOk(packageConfig.win && packageConfig.win.requestedExecutionLevel === "requireAdministrator", "Packaged Windows app must request administrator execution.");
