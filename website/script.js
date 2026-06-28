@@ -41,6 +41,22 @@ function shortHash(value) {
   return value ? `${value.slice(0, 12)}...${value.slice(-8)}` : "";
 }
 
+function formatBytes(bytes) {
+  const value = Number(bytes);
+  if (!Number.isFinite(value) || value <= 0) return "";
+
+  const units = ["B", "KB", "MB", "GB"];
+  let size = value;
+  let unitIndex = 0;
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
 function setExternalLink(anchor, url) {
   anchor.href = url;
   anchor.target = "_blank";
@@ -72,8 +88,9 @@ function renderRelease(release) {
   downloadKicker.textContent = "PUBLIC BUILD";
   downloadIntro.textContent = "ZeroLag 安装包已经准备好。下载后可以用页面中的 SHA256 校验码确认文件完整性。";
   releaseStatus.textContent = `ZeroLag ${release.version} 已开放下载`;
+  const installerSize = formatBytes(release.installer && release.installer.size);
   releaseDescription.textContent = release.installer && release.installer.file
-    ? `Windows 安装包：${release.installer.file}`
+    ? `Windows 安装包：${release.installer.file}${installerSize ? ` · ${installerSize}` : ""}`
     : "Windows 安装包已准备好。";
 
   if (checksum) {

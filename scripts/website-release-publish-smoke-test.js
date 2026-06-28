@@ -110,6 +110,7 @@ function testAvailableRelease(tempDir) {
   assertOk(output.downloadUrl === "https://cdn.zerolag.app/releases/ZeroLag-Setup-1.2.3.exe", "Download URL was not preserved.");
   assertOk(output.supportUrl === "https://zerolag.app/support", "Support URL was not preserved.");
   assertOk(output.installer.file === "ZeroLag Setup 1.2.3.exe", "Installer filename was not preserved.");
+  assertOk(output.installer.size === 42 * 1024 * 1024, "Installer size was not preserved.");
   assertOk(output.installer.sha256 === "a".repeat(64), "Installer checksum was not preserved.");
   assertOk(output.updateMetadata.sha256 === "b".repeat(64), "Update metadata checksum was not preserved.");
   assertOk(output.readiness.ok === 2 && output.readiness.total === 3, "Readiness summary is incorrect.");

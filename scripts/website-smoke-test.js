@@ -114,6 +114,7 @@ function main() {
   assertHas(scriptJs, "cache: \"no-store\"", "website release loader");
   assertHas(scriptJs, "renderRelease", "website release renderer");
   assertHas(scriptJs, "renderReleaseNotes", "website release notes renderer");
+  assertHas(scriptJs, "formatBytes", "website installer size formatter");
   assertHas(scriptJs, "rel = \"noopener\"", "external download link safety");
   assertHas(stylesCss, ".release-checksum", "website release checksum style");
   assertHas(stylesCss, ".release-notes", "website release notes style");

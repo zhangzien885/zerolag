@@ -131,6 +131,7 @@
 - Added website smoke checks for release JSON schema, download panel wiring, checksum rules, and public-facing copy guardrails.
 - Added isolated website release publishing smoke tests for both available and preparing states, without mutating the real website manifest.
 - Added sanitized public release notes rendering on the website download panel, sourced from verified release metadata.
+- Added human-readable installer size display on the website download panel while keeping byte-accurate release metadata.
 
 ## Known Boundaries
 
