@@ -3,6 +3,7 @@
   "releaseChannel": "alpha",
   "websiteUrl": "https://example.com/zerolag",
   "purchaseUrl": "",
+  "analyticsUrl": "",
   "apiBaseUrl": "",
   "updateManifestUrl": "",
   "updatePublicKeyPem": "",

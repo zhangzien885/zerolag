@@ -36,6 +36,10 @@ function assertHas(text, snippet, context) {
   assertOk(text.includes(snippet), `${context} is missing: ${snippet}`);
 }
 
+function assertNotHas(text, snippet, context) {
+  assertOk(!text.includes(snippet), `${context} must not include: ${snippet}`);
+}
+
 function assertNoForbiddenCopy(relativePath, text) {
   const forbiddenTerms = [
     "subscription control",
@@ -79,6 +83,10 @@ function assertReleaseManifest(release) {
 
   if (release.purchaseUrl) {
     assertOk(isPublicHttpsUrl(release.purchaseUrl), "website/release.json purchaseUrl must be a real HTTPS URL when set.");
+  }
+
+  if (release.analyticsUrl) {
+    assertOk(isPublicHttpsUrl(release.analyticsUrl), "website/release.json analyticsUrl must be a real HTTPS URL when set.");
   }
 
   if (release.downloadReady) {
@@ -127,7 +135,13 @@ function main() {
   assertHas(scriptJs, "clipboard.writeText", "website checksum clipboard path");
   assertHas(scriptJs, "release.purchaseUrl", "website purchase link wiring");
   assertHas(scriptJs, "release.supportUrl", "website support link wiring");
+  assertHas(scriptJs, "release.analyticsUrl", "website analytics endpoint wiring");
+  assertHas(scriptJs, "trackWebsiteEvent", "website analytics event tracking");
+  assertHas(scriptJs, "safeEventDetail", "website analytics payload redaction");
+  assertHas(scriptJs, "navigator.sendBeacon", "website analytics beacon path");
   assertHas(scriptJs, "rel = \"noopener\"", "external download link safety");
+  assertNotHas(scriptJs, "userAgent", "website privacy-safe analytics");
+  assertNotHas(scriptJs, "localStorage", "website privacy-safe analytics");
   assertHas(stylesCss, ".release-checksum", "website release checksum style");
   assertHas(stylesCss, ".checksum-copy-button", "website checksum copy button style");
   assertHas(stylesCss, ".release-notes", "website release notes style");

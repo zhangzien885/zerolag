@@ -73,6 +73,7 @@ The desktop client reads production endpoints from `assets/app-config.json`.
 - `apiBaseUrl`: HTTPS API base URL, for example `https://api.zerolag.example`.
 - `websiteUrl`: HTTPS public website URL.
 - `purchaseUrl`: HTTPS purchase or checkout page URL shown on the public website.
+- `analyticsUrl`: HTTPS endpoint for privacy-safe public website CTA events.
 - `supportUrl`: HTTPS support/contact page URL opened from the desktop toolbox.
 - `updateManifestUrl`: HTTPS update metadata URL.
 - `allowLocalDemoLicense`: must be `false` in production.

@@ -15,6 +15,8 @@ const downloadPurchase = document.querySelector("#downloadPurchase");
 const downloadSecondary = document.querySelector("#downloadSecondary");
 const downloadSupport = document.querySelector("#downloadSupport");
 let fullReleaseChecksum = "";
+let releaseAnalyticsUrl = "";
+let releaseEventContext = {};
 
 if (memoryTicker) {
   let tick = 0;
@@ -68,17 +70,64 @@ function setExternalLink(anchor, url) {
   anchor.rel = "noopener";
 }
 
+function safeEventDetail(detail) {
+  const output = {};
+
+  for (const [key, value] of Object.entries(detail || {})) {
+    if (!/^[a-zA-Z0-9_]+$/.test(key)) continue;
+
+    if (typeof value === "string") {
+      output[key] = value.slice(0, 96);
+    } else if (typeof value === "number" && Number.isFinite(value)) {
+      output[key] = value;
+    } else if (typeof value === "boolean") {
+      output[key] = value;
+    }
+  }
+
+  return output;
+}
+
+function setAnalyticsUrl(url) {
+  releaseAnalyticsUrl = url || "";
+}
+
+function trackWebsiteEvent(eventName, detail = {}) {
+  if (!releaseAnalyticsUrl || !eventName) return;
+
+  const payload = JSON.stringify({
+    product: "ZeroLag",
+    event: String(eventName).slice(0, 64),
+    at: new Date().toISOString(),
+    page: window.location.pathname,
+    detail: safeEventDetail({ ...releaseEventContext, ...detail })
+  });
+
+  const blob = new Blob([payload], { type: "text/plain" });
+  if (navigator.sendBeacon && navigator.sendBeacon(releaseAnalyticsUrl, blob)) return;
+
+  fetch(releaseAnalyticsUrl, {
+    method: "POST",
+    body: payload,
+    headers: { "content-type": "text/plain" },
+    keepalive: true,
+    mode: "no-cors"
+  }).catch(() => {});
+}
+
 function wirePurchaseLink(url) {
   if (!url) return;
 
   if (pricingPurchase) {
     pricingPurchase.textContent = "开通 ZeroLag Pro";
+    pricingPurchase.dataset.analyticsEvent = "purchase_click";
     setExternalLink(pricingPurchase, url);
   }
 
   if (downloadPurchase) {
     downloadPurchase.hidden = false;
     downloadPurchase.textContent = "开通会员";
+    downloadPurchase.dataset.analyticsEvent = "purchase_click";
     setExternalLink(downloadPurchase, url);
   }
 }
@@ -126,11 +175,21 @@ function renderReleaseNotes(notes) {
 function renderRelease(release) {
   if (!release || !release.version) return;
 
+  setAnalyticsUrl(release.analyticsUrl);
+  releaseEventContext = {
+    version: release.version,
+    channel: release.channel || "",
+    status: release.status || "",
+    downloadReady: Boolean(release.downloadReady)
+  };
+  trackWebsiteEvent("release_view");
+
   wirePurchaseLink(release.purchaseUrl);
 
   if (release.supportUrl && downloadSupport) {
     downloadSupport.hidden = false;
     downloadSupport.textContent = "遇到问题？联系支持";
+    downloadSupport.dataset.analyticsEvent = "support_click";
     setExternalLink(downloadSupport, release.supportUrl);
   }
 
@@ -159,12 +218,14 @@ function renderRelease(release) {
 
   if (release.downloadUrl) {
     downloadPrimary.textContent = "下载 Windows 安装包";
+    downloadPrimary.dataset.analyticsEvent = "download_click";
     setExternalLink(downloadPrimary, release.downloadUrl);
   }
 
   renderReleaseNotes(release.releaseNotes);
 
   downloadSecondary.textContent = "查看校验信息";
+  downloadSecondary.dataset.analyticsEvent = "checksum_info_click";
   downloadSecondary.href = "./release.json";
 }
 
@@ -174,5 +235,16 @@ fetch("./release.json", { cache: "no-store" })
   .catch(() => {});
 
 if (copyChecksumButton) {
-  copyChecksumButton.addEventListener("click", copyReleaseChecksum);
+  copyChecksumButton.addEventListener("click", () => {
+    copyReleaseChecksum();
+    trackWebsiteEvent("checksum_copy");
+  });
+}
+
+for (const anchor of [pricingPurchase, downloadPrimary, downloadPurchase, downloadSecondary, downloadSupport]) {
+  if (!anchor) continue;
+
+  anchor.addEventListener("click", () => {
+    trackWebsiteEvent(anchor.dataset.analyticsEvent || "cta_click", { target: anchor.id || "" });
+  });
 }

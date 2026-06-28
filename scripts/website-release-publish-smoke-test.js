@@ -100,6 +100,7 @@ function testAvailableRelease(tempDir) {
   writeJson(paths.config, {
     releaseChannel: "stable",
     purchaseUrl: "https://zerolag.app/buy",
+    analyticsUrl: "https://zerolag.app/analytics",
     supportUrl: "https://zerolag.app/support"
   });
 
@@ -110,6 +111,7 @@ function testAvailableRelease(tempDir) {
   assertOk(output.downloadReady === true, "Available fixture should be download ready.");
   assertOk(output.downloadUrl === "https://cdn.zerolag.app/releases/ZeroLag-Setup-1.2.3.exe", "Download URL was not preserved.");
   assertOk(output.purchaseUrl === "https://zerolag.app/buy", "Purchase URL was not preserved.");
+  assertOk(output.analyticsUrl === "https://zerolag.app/analytics", "Analytics URL was not preserved.");
   assertOk(output.supportUrl === "https://zerolag.app/support", "Support URL was not preserved.");
   assertOk(output.installer.file === "ZeroLag Setup 1.2.3.exe", "Installer filename was not preserved.");
   assertOk(output.installer.size === 42 * 1024 * 1024, "Installer size was not preserved.");
@@ -133,6 +135,7 @@ function testPreparingRelease(tempDir) {
   writeJson(paths.config, {
     releaseChannel: "stable",
     purchaseUrl: "https://example.com/buy",
+    analyticsUrl: "https://example.com/analytics",
     supportUrl: "https://example.com/support"
   });
 
@@ -143,6 +146,7 @@ function testPreparingRelease(tempDir) {
   assertOk(output.downloadReady === false, "Placeholder download fixture must not be download ready.");
   assertOk(output.downloadUrl === "", "Placeholder download URL must be removed.");
   assertOk(output.purchaseUrl === "", "Placeholder purchase URL must be removed.");
+  assertOk(output.analyticsUrl === "", "Placeholder analytics URL must be removed.");
   assertOk(output.supportUrl === "", "Placeholder support URL must be removed.");
   assertOk(output.installer.sha256 === "a".repeat(64), "Installer checksum should still be carried for internal verification.");
 }
