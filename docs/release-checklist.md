@@ -60,11 +60,13 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 - Generate or replace the Windows icon at `build/icon.ico`.
 - Run `npm run pack:dir` for an unpacked local build.
 - Run `npm run package:smoke` to verify the unpacked build contains the executable, app archive, icon, and unpacked runtime watchdog.
+- Run `npm run installer:guard:smoke` to verify the NSIS guard hook is present, gated, uninstall-aware, and service-first before Task Scheduler fallback.
 - Run `npm run guard:service:smoke` to verify the Windows Service guard manifest, install script, uninstall script, and packaged resources.
 - Run `npm run guard:install:smoke` to verify the service install script refuses accidental registration unless the private validation switch is passed with `-WhatIf`.
 - Run `npm run guard:task:smoke` to verify the Task Scheduler fallback refuses accidental registration unless the private validation switch is passed with `-WhatIf`.
 - Run `npm run guard:runtime:smoke` to verify the service worker can clean invalid runtime sessions in dry-run mode and write health/log state.
 - Confirm the installer service command uses `ZeroLag.exe --runtime-guard-service` and that the native service wrapper warning is resolved before paid public release.
+- Keep `ZEROLAG_ENABLE_GUARD_REGISTRATION` disabled for development installers; enable it only for private validation or the final signed build after the native service wrapper is ready.
 - Run `npm run dist:win` only after the strict release gates are satisfied.
 - Run `npm run installer:smoke` to verify the installer executable, blockmap, update metadata, and Windows installer settings.
 - Run `npm run release:artifacts` to generate public checksum and artifact metadata files for the download page.

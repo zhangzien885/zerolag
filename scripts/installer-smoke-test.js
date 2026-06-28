@@ -57,6 +57,7 @@ function assertInstallerConfig() {
   assertOk(build.asar === true, "Installer build must keep app files inside asar.");
   assertOk(hasNsisTarget, "Installer build must target Windows NSIS.");
   assertOk(build.win && build.win.requestedExecutionLevel === "requireAdministrator", "Windows installer must request administrator execution.");
+  assertOk(nsis.include === "build/installer-guard.nsh", "NSIS installer must include the ZeroLag guard hook.");
   assertOk(nsis.perMachine === true, "NSIS installer must install per-machine for the formal build.");
   assertOk(nsis.allowElevation === true, "NSIS installer must allow elevation.");
   assertOk(nsis.deleteAppDataOnUninstall === false, "NSIS uninstaller must not delete user app data by default.");

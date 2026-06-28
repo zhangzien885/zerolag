@@ -21,6 +21,7 @@ const protectedFiles = [
   "scripts/generate-icon.js",
   "scripts/package-smoke-test.js",
   "scripts/installer-smoke-test.js",
+  "scripts/installer-guard-hook-smoke-test.js",
   "scripts/service-guard-smoke-test.js",
   "scripts/service-install-script-smoke-test.js",
   "scripts/task-fallback-smoke-test.js",
@@ -55,7 +56,8 @@ const protectedFiles = [
   "build/install-runtime-guard-service.ps1",
   "build/uninstall-runtime-guard-service.ps1",
   "build/install-runtime-guard-task.ps1",
-  "build/uninstall-runtime-guard-task.ps1"
+  "build/uninstall-runtime-guard-task.ps1",
+  "build/installer-guard.nsh"
 ];
 
 function sha256File(filePath) {

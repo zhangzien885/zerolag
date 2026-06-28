@@ -84,16 +84,17 @@ Implemented in prototype:
 - Desktop entry mode `--runtime-guard-service`, allowing the installed ZeroLag executable to run the guard worker without opening the UI.
 - Service install script registration is blocked by default and requires an explicit private-validation switch until the native wrapper exists.
 - Installer-managed Task Scheduler fallback assets for service-install failure, with logon and periodic cleanup triggers gated behind an explicit private-validation switch.
+- NSIS installer guard hook that is ready to call service registration first, then the visible Task Scheduler fallback if service registration fails, while staying disabled unless `ZEROLAG_ENABLE_GUARD_REGISTRATION` is explicitly defined.
 - CI smoke test for transparent service-guard packaging and prohibited behavior guardrails.
 - CI smoke test for service-worker cleanup behavior in dry-run mode.
 - CI smoke test for Task Scheduler fallback registration gating.
+- CI smoke test for the gated NSIS installer guard hook.
 
 Still required for paid production:
 
 - Native Windows Service wrapper executable.
 - Installer service registration without the private-validation guard after the native wrapper is ready.
-- Installer invocation of the Task Scheduler fallback after a real service-install failure.
+- Enable the NSIS guard hook in the final signed installer after the native service wrapper is ready and privately validated.
 - Server-issued signed session IDs and key rotation.
 - Server-side subscription/session validation.
-- Installer invocation of the service install/uninstall scripts with the native service wrapper once it is available.
 - Uninstaller cleanup.

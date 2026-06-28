@@ -84,6 +84,7 @@ function main() {
   addIssue(issues, fileExists("build/uninstall-runtime-guard-service.ps1"), "Windows Service guard uninstall script is missing.");
   addIssue(issues, fileExists("build/install-runtime-guard-task.ps1"), "Task Scheduler fallback install script is missing.");
   addIssue(issues, fileExists("build/uninstall-runtime-guard-task.ps1"), "Task Scheduler fallback uninstall script is missing.");
+  addIssue(issues, fileExists("build/installer-guard.nsh"), "NSIS installer guard hook is missing.");
   addIssue(issues, fileExists("scripts/runtime-guard-core.js"), "Runtime guard core worker is missing.");
   addIssue(issues, fileExists("scripts/runtime-guard-service.js"), "Runtime guard service worker is missing.");
 
@@ -100,7 +101,7 @@ function main() {
   const gitignore = readTextIfExists(".gitignore");
   const ciWorkflow = readTextIfExists(".github/workflows/ci.yml");
 
-  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:verify", "release:artifacts", "release:report", "release:report:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "server:check", "server:smoke", "server:test", "server:env-check", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:sign", "update:smoke"].forEach((scriptName) => {
+  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:guard:smoke", "installer:verify", "release:artifacts", "release:report", "release:report:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "server:check", "server:smoke", "server:test", "server:env-check", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:sign", "update:smoke"].forEach((scriptName) => {
     addIssue(issues, hasScript(packageJson, scriptName), `package.json script is missing: ${scriptName}`);
   });
 
@@ -117,11 +118,13 @@ function main() {
   addIssue(issues, ciWorkflow.includes("actions/upload-artifact@v4"), "GitHub CI workflow must upload release reports as an artifact.");
   addIssue(issues, ciWorkflow.includes("zerolag-ci-reports"), "GitHub CI workflow must use the zerolag-ci-reports artifact name.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run ci:reports:smoke"), "npm run ci must verify CI report artifact generation.");
+  addIssue(issues, (packageJson.scripts.ci || "").includes("npm run installer:guard:smoke"), "npm run ci must verify the NSIS installer guard hook.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:service:smoke"), "npm run ci must verify Windows Service guard assets.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:install:smoke"), "npm run ci must verify Windows Service install-script gating.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:task:smoke"), "npm run ci must verify Task Scheduler fallback gating.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:runtime:smoke"), "npm run ci must verify the runtime guard service worker.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:verify", "release:gate", "website:release"), "release:verify must run release:gate before website:release.");
+  addIssue(issues, scriptIncludesInOrder(packageJson, "release:verify", "installer:guard:smoke", "installer:smoke"), "release:verify must check the NSIS guard hook before installer artifacts.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:build", "dist:win", "release:verify"), "release:build must build the installer before running release:verify.");
   addIssue(issues, gitignore.includes(".secrets/"), ".gitignore must keep .secrets/ out of Git.");
   addIssue(issues, gitignore.includes("dist/"), ".gitignore must keep dist/ build outputs out of Git.");
@@ -140,6 +143,7 @@ function main() {
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/runtime-guard-core.js"), "Installer packaging config must include the runtime guard core as an extra resource.");
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/runtime-guard-service.js"), "Installer packaging config must include the runtime guard service worker as an extra resource.");
   addIssue(issues, hasWindowsNsisTarget(build), "Installer packaging config must target Windows NSIS.");
+  addIssue(issues, build.nsis && build.nsis.include === "build/installer-guard.nsh", "Installer packaging config must include the NSIS guard hook.");
   addIssue(issues, build.win && build.win.requestedExecutionLevel === "requireAdministrator", "Windows package must request administrator execution.");
   addIssue(issues, serviceGuard.serviceName === "ZeroLagRuntimeGuard", "Windows Service guard manifest must use the ZeroLagRuntimeGuard service name.");
   addIssue(issues, serviceGuard.serviceBinary === "ZeroLag.exe", "Windows Service guard manifest must use the installed ZeroLag executable for worker mode.");
