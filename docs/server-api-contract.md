@@ -75,6 +75,24 @@ The desktop client reads production endpoints from `assets/app-config.json`.
 - `allowLocalDemoLicense`: must be `false` in production.
 - `offlineGraceHours`: short validation grace window when the server is temporarily unreachable.
 
+The license server reads deployment settings from environment variables. Before public release, run:
+
+```powershell
+npm run server:check
+npm run server:check:strict
+```
+
+Minimum production server variables:
+
+- `ZEROLAG_SERVER_SECRET`: custom strong secret for hashing activation codes and tokens.
+- `ZEROLAG_ADMIN_SECRET`: custom strong secret for private admin endpoints.
+- `ZEROLAG_PAYMENT_WEBHOOK_SECRET`: custom strong secret for payment callbacks.
+- `ZEROLAG_SERVER_STATE_PATH`: durable server-state JSON location.
+- `ZEROLAG_SERVER_BACKUP_DIR`: durable backup directory.
+- `ZEROLAG_RATE_LIMIT_DISABLED`: must not be `1` in production.
+- `ZEROLAG_SERVER_BACKUP_DISABLED`: must not be `1` in production.
+- `ZEROLAG_MAINTENANCE_DISABLED`: must not be `1` unless another scheduler owns cleanup.
+
 ## POST `/v1/licenses/activate`
 
 Exchanges a member code or payment-issued activation code for a server-backed device license.

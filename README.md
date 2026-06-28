@@ -49,9 +49,11 @@ ZeroLag is a Windows gaming performance optimizer prototype.
 ```powershell
 npm run production:check
 npm run production:check:strict
+npm run server:check
+npm run server:check:strict
 ```
 
-`production:check` gives a readiness report. `production:check:strict` should be used before a real paid release.
+`production:check` validates desktop release config. `server:check` validates server deployment environment variables. Use the `:strict` variants before a real paid release.
 
 ## Signed updates
 

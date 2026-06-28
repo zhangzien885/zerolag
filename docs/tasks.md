@@ -106,6 +106,7 @@
 - Added server-side rate limiting for order creation, payment webhooks, activation, validation, and admin endpoints to reduce abuse before public release.
 - Added public health and admin readiness checks for server deployment operations, including state, backup, update-manifest, secret, rate-limit, and maintenance status.
 - Added automatic and admin-triggered maintenance cleanup for expired subscriptions and stale server tokens with audit logging.
+- Added server production environment checks for required secrets, backups, rate limiting, maintenance, host, port, and storage paths.
 - Added safer JSON-state persistence with atomic writes, rolling backups, corrupted-state fallback, and admin state export for migration or emergency recovery.
 - Added signed update-manifest verification in the desktop client plus release tooling for generating, signing, and verifying update metadata.
 - Added customer-support diagnostics bundle export from the desktop toolbox with redacted membership and runtime details.

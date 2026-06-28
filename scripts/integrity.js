@@ -16,6 +16,7 @@ const protectedFiles = [
   "scripts/runtime-watchdog.js",
   "scripts/local-integration.js",
   "scripts/production-check.js",
+  "scripts/server-production-check.js",
   "assets/zerolag-logo.svg",
   "assets/app-config.json",
   "assets/zerolag-power-plan-template.protected.json"
