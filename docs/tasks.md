@@ -127,6 +127,7 @@
 - Added release artifact generation for installer checksums and download metadata after the Windows installer is built.
 - Added one-command release verification and release build chains for installer validation plus public artifact metadata generation.
 - Added release candidate report generation with version, Git state, installer checksum status, readiness checks, and final release commands.
+- Added server deployment gate status to the release candidate report so desktop release readiness and server readiness are reviewed together.
 - Added website release metadata publishing so the static download page can display release status, installer link, and SHA256 checksum from verified release artifacts.
 - Added website smoke checks for release JSON schema, download panel wiring, checksum rules, and public-facing copy guardrails.
 - Added isolated website release publishing smoke tests for both available and preparing states, without mutating the real website manifest.

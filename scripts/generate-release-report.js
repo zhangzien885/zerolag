@@ -26,6 +26,18 @@ function safeGit(args, fallback = "") {
   }
 }
 
+function safeJsonCommand(command, args, fallback = {}) {
+  try {
+    return JSON.parse(cp.execFileSync(command, args, {
+      cwd: rootDir,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"]
+    }));
+  } catch (_error) {
+    return fallback;
+  }
+}
+
 function isHttpsUrl(value) {
   return /^https:\/\//i.test(String(value || ""));
 }
@@ -63,8 +75,27 @@ function buildReadiness(packageJson, appConfig, updateManifest, releaseArtifacts
   return checks.map(([name, ok, nextStep]) => ({ name, ok, nextStep }));
 }
 
+function serverDeploymentReport() {
+  return safeJsonCommand(process.execPath, [
+    path.join(rootDir, "scripts", "generate-server-deployment-report.js"),
+    "--json",
+    "--stdout"
+  ], {
+    ready: false,
+    gates: [],
+    strictFailureSummary: "Server deployment report unavailable.",
+    snapshot: {
+      privateEnvFile: {}
+    }
+  });
+}
+
 function renderMarkdown(report) {
   const readyCount = report.readiness.filter((item) => item.ok).length;
+  const serverGateCount = Array.isArray(report.serverDeployment.gates) ? report.serverDeployment.gates.length : 0;
+  const serverReadyCount = Array.isArray(report.serverDeployment.gates)
+    ? report.serverDeployment.gates.filter((item) => item.ok).length
+    : 0;
   const lines = [
     "# ZeroLag Release Candidate Report",
     "",
@@ -82,6 +113,7 @@ function renderMarkdown(report) {
     line("Git commit", report.git.commit),
     line("Working tree", report.git.dirty ? "DIRTY" : "clean"),
     line("Readiness", `${readyCount}/${report.readiness.length} checks OK`),
+    line("Server deployment", `${serverReadyCount}/${serverGateCount} gates OK`),
     "",
     "## Installer",
     "",
@@ -98,10 +130,22 @@ function renderMarkdown(report) {
     "| --- | --- | --- |",
     ...report.readiness.map((item) => `| ${item.name} | ${status(item.ok)} | ${item.ok ? "Ready" : item.nextStep} |`),
     "",
+    "## Server Deployment Gates",
+    "",
+    "| Gate | Status | Detail |",
+    "| --- | --- | --- |",
+    ...(Array.isArray(report.serverDeployment.gates) && report.serverDeployment.gates.length
+      ? report.serverDeployment.gates.map((item) => `| ${item.label} | ${status(item.ok)} | ${item.detail || ""} |`)
+      : ["| Server deployment report | TODO | Run npm run server:deployment-report:json |"]),
+    "",
+    report.serverDeployment.ready ? "Server deployment strict gates are ready." : `Server deployment strict gate is not ready: ${report.serverDeployment.strictFailureSummary || "unknown"}`,
+    "",
     "## Final Commands",
     "",
     "```powershell",
     "npm run ci",
+    "npm run server:deployment-report:smoke",
+    "npm run server:deployment-report:strict",
     "npm run production:check:strict",
     "npm run release:preflight:strict",
     "npm run release:build",
@@ -130,6 +174,7 @@ function main() {
     },
     artifactManifestExists: fs.existsSync(releaseArtifactsPath),
     installer: releaseArtifacts.installer || {},
+    serverDeployment: serverDeploymentReport(),
     readiness: buildReadiness(packageJson, appConfig, updateManifest, releaseArtifacts)
   };
 
