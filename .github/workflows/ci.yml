@@ -1,0 +1,57 @@
+name: ZeroLag CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    name: Verify desktop and server
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run standard checks
+        run: npm run ci
+
+      - name: Run strict server readiness with private env sample
+        shell: pwsh
+        run: |
+          $strictRoot = Join-Path $env:RUNNER_TEMP "zerolag-strict"
+          $stateDir = Join-Path $strictRoot "state"
+          $backupDir = Join-Path $strictRoot "backups"
+          New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
+          New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+
+          $envFile = Join-Path $strictRoot "server.env"
+          @(
+            "ZEROLAG_SERVER_SECRET=zl_server_ci_abcdefghijklmnopqrstuvwxyz1234567890",
+            "ZEROLAG_ADMIN_SECRET=zl_admin_ci_abcdefghijklmnopqrstuvwxyz1234567890",
+            "ZEROLAG_PAYMENT_WEBHOOK_SECRET=zl_payment_ci_abcdefghijklmnopqrstuvwxyz1234567890",
+            "ZEROLAG_SERVER_HOST=0.0.0.0",
+            "ZEROLAG_SERVER_PORT=8787",
+            "ZEROLAG_SERVER_STATE_PATH=$($stateDir)\server-state.json",
+            "ZEROLAG_SERVER_BACKUP_DIR=$backupDir",
+            "ZEROLAG_RATE_LIMIT_DISABLED=0",
+            "ZEROLAG_SERVER_BACKUP_DISABLED=0",
+            "ZEROLAG_MAINTENANCE_DISABLED=0"
+          ) | Set-Content -Path $envFile -Encoding UTF8
+
+          $env:ZEROLAG_ENV_FILE = $envFile
+          npm run server:check:strict
+          npm run server:smoke

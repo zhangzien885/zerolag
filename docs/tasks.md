@@ -117,6 +117,7 @@
 - Added a desktop toolbox version center for manual update checks and user-visible version/channel status.
 - Added automatic private server env-file loading for service startup, admin tools, activation-code creation, and production readiness checks.
 - Added a safe server smoke-test command for checking health and admin readiness with isolated temporary state before deployment.
+- Added GitHub Actions CI for pushes and pull requests, including local verification plus strict server readiness against a temporary private env file.
 
 ## Known Boundaries
 

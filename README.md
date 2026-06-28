@@ -134,4 +134,11 @@ cd C:\Users\Administrator\Documents\zerolag
 
 ```powershell
 npm run check
+npm run ci
 ```
+
+`ci` runs the standard local verification set used by GitHub Actions: syntax checks, desktop production readiness, server readiness, server self-test, server smoke test, and integrity verification.
+
+## Continuous Integration
+
+GitHub Actions runs on pushes and pull requests to `main`. The workflow installs dependencies with `npm ci`, runs `npm run ci`, then performs a strict server readiness and smoke test against a temporary private env file.
