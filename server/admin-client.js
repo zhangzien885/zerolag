@@ -116,7 +116,8 @@ function analyticsPayloadFromSummary(summary) {
       versions: websiteEvents.versions || {},
       channels: websiteEvents.channels || {},
       statuses: websiteEvents.statuses || {},
-      daily: websiteEvents.daily || {}
+      daily: websiteEvents.daily || {},
+      dailyEvents: websiteEvents.dailyEvents || {}
     }
   };
 }
@@ -128,31 +129,49 @@ function percent(numerator, denominator) {
   return Number(((top / bottom) * 100).toFixed(2));
 }
 
-function analyticsFunnelFromSummary(summary) {
-  const analytics = analyticsPayloadFromSummary(summary).websiteEvents;
-  const events = analytics.events || {};
+function funnelFromEvents(events = {}) {
   const releaseViews = Number(events.release_view || 0);
   const downloads = Number(events.download_click || 0);
   const purchases = Number(events.purchase_click || 0);
+
+  return {
+    releaseViews,
+    downloads,
+    purchases,
+    downloadRatePct: percent(downloads, releaseViews),
+    purchaseRatePct: percent(purchases, releaseViews),
+    purchasePerDownloadPct: percent(purchases, downloads)
+  };
+}
+
+function assistanceFromEvents(events = {}) {
   const supportClicks = Number(events.support_click || 0);
   const checksumCopies = Number(events.checksum_copy || 0);
   const checksumInfoClicks = Number(events.checksum_info_click || 0);
 
   return {
+    supportClicks,
+    checksumCopies,
+    checksumInfoClicks
+  };
+}
+
+function analyticsFunnelFromSummary(summary) {
+  const analytics = analyticsPayloadFromSummary(summary).websiteEvents;
+  const events = analytics.events || {};
+  const dailyEvents = analytics.dailyEvents || {};
+  const latestDay = Object.keys(dailyEvents).sort().pop() || "";
+  const latestDayEvents = latestDay ? dailyEvents[latestDay] || {} : {};
+
+  return {
     ok: true,
     updatedAt: analytics.updatedAt,
-    funnel: {
-      releaseViews,
-      downloads,
-      purchases,
-      downloadRatePct: percent(downloads, releaseViews),
-      purchaseRatePct: percent(purchases, releaseViews),
-      purchasePerDownloadPct: percent(purchases, downloads)
-    },
-    assistance: {
-      supportClicks,
-      checksumCopies,
-      checksumInfoClicks
+    funnel: funnelFromEvents(events),
+    assistance: assistanceFromEvents(events),
+    latestDay: {
+      date: latestDay,
+      funnel: funnelFromEvents(latestDayEvents),
+      assistance: assistanceFromEvents(latestDayEvents)
     }
   };
 }
@@ -168,6 +187,13 @@ function sortedMetricRows(metric, map, updatedAt) {
     .map(([key, count]) => [metric, key, Number(count || 0), updatedAt]);
 }
 
+function sortedDailyEventRows(dailyEvents, updatedAt) {
+  return Object.entries(dailyEvents || {})
+    .sort((left, right) => right[0].localeCompare(left[0]))
+    .flatMap(([day, events]) => sortedMetricRows("day_event", events, updatedAt)
+      .map((row) => [row[0], `${day}:${row[1]}`, row[2], row[3]]));
+}
+
 function analyticsCsvFromSummary(summary) {
   const analytics = analyticsPayloadFromSummary(summary).websiteEvents;
   const rows = [
@@ -177,7 +203,8 @@ function analyticsCsvFromSummary(summary) {
     ...sortedMetricRows("version", analytics.versions, analytics.updatedAt),
     ...sortedMetricRows("channel", analytics.channels, analytics.updatedAt),
     ...sortedMetricRows("status", analytics.statuses, analytics.updatedAt),
-    ...sortedMetricRows("day", analytics.daily, analytics.updatedAt)
+    ...sortedMetricRows("day", analytics.daily, analytics.updatedAt),
+    ...sortedDailyEventRows(analytics.dailyEvents, analytics.updatedAt)
   ];
 
   return `${rows.map((row) => row.map(csvEscape).join(",")).join("\n")}\n`;

@@ -73,7 +73,8 @@ function createEmptyState() {
       versions: {},
       channels: {},
       statuses: {},
-      daily: {}
+      daily: {},
+      dailyEvents: {}
     }
   };
 }
@@ -380,6 +381,17 @@ function safeCountMap(input) {
   );
 }
 
+function safeNestedCountMap(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return {};
+
+  return Object.fromEntries(
+    Object.entries(input)
+      .filter(([, value]) => value && typeof value === "object" && !Array.isArray(value))
+      .map(([key, value]) => [key, safeCountMap(value)])
+      .filter(([key, value]) => typeof key === "string" && Object.keys(value).length > 0)
+  );
+}
+
 function websiteEventsSummary(input = {}) {
   return {
     total: Math.max(0, Math.floor(Number(input.total || 0))),
@@ -388,7 +400,8 @@ function websiteEventsSummary(input = {}) {
     versions: safeCountMap(input.versions),
     channels: safeCountMap(input.channels),
     statuses: safeCountMap(input.statuses),
-    daily: safeCountMap(input.daily)
+    daily: safeCountMap(input.daily),
+    dailyEvents: safeNestedCountMap(input.dailyEvents)
   };
 }
 
@@ -772,11 +785,29 @@ function pruneCountMap(map, limit, options = {}) {
   }
 }
 
+function pruneNestedDailyCountMap(map, limit) {
+  const selectedDays = Object.keys(map || {})
+    .filter((day) => typeof day === "string" && map[day] && typeof map[day] === "object" && !Array.isArray(map[day]))
+    .sort((left, right) => right.localeCompare(left))
+    .slice(0, limit);
+  const selectedDaySet = new Set(selectedDays);
+
+  for (const day of Object.keys(map || {})) {
+    if (!selectedDaySet.has(day)) {
+      delete map[day];
+      continue;
+    }
+
+    pruneCountMap(map[day], allowedWebsiteEvents.size);
+  }
+}
+
 function pruneWebsiteEventMetrics(metrics) {
   pruneCountMap(metrics.versions, websiteMetricKeyLimit);
   pruneCountMap(metrics.channels, websiteMetricKeyLimit);
   pruneCountMap(metrics.statuses, websiteMetricKeyLimit);
   pruneCountMap(metrics.daily, websiteDailyRetentionDays, { sortByKeyDesc: true });
+  pruneNestedDailyCountMap(metrics.dailyEvents, websiteDailyRetentionDays);
 }
 
 function recordWebsiteEventInState(state, body = {}) {
@@ -797,12 +828,18 @@ function recordWebsiteEventInState(state, body = {}) {
   metrics.channels = metrics.channels && typeof metrics.channels === "object" && !Array.isArray(metrics.channels) ? metrics.channels : {};
   metrics.statuses = metrics.statuses && typeof metrics.statuses === "object" && !Array.isArray(metrics.statuses) ? metrics.statuses : {};
   metrics.daily = metrics.daily && typeof metrics.daily === "object" && !Array.isArray(metrics.daily) ? metrics.daily : {};
+  metrics.dailyEvents = metrics.dailyEvents && typeof metrics.dailyEvents === "object" && !Array.isArray(metrics.dailyEvents) ? metrics.dailyEvents : {};
 
+  const day = now.slice(0, 10);
   bumpCount(metrics.events, eventName);
   bumpCount(metrics.versions, normalizeWebsiteMetricKey(detail.version));
   bumpCount(metrics.channels, normalizeWebsiteMetricKey(detail.channel));
   bumpCount(metrics.statuses, normalizeWebsiteMetricKey(detail.status));
-  bumpCount(metrics.daily, now.slice(0, 10));
+  bumpCount(metrics.daily, day);
+  metrics.dailyEvents[day] = metrics.dailyEvents[day] && typeof metrics.dailyEvents[day] === "object" && !Array.isArray(metrics.dailyEvents[day])
+    ? metrics.dailyEvents[day]
+    : {};
+  bumpCount(metrics.dailyEvents[day], eventName);
   pruneWebsiteEventMetrics(metrics);
 
   state.websiteEvents = metrics;

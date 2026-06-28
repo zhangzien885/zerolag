@@ -146,7 +146,7 @@ Keep rate limiting enabled in production, and add edge protection through the ho
 
 Set the public website `analyticsUrl` to `https://your-api.example/v1/website/events` after deploying this server behind HTTPS. The endpoint supports cross-origin website POSTs and `OPTIONS` preflight responses.
 
-The endpoint accepts only known website CTA event names and stores aggregate counters by event, version, channel, status, and day. Version, channel, and status counters are capped to 64 keys each, and daily counters keep the latest 90 days. It does not store client IPs, browser user agents, activation codes, tokens, order IDs, or raw event payloads.
+The endpoint accepts only known website CTA event names and stores aggregate counters by event, version, channel, status, day, and per-day event breakdown. Version, channel, and status counters are capped to 64 keys each, and daily counters keep the latest 90 days. It does not store client IPs, browser user agents, activation codes, tokens, order IDs, or raw event payloads.
 
 To view aggregate website CTA counts:
 
@@ -155,6 +155,8 @@ npm run server:admin -- analytics
 npm run server:admin -- analytics-funnel
 npm run server:admin -- analytics-csv .\website-analytics.csv
 ```
+
+The funnel command includes overall conversion plus the latest day's event breakdown. The CSV export includes `day_event` rows such as `2026-06-28:download_click` for private trend review.
 
 ## State Safety
 

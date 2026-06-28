@@ -110,6 +110,11 @@ function assert(condition, message) {
   }
 }
 
+function nestedWebsiteEventCount(dailyEvents, eventName) {
+  return Object.values(dailyEvents || {})
+    .reduce((total, events) => total + Number(events && events[eventName] || 0), 0);
+}
+
 function listen(server) {
   return new Promise((resolve) => {
     server.listen(0, "127.0.0.1", () => {
@@ -261,6 +266,18 @@ async function main() {
     assert(websiteSummary.body.summary.websiteEvents.versions["0.1.0"] === 3, "Admin summary should aggregate website event versions.");
     assert(websiteSummary.body.summary.websiteEvents.statuses.available === 3, "Admin summary should aggregate website event release status.");
     assert(
+      nestedWebsiteEventCount(websiteSummary.body.summary.websiteEvents.dailyEvents, "release_view") === 1,
+      "Admin summary should expose daily release views."
+    );
+    assert(
+      nestedWebsiteEventCount(websiteSummary.body.summary.websiteEvents.dailyEvents, "download_click") === 1,
+      "Admin summary should expose daily download clicks."
+    );
+    assert(
+      nestedWebsiteEventCount(websiteSummary.body.summary.websiteEvents.dailyEvents, "purchase_click") === 1,
+      "Admin summary should expose daily purchase clicks."
+    );
+    assert(
       !JSON.stringify(loadState(options).websiteEvents).includes("downloadPrimary"),
       "Website analytics state must not store raw CTA targets."
     );
@@ -271,6 +288,10 @@ async function main() {
     assert(adminAnalyticsBody.websiteEvents.events.release_view === 1, "Admin analytics command should expose release views.");
     assert(adminAnalyticsBody.websiteEvents.events.download_click === 1, "Admin analytics command should expose download clicks.");
     assert(adminAnalyticsBody.websiteEvents.events.purchase_click === 1, "Admin analytics command should expose purchase clicks.");
+    assert(
+      nestedWebsiteEventCount(adminAnalyticsBody.websiteEvents.dailyEvents, "download_click") === 1,
+      "Admin analytics command should expose daily download clicks."
+    );
     const adminAnalyticsFunnel = await runAdminClient(port, ["analytics-funnel"]);
     assert(adminAnalyticsFunnel.status === 0, `Admin analytics funnel command failed: ${adminAnalyticsFunnel.stderr || adminAnalyticsFunnel.stdout}`);
     const adminAnalyticsFunnelBody = JSON.parse(adminAnalyticsFunnel.stdout);
@@ -279,6 +300,8 @@ async function main() {
     assert(adminAnalyticsFunnelBody.funnel.purchases === 1, "Admin analytics funnel should expose purchases.");
     assert(adminAnalyticsFunnelBody.funnel.downloadRatePct === 100, "Admin analytics funnel should calculate download rate.");
     assert(adminAnalyticsFunnelBody.funnel.purchasePerDownloadPct === 100, "Admin analytics funnel should calculate purchase per download rate.");
+    assert(adminAnalyticsFunnelBody.latestDay.date, "Admin analytics funnel should expose a latest day.");
+    assert(adminAnalyticsFunnelBody.latestDay.funnel.downloads === 1, "Admin analytics funnel should expose latest-day downloads.");
     const analyticsCsvPath = path.join(tempDir, "website-analytics.csv");
     const adminAnalyticsCsv = await runAdminClient(port, ["analytics-csv", analyticsCsvPath]);
     assert(adminAnalyticsCsv.status === 0, `Admin analytics CSV command failed: ${adminAnalyticsCsv.stderr || adminAnalyticsCsv.stdout}`);
@@ -287,6 +310,8 @@ async function main() {
     assert(analyticsCsv.startsWith("metric,key,count,updatedAt\n"), "Admin analytics CSV should include a stable header.");
     assert(analyticsCsv.includes("event,download_click,1,"), "Admin analytics CSV should include download clicks.");
     assert(analyticsCsv.includes("event,purchase_click,1,"), "Admin analytics CSV should include purchase clicks.");
+    assert(analyticsCsv.includes("day_event,"), "Admin analytics CSV should include daily event rows.");
+    assert(analyticsCsv.includes(":download_click,1,"), "Admin analytics CSV should include daily download clicks.");
 
     for (let index = 0; index < 80; index += 1) {
       const noisyWebsiteEvent = await requestJson(port, "/v1/website/events", {
@@ -308,6 +333,11 @@ async function main() {
     assert(Object.keys(cappedWebsiteSummary.body.summary.websiteEvents.versions).length <= 64, "Website analytics versions must stay capped.");
     assert(Object.keys(cappedWebsiteSummary.body.summary.websiteEvents.channels).length <= 64, "Website analytics channels must stay capped.");
     assert(Object.keys(cappedWebsiteSummary.body.summary.websiteEvents.statuses).length <= 64, "Website analytics statuses must stay capped.");
+    assert(Object.keys(cappedWebsiteSummary.body.summary.websiteEvents.dailyEvents).length <= 90, "Website analytics daily event buckets must stay capped.");
+    assert(
+      nestedWebsiteEventCount(cappedWebsiteSummary.body.summary.websiteEvents.dailyEvents, "cta_click") === 80,
+      "Website analytics should keep daily CTA event totals."
+    );
 
     const autoTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-auto-maintenance-test-"));
     const autoOptions = {

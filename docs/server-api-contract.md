@@ -107,7 +107,7 @@ Minimum production server variables:
 
 Accepts privacy-safe public website CTA events from `analyticsUrl`.
 
-The server stores aggregate counters only. Version, channel, and status counters are capped to 64 keys each, and daily counters keep the latest 90 days. It does not store client IPs, browser user agents, activation codes, tokens, order IDs, full URLs, or raw event payloads.
+The server stores aggregate counters only. Version, channel, and status counters are capped to 64 keys each, and daily counters keep the latest 90 days, including per-day event breakdowns for private trend review. It does not store client IPs, browser user agents, activation codes, tokens, order IDs, full URLs, or raw event payloads.
 
 This endpoint supports cross-origin public website requests with `Access-Control-Allow-Origin: *` and accepts `OPTIONS` preflight checks. Admin, order, payment, and license endpoints do not share this public CORS behavior.
 
@@ -151,6 +151,8 @@ npm run server:admin -- analytics
 npm run server:admin -- analytics-funnel
 npm run server:admin -- analytics-csv .\website-analytics.csv
 ```
+
+The private analytics output includes `dailyEvents`, and CSV exports include `day_event` rows in the form `YYYY-MM-DD:event_name` so operators can compare daily download, purchase, and support-click trends without collecting user-level data.
 
 ## POST `/v1/licenses/activate`
 
