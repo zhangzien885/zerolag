@@ -73,9 +73,11 @@ Production update prompts should use signed metadata:
 npm run update:sign -- --generate-keypair .\.secrets\update-private.pem .\.secrets\update-public.pem
 npm run update:sign -- assets\update.json .\.secrets\update-private.pem
 npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
+npm run update:smoke
 ```
 
 Keep the private key outside Git. Put only the public key into `assets/app-config.json` as `updatePublicKeyPem` for production builds.
+`update:smoke` uses temporary keys and a copied manifest to verify the signing toolchain without touching real release keys or `assets/update.json`.
 
 ## License server MVP
 

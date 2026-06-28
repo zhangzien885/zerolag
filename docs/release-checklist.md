@@ -21,6 +21,7 @@ Use this checklist before preparing a paid public build.
 
 - Update `assets/update.json` `latest` to match `package.json` version.
 - Replace placeholder download URLs with the final HTTPS download page.
+- Run `npm run update:smoke` to verify the signing toolchain with temporary keys.
 - Sign the update manifest with the private update key.
 - Verify the manifest with the public key.
 

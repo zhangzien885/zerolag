@@ -121,6 +121,7 @@
 - Added release preflight checks and a release checklist for packaging, signing, update metadata, production config, and strict final gates.
 - Added Electron Builder packaging scripts and Windows NSIS installer configuration, with build-resource guidance for the final Windows icon and signing assets.
 - Added a reproducible ZeroLag Windows icon generator and generated `build/icon.ico` for packaged builds.
+- Added an update-manifest signing smoke test that signs, verifies, and rejects a tampered copied manifest with temporary keys.
 
 ## Known Boundaries
 

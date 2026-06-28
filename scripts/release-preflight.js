@@ -84,7 +84,7 @@ function main() {
   const gitignore = readTextIfExists(".gitignore");
   const ciWorkflow = readTextIfExists(".github/workflows/ci.yml");
 
-  ["check", "ci", "icon:generate", "pack:dir", "dist:win", "production:check", "server:check", "server:smoke", "server:test", "integrity:verify", "update:sign"].forEach((scriptName) => {
+  ["check", "ci", "icon:generate", "pack:dir", "dist:win", "production:check", "server:check", "server:smoke", "server:test", "integrity:verify", "update:sign", "update:smoke"].forEach((scriptName) => {
     addIssue(issues, hasScript(packageJson, scriptName), `package.json script is missing: ${scriptName}`);
   });
 
