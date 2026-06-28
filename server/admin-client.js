@@ -24,6 +24,7 @@ function usage() {
   console.log("  node server/admin-client.js subscription [subscriptionId]");
   console.log("  node server/admin-client.js revoke-subscription [subscriptionId] [reason]");
   console.log("  node server/admin-client.js audit-events [limit] [type]");
+  console.log("  node server/admin-client.js analytics");
   console.log("  node server/admin-client.js cleanup");
   console.log("  node server/admin-client.js export-state [outputFile]");
   console.log("  node server/admin-client.js readiness");
@@ -100,6 +101,22 @@ function requestSignedWebhook(body) {
     request.write(payload);
     request.end();
   });
+}
+
+function analyticsPayloadFromSummary(summary) {
+  const websiteEvents = summary && summary.websiteEvents ? summary.websiteEvents : {};
+  return {
+    ok: true,
+    websiteEvents: {
+      total: Number(websiteEvents.total || 0),
+      updatedAt: websiteEvents.updatedAt || "",
+      events: websiteEvents.events || {},
+      versions: websiteEvents.versions || {},
+      channels: websiteEvents.channels || {},
+      statuses: websiteEvents.statuses || {},
+      daily: websiteEvents.daily || {}
+    }
+  };
 }
 
 async function main() {
@@ -254,6 +271,18 @@ async function main() {
     const response = await requestJson(`/v1/admin/audit-events${query}`);
     console.log(JSON.stringify(response.body, null, 2));
     process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
+  if (command === "analytics") {
+    const response = await requestJson("/v1/admin/summary");
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      console.log(JSON.stringify(response.body, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+
+    console.log(JSON.stringify(analyticsPayloadFromSummary(response.body.summary), null, 2));
     return;
   }
 

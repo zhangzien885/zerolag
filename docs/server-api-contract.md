@@ -142,6 +142,12 @@ Success response:
 }
 ```
 
+Admins can inspect aggregate counts with:
+
+```powershell
+npm run server:admin -- analytics
+```
+
 ## POST `/v1/licenses/activate`
 
 Exchanges a member code or payment-issued activation code for a server-backed device license.

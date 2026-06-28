@@ -2,6 +2,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
+const { spawn } = require("child_process");
 const { addActivationCode, createAppServer, loadState, signPaymentWebhook } = require("./index");
 
 function requestJson(port, pathname, body, headers = {}) {
@@ -98,6 +99,32 @@ function sleep(ms) {
   });
 }
 
+function runAdminClient(port, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [path.join(__dirname, "admin-client.js"), ...args], {
+      cwd: path.join(__dirname, ".."),
+      env: {
+        ...process.env,
+        ZEROLAG_ADMIN_API_BASE_URL: `http://127.0.0.1:${port}`,
+        ZEROLAG_ADMIN_SECRET: options.adminSecret || "self-test-admin",
+        ZEROLAG_PAYMENT_WEBHOOK_SECRET: options.paymentWebhookSecret || "self-test-payment"
+      },
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.on("error", reject);
+    child.on("close", (status) => {
+      resolve({ status, stdout, stderr });
+    });
+  });
+}
+
 async function main() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-server-test-"));
   const options = {
@@ -183,6 +210,12 @@ async function main() {
       !JSON.stringify(loadState(options).websiteEvents).includes("downloadPrimary"),
       "Website analytics state must not store raw CTA targets."
     );
+    const adminAnalytics = await runAdminClient(port, ["analytics"]);
+    assert(adminAnalytics.status === 0, `Admin analytics command failed: ${adminAnalytics.stderr || adminAnalytics.stdout}`);
+    const adminAnalyticsBody = JSON.parse(adminAnalytics.stdout);
+    assert(adminAnalyticsBody.websiteEvents.total === 2, "Admin analytics command should expose website event total.");
+    assert(adminAnalyticsBody.websiteEvents.events.download_click === 1, "Admin analytics command should expose download clicks.");
+    assert(adminAnalyticsBody.websiteEvents.events.purchase_click === 1, "Admin analytics command should expose purchase clicks.");
 
     const autoTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-auto-maintenance-test-"));
     const autoOptions = {

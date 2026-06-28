@@ -137,6 +137,7 @@
 - Added a configurable website purchase CTA sourced from production `purchaseUrl`, with publish and smoke-test coverage.
 - Added privacy-safe website CTA analytics sourced from production `analyticsUrl`, with publish and smoke-test coverage.
 - Added a public server endpoint for privacy-safe website CTA analytics that stores aggregate counts only.
+- Added an admin CLI command for viewing aggregate website CTA analytics without exposing user-level data.
 
 ## Known Boundaries
 
