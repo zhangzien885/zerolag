@@ -97,6 +97,11 @@ function main() {
 
   const build = packageJson.build || {};
   addIssue(issues, ciWorkflow.includes("npm run ci"), "GitHub CI workflow must run npm run ci.");
+  addIssue(issues, ciWorkflow.includes("ZEROLAG_STATE_STORE=sqlite"), "GitHub CI strict server sample must exercise SQLite state storage.");
+  addIssue(issues, ciWorkflow.includes("npm run server:migrate-sqlite"), "GitHub CI strict server sample must create a SQLite state file.");
+  addIssue(issues, ciWorkflow.includes("npm run server:backup-sqlite"), "GitHub CI strict server sample must create a SQLite backup.");
+  addIssue(issues, ciWorkflow.includes("npm run server:env-check -- --profile sqlite --strict"), "GitHub CI strict server sample must run strict SQLite env validation.");
+  addIssue(issues, ciWorkflow.includes("npm run server:check-sqlite-backups"), "GitHub CI strict server sample must validate SQLite backups.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:verify", "release:gate", "website:release"), "release:verify must run release:gate before website:release.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:build", "dist:win", "release:verify"), "release:build must build the installer before running release:verify.");
   addIssue(issues, gitignore.includes(".secrets/"), ".gitignore must keep .secrets/ out of Git.");

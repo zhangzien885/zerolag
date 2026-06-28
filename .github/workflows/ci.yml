@@ -29,7 +29,7 @@ jobs:
       - name: Run standard checks
         run: npm run ci
 
-      - name: Run strict server readiness with private env sample
+      - name: Run strict SQLite server readiness with private env sample
         shell: pwsh
         run: |
           $strictRoot = Join-Path $env:RUNNER_TEMP "zerolag-strict"
@@ -37,6 +37,12 @@ jobs:
           $backupDir = Join-Path $strictRoot "backups"
           New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
           New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+          $jsonState = Join-Path $stateDir "server-state.json"
+          $sqliteState = Join-Path $stateDir "server-state.sqlite"
+          $sqliteBackup = Join-Path $backupDir "server-state-backup.sqlite"
+
+          npm run server:migrate-sqlite -- --input $jsonState --output $sqliteState --allow-empty
+          npm run server:backup-sqlite -- --input $sqliteState --output $sqliteBackup
 
           $envFile = Join-Path $strictRoot "server.env"
           @(
@@ -45,13 +51,23 @@ jobs:
             "ZEROLAG_PAYMENT_WEBHOOK_SECRET=zl_payment_ci_abcdefghijklmnopqrstuvwxyz1234567890",
             "ZEROLAG_SERVER_HOST=0.0.0.0",
             "ZEROLAG_SERVER_PORT=8787",
-            "ZEROLAG_SERVER_STATE_PATH=$($stateDir)\server-state.json",
+            "ZEROLAG_SERVER_STATE_PATH=$jsonState",
             "ZEROLAG_SERVER_BACKUP_DIR=$backupDir",
+            "ZEROLAG_STATE_STORE=sqlite",
+            "ZEROLAG_SQLITE_STATE_PATH=$sqliteState",
+            "ZEROLAG_SQLITE_BACKUP_DIR=$backupDir",
+            "ZEROLAG_SQLITE_BACKUP_MAX_AGE_HOURS=24",
+            "ZEROLAG_PAYMENT_PROVIDER=wechat_pay",
+            "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS=wechat_pay",
+            "ZEROLAG_PAYMENT_URL_TEMPLATE=https://pay.zerolag.test/checkout/{orderId}",
+            "ZEROLAG_PAYMENT_MESSAGE=Open the secure checkout page to finish payment.",
             "ZEROLAG_RATE_LIMIT_DISABLED=0",
             "ZEROLAG_SERVER_BACKUP_DISABLED=0",
             "ZEROLAG_MAINTENANCE_DISABLED=0"
           ) | Set-Content -Path $envFile -Encoding UTF8
 
           $env:ZEROLAG_ENV_FILE = $envFile
+          npm run server:env-check -- --profile sqlite --strict
+          npm run server:check-sqlite-backups -- --dir $backupDir --max-age-hours 24
           npm run server:check:strict
           npm run server:smoke

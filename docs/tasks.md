@@ -118,6 +118,7 @@
 - Added automatic private server env-file loading for service startup, admin tools, activation-code creation, and production readiness checks.
 - Added a safe server smoke-test command for checking health and admin readiness with isolated temporary state before deployment.
 - Added GitHub Actions CI for pushes and pull requests, including local verification plus strict server readiness against a temporary private env file.
+- Upgraded GitHub Actions strict server readiness to exercise SQLite state, SQLite backup validation, strict SQLite env checks, and isolated server smoke testing.
 - Added release preflight checks and a release checklist for packaging, signing, update metadata, production config, and strict final gates.
 - Added Electron Builder packaging scripts and Windows NSIS installer configuration, with build-resource guidance for the final Windows icon and signing assets.
 - Added a reproducible ZeroLag Windows icon generator and generated `build/icon.ico` for packaged builds.
