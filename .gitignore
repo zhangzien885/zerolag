@@ -10,3 +10,4 @@ server/data/backups/
 .secrets/
 *.private.pem
 zerolag-state-export-*.json
+ZeroLag-support-*.json

@@ -22,6 +22,7 @@ ZeroLag is a Windows gaming performance optimizer prototype.
 - Keeps running in the Windows tray when the main window is closed; use the tray menu to reopen or fully exit.
 - Provides manual rescan and restore-daily-mode controls from the topbar.
 - Includes a game toolbox button that opens local game library, one-click game launch, network latency check, DNS refresh, and Boost session timer tools.
+- Exports a redacted support diagnostics bundle from the game toolbox for customer support.
 - Includes an official website button with a placeholder URL for the future ZeroLag site.
 - Writes VBS / HVCI / Credential Guard / Hypervisor disable configuration.
 - Does not delete files.

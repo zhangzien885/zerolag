@@ -29,6 +29,9 @@ const els = {
   networkDetail: document.querySelector("#networkDetail"),
   networkCheckButton: document.querySelector("#networkCheckButton"),
   flushDnsButton: document.querySelector("#flushDnsButton"),
+  supportState: document.querySelector("#supportState"),
+  supportDetail: document.querySelector("#supportDetail"),
+  supportBundleButton: document.querySelector("#supportBundleButton"),
   toolboxOverlay: document.querySelector("#toolboxOverlay"),
   closeToolboxButton: document.querySelector("#closeToolboxButton"),
   resultState: document.querySelector("#resultState"),
@@ -687,6 +690,39 @@ els.flushDnsButton.addEventListener("click", async () => {
   } catch {
     setText(els.toolState, "刷新失败");
     addLog("DNS 刷新失败。", "warn");
+  }
+});
+
+els.supportBundleButton.addEventListener("click", async () => {
+  els.supportBundleButton.disabled = true;
+  setText(els.toolState, "生成诊断");
+  setText(els.supportState, "生成中");
+  setText(els.supportDetail, "正在整理版本、会员、权限、系统检测和更新状态。");
+
+  try {
+    const result = await window.zeroLag.createSupportBundle();
+    if (!result || result.canceled) {
+      setText(els.toolState, "待命");
+      setText(els.supportState, "已取消");
+      setText(els.supportDetail, "没有生成文件。需要客服排查时可以重新点击生成。");
+      return;
+    }
+
+    if (!result.ok) {
+      throw new Error("Support bundle failed");
+    }
+
+    setText(els.toolState, "诊断完成");
+    setText(els.supportState, "已生成");
+    setText(els.supportDetail, `诊断文件已保存：${result.fileName || "ZeroLag-support.json"}`);
+    addLog("支持诊断包已生成，可发送给客服排查。", "good");
+  } catch {
+    setText(els.toolState, "诊断失败");
+    setText(els.supportState, "生成失败");
+    setText(els.supportDetail, "诊断文件生成失败，请稍后重试。");
+    addLog("支持诊断包生成失败。", "warn");
+  } finally {
+    els.supportBundleButton.disabled = false;
   }
 });
 

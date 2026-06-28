@@ -868,6 +868,149 @@ function writeGameLibrary(games) {
   fs.writeFileSync(gameLibraryPath(), `${JSON.stringify({ games }, null, 2)}\n`, "utf8");
 }
 
+function safeFileTimestamp(date = new Date()) {
+  return date.toISOString().replace(/[:.]/g, "-");
+}
+
+function maskIdentifier(value) {
+  const text = String(value || "");
+  if (!text) return "";
+  if (text.length <= 10) return `${text.slice(0, 2)}...`;
+  return `${text.slice(0, 6)}...${text.slice(-4)}`;
+}
+
+function supportConfigSnapshot(config) {
+  return {
+    releaseMode: config.releaseMode,
+    releaseChannel: config.releaseChannel,
+    apiConfigured: Boolean(normalizeBaseUrl(config.apiBaseUrl)),
+    websiteConfigured: isHttpUrl(config.websiteUrl),
+    updateManifestConfigured: isHttpUrl(config.updateManifestUrl),
+    updatePublicKeyConfigured: Boolean(normalizePem(config.updatePublicKeyPem)),
+    supportConfigured: isHttpUrl(config.supportUrl),
+    localDemoAllowed: Boolean(config.allowLocalDemoLicense),
+    offlineGraceHours: Number(config.offlineGraceHours || 0)
+  };
+}
+
+function supportLicenseSnapshot(license) {
+  return {
+    active: Boolean(license && license.active),
+    plan: license && license.plan ? license.plan : "",
+    expiresAt: license && license.expiresAt ? license.expiresAt : "",
+    source: license && license.source ? license.source : "none",
+    serverBacked: Boolean(license && license.serverBacked),
+    subscriptionId: maskIdentifier(license && license.subscriptionId),
+    machineBound: Boolean(license && license.machineBound),
+    integrityOk: license ? license.integrityOk !== false : appIntegrityStatus.ok,
+    reason: license && license.reason ? license.reason : ""
+  };
+}
+
+function supportRuntimeSnapshot() {
+  return {
+    boostActive: Boolean(runtimePowerPlanGuid),
+    activatedAt: runtimePowerPlanResult && runtimePowerPlanResult.activatedAt ? runtimePowerPlanResult.activatedAt : "",
+    skippedCount: runtimePowerPlanResult && Array.isArray(runtimePowerPlanResult.skipped) ? runtimePowerPlanResult.skipped.length : 0,
+    errorCode: runtimePowerPlanError ? "RUNTIME_LIMITED" : ""
+  };
+}
+
+function supportUpdateSnapshot(update) {
+  return {
+    current: update.current || "",
+    latest: update.latest || "",
+    updateAvailable: Boolean(update.updateAvailable),
+    force: Boolean(update.force),
+    source: update.source || "",
+    signed: Boolean(update.signed),
+    signatureValid: Boolean(update.signatureValid),
+    error: update.error || update.signatureError || ""
+  };
+}
+
+async function buildSupportDiagnosticPayload() {
+  const config = readAppConfig();
+  const vbs = await getVbsStatus().catch(() => ({ ok: false, enabled: false, status: null }));
+  const diagnostics = await getGamingDiagnostics(vbs).catch(() => null);
+  const license = await readLicenseStatusV2().catch(() => null);
+  const update = await readUpdateStatusV2().catch(() => ({}));
+  const memory = getMemorySnapshot();
+  const games = readGameLibrary();
+
+  return {
+    product: "ZeroLag",
+    supportBundleVersion: 1,
+    createdAt: new Date().toISOString(),
+    app: {
+      version: app.getVersion(),
+      packaged: app.isPackaged,
+      platform: process.platform,
+      arch: process.arch,
+      electron: process.versions.electron || "",
+      node: process.versions.node || ""
+    },
+    config: supportConfigSnapshot(config),
+    integrity: appIntegrityStatus,
+    license: supportLicenseSnapshot(license),
+    permissions: {
+      admin: await isAdmin()
+    },
+    runtime: supportRuntimeSnapshot(),
+    diagnostics: diagnostics ? {
+      readinessScore: diagnostics.readinessScore,
+      cpu: diagnostics.cpu,
+      gpu: Array.isArray(diagnostics.gpu) ? diagnostics.gpu.map((gpu) => ({ name: gpu.name })) : [],
+      memory: diagnostics.memory,
+      windows: diagnostics.windows,
+      suggestions: Array.isArray(diagnostics.suggestions) ? diagnostics.suggestions.slice(0, 4) : []
+    } : null,
+    memory,
+    vbs: {
+      ok: Boolean(vbs.ok),
+      enabled: Boolean(vbs.enabled),
+      status: vbs.status ?? null
+    },
+    update: supportUpdateSnapshot(update),
+    gameLibrary: {
+      count: games.length
+    }
+  };
+}
+
+async function createSupportBundle() {
+  const defaultPath = path.join(app.getPath("desktop"), `ZeroLag-support-${safeFileTimestamp()}.json`);
+  const result = await dialog.showSaveDialog(mainWindow || undefined, {
+    title: "导出 ZeroLag 支持诊断包",
+    defaultPath,
+    filters: [
+      { name: "JSON", extensions: ["json"] }
+    ]
+  });
+
+  if (result.canceled || !result.filePath) {
+    return {
+      ok: false,
+      canceled: true
+    };
+  }
+
+  const payload = await buildSupportDiagnosticPayload();
+  fs.mkdirSync(path.dirname(result.filePath), { recursive: true });
+  fs.writeFileSync(result.filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+  return {
+    ok: true,
+    filePath: result.filePath,
+    fileName: path.basename(result.filePath),
+    summary: {
+      licenseActive: payload.license.active,
+      admin: payload.permissions.admin,
+      boostActive: payload.runtime.boostActive,
+      readinessScore: payload.diagnostics ? payload.diagnostics.readinessScore : null
+    }
+  };
+}
+
 async function addGameToLibrary() {
   const result = await dialog.showOpenDialog(mainWindow || undefined, {
     title: "添加常用游戏",
@@ -2003,6 +2146,7 @@ app.whenReady().then(async () => {
   ipcMain.handle("zerolag:launch-game", async (_event, id) => launchGame(String(id || "")));
   ipcMain.handle("zerolag:get-network-diagnostics", async () => getNetworkDiagnostics());
   ipcMain.handle("zerolag:flush-dns", async () => flushDnsCache());
+  ipcMain.handle("zerolag:create-support-bundle", async () => createSupportBundle());
   ipcMain.handle("zerolag:get-app-config", async () => {
     const config = readAppConfig();
     return {
