@@ -25,6 +25,7 @@ ZeroLag is a Windows gaming performance optimizer prototype.
 - Exports a redacted support diagnostics bundle from the game toolbox for customer support.
 - Keeps a local redacted support log so diagnostics include recent user-facing events without activation codes, tokens, paths, or tuning details.
 - Opens a configured official support page from the game toolbox for customer help and diagnostics handoff.
+- Shows membership expiry and renewal guidance before Pro access runs out.
 - Includes an official website button with a placeholder URL for the future ZeroLag site.
 - Writes VBS / HVCI / Credential Guard / Hypervisor disable configuration.
 - Does not delete files.

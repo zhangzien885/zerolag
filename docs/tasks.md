@@ -16,6 +16,7 @@
 - Startup orphan cleanup for stale runtime sessions.
 - Local monthly membership prototype with signed license and machine binding.
 - Membership purchase and activation UI.
+- Membership expiry and renewal guidance in the desktop membership center.
 - Administrator relaunch prompt on normal startup.
 - VBS / HVCI / Credential Guard / Hypervisor disable flow.
 - Windows gaming optimizations: Game Mode, Game DVR/background capture off, fullscreen interference reduction, power throttling off, game scheduling priority, GPU scheduling preference.
@@ -107,6 +108,7 @@
 - Added customer-support diagnostics bundle export from the desktop toolbox with redacted membership and runtime details.
 - Added redacted support-event logging so exported diagnostics include recent user-facing operation history without sensitive codes or implementation details.
 - Added a configurable official support/contact link in the desktop toolbox and production readiness checks for `supportUrl`.
+- Added membership expiry and renewal guidance so users see remaining Pro time before access runs out.
 
 ## Known Boundaries
 

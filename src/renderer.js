@@ -41,6 +41,7 @@ const els = {
   expiresAt: document.querySelector("#expiresAt"),
   planName: document.querySelector("#planName"),
   planPrice: document.querySelector("#planPrice"),
+  renewHint: document.querySelector("#renewHint"),
   deviceState: document.querySelector("#deviceState"),
   boostSummary: document.querySelector("#boostSummary"),
   boostButton: document.querySelector("#boostButton"),
@@ -131,6 +132,44 @@ function formatDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "未激活";
   return date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" });
+}
+
+function membershipExpiryInfo(value) {
+  if (!value) return null;
+  const expiresAt = new Date(value).getTime();
+  if (Number.isNaN(expiresAt)) return null;
+
+  const msLeft = expiresAt - Date.now();
+  const daysLeft = Math.ceil(msLeft / 86400000);
+  if (daysLeft <= 0) {
+    return {
+      state: "expired",
+      priceLabel: "已到期",
+      hint: "会员已到期，续费后即可继续使用一键加速。"
+    };
+  }
+
+  if (daysLeft <= 3) {
+    return {
+      state: "expiring",
+      priceLabel: `剩余 ${daysLeft} 天`,
+      hint: `会员还剩 ${daysLeft} 天，提前续费可保持 Pro 权益不中断。`
+    };
+  }
+
+  if (daysLeft <= 7) {
+    return {
+      state: "notice",
+      priceLabel: `剩余 ${daysLeft} 天`,
+      hint: `会员还剩 ${daysLeft} 天，建议提前续费避免影响开局加速。`
+    };
+  }
+
+  return {
+    state: "active",
+    priceLabel: "权益正常",
+    hint: "Pro 权益正常，可随时续费延长有效期。"
+  };
 }
 
 function formatDuration(totalSeconds) {
@@ -289,6 +328,9 @@ async function refreshStatus() {
     const runtimeReady = Boolean(status.runtimePowerPlan);
     const licenseActive = Boolean(status.license && status.license.active);
     const integrityOk = !status.license || status.license.integrityOk !== false;
+    const expiryInfo = membershipExpiryInfo(status.license && status.license.expiresAt);
+    const expiredLicense = !licenseActive && expiryInfo && expiryInfo.state === "expired";
+    const memberAlert = (licenseActive || expiredLicense) && expiryInfo && (expiryInfo.state === "expiring" || expiryInfo.state === "expired");
 
     setPill(els.licenseState, licenseActive ? "Pro 已启用" : (integrityOk ? "待激活" : "授权异常"), licenseActive ? "good" : "warn");
     setPill(els.adminState, status.admin ? "权限就绪" : "权限待启用", status.admin ? "good" : "warn");
@@ -298,11 +340,14 @@ async function refreshStatus() {
     els.restoreButton.disabled = !runtimeReady;
     setText(els.activePlan, runtimeReady ? "已启用" : "待启用");
     setText(els.readyState, licenseActive ? (runtimeReady ? "加速中" : "待处理") : "等待授权");
-    setText(els.memberState, licenseActive ? "Pro 已启用" : (integrityOk ? "未授权" : "授权异常"));
+    setText(els.memberState, expiredLicense ? "已到期" : (licenseActive ? (memberAlert ? "即将到期" : "Pro 已启用") : (integrityOk ? "未授权" : "授权异常")));
     els.memberCard.classList.toggle("active", licenseActive);
+    els.memberCard.classList.toggle("expiring", licenseActive && expiryInfo && expiryInfo.state === "expiring");
+    els.memberCard.classList.toggle("expired", expiredLicense || (licenseActive && expiryInfo && expiryInfo.state === "expired"));
     setText(els.expiresAt, formatDate(status.license && status.license.expiresAt));
     setText(els.planName, licenseActive ? status.license.plan : "ZeroLag Pro 月度");
-    setText(els.planPrice, licenseActive ? "已激活" : "¥30 / 月");
+    setText(els.planPrice, expiredLicense ? "续费恢复" : (licenseActive ? (expiryInfo ? expiryInfo.priceLabel : "已激活") : "¥30 / 月"));
+    setText(els.renewHint, expiredLicense ? expiryInfo.hint : (licenseActive ? (expiryInfo ? expiryInfo.hint : "Pro 权益正常，可随时续费延长有效期。") : "开通后即可解锁一键加速与会员工具。"));
     setText(els.deviceState, licenseActive ? "本机已绑定" : (integrityOk ? "等待绑定" : "安全校验失败"));
     setText(els.boostButtonText, licenseActive ? "启动 ZeroLag Boost" : (integrityOk ? "购买 ZeroLag Pro" : "授权环境异常"));
     setText(els.boostButtonHint, licenseActive ? "PERFORMANCE MODE + VBS OFF" : (integrityOk ? "UNLOCK PERFORMANCE MODE" : "CLIENT PROTECTION"));

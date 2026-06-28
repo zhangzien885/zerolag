@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T02:16:59.873Z",
+  "generatedAt": "2026-06-28T02:21:39.162Z",
   "files": [
     {
       "path": "package.json",
@@ -16,7 +16,7 @@
     },
     {
       "path": "src/index.html",
-      "sha256": "23983e1049a676f92578555a95e5eadf760a3174968e96f5301a9b2c5e843895"
+      "sha256": "c13697ff10576550fbbfa8a77d4a9ab928fc73ffc4ba0d7e3e013cdbc43fe6bc"
     },
     {
       "path": "src/splash.html",
@@ -24,11 +24,11 @@
     },
     {
       "path": "src/renderer.js",
-      "sha256": "3dd747794c60873b5beabc7359d183b85e6b742bb8b2b62c16fd3e926228adc3"
+      "sha256": "77485a36d4a60b42a7ce46ab8d40cb8c5020c9aa97a3d6e1a9baa123dc180c7c"
     },
     {
       "path": "src/styles.css",
-      "sha256": "7bb0a5d799781d4e51559661d6716e78004e584e13e93b85ee8659ef7246ca67"
+      "sha256": "9356fca8c15b179a2a9be5e4c6f41cbf977a3376394e61a455d9e52374aa002b"
     },
     {
       "path": "scripts/runtime-watchdog.js",
@@ -55,5 +55,5 @@
       "sha256": "03088e08120ee7508d175a61b3b6f66ee31a657ec592adfd60e5f352f890fc6d"
     }
   ],
-  "signature": "7ab7cf6889fb4024af94599b41238776d61309dbd83a84c5b6b84f9bd4d3a1d5"
+  "signature": "85d8c4d4f17fb2a64d7ab80d93686812e73dde917ce0f601c27313a4fb46e317"
 }

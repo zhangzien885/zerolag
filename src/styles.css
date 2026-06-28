@@ -1162,6 +1162,16 @@ body.ready-mid .metric-rail {
   background: linear-gradient(135deg, rgba(167, 255, 90, 0.1), rgba(255, 255, 255, 0.025));
 }
 
+.member-card.expiring {
+  border-color: rgba(255, 189, 89, 0.42);
+  background: linear-gradient(135deg, rgba(255, 189, 89, 0.12), rgba(255, 255, 255, 0.025));
+}
+
+.member-card.expired {
+  border-color: rgba(255, 95, 87, 0.42);
+  background: linear-gradient(135deg, rgba(255, 95, 87, 0.11), rgba(255, 255, 255, 0.025));
+}
+
 .member-card span,
 .member-facts span {
   display: block;
@@ -1182,11 +1192,29 @@ body.ready-mid .metric-rail {
   white-space: nowrap;
 }
 
+.member-card.expiring b {
+  color: var(--amber);
+}
+
+.member-card.expired b {
+  color: var(--red);
+}
+
 .member-facts {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 10px;
+}
+
+.renew-hint {
+  border: 1px solid rgba(196, 255, 220, 0.1);
+  background: rgba(167, 255, 90, 0.045);
+  color: var(--muted);
+  margin: 0 0 10px;
+  padding: 9px 10px;
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .member-facts div {
