@@ -5,7 +5,7 @@ This report is designed for private deployment review and never prints secret va
 
 ## Snapshot
 
-- Generated at: `2026-06-28T12:10:50.015Z`
+- Generated at: `2026-06-28T12:20:36.342Z`
 - App version: `0.1.0`
 - App mode: `development`
 - Release channel: `alpha`
@@ -20,6 +20,16 @@ This report is designed for private deployment review and never prints secret va
 - Payment: `provider setup incomplete`
 - Public links: `production URLs incomplete`
 - Runtime safety: `guards enabled`
+
+## Strict Gate Details
+
+- [ ] Private env file passes validation - 1 issue(s), 0 warning(s)
+- [ ] SQLite storage and backup paths are configured - stateStore=json
+- [ ] Payment provider is no longer local manual mode - provider=manual
+- [ ] Payment provider allowlist excludes test webhook providers - 5 provider(s)
+- [ ] Checkout URL template is configured - placeholder or missing
+- [ ] Public website, purchase, API, update, and support URLs are production HTTPS - one or more URLs are missing/placeholders
+- [x] Rate limit, backup, and maintenance guards are enabled - enabled
 
 ## Env Check
 
@@ -67,6 +77,7 @@ This report is designed for private deployment review and never prints secret va
 
 ```powershell
 npm run server:deployment-report
+npm run server:deployment-report:strict
 npm run server:env-check -- --profile sqlite --strict
 npm run server:check:strict
 npm run server:smoke

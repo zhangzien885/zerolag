@@ -89,6 +89,14 @@ npm run server:deployment-report
 
 The report writes `docs/server-deployment-report.generated.md` by default and summarizes env validation, storage, backup, payment, update, and public endpoint readiness. It does not print secret values, activation codes, subscription tokens, or full external paths.
 
+Use strict mode as a release gate after the real private env file, payment provider, and production URLs are configured:
+
+```powershell
+npm run server:deployment-report:strict
+```
+
+Strict mode still writes the report, but returns a failing exit code until every deployment gate is ready.
+
 ## Create A Test Code
 
 ```powershell

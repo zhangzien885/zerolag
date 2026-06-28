@@ -362,6 +362,20 @@ async function main() {
     assert(deploymentReportBody.includes("State store from env: `sqlite`"), "Server deployment report should summarize env storage.");
     assert(deploymentReportBody.includes("Payment provider from env:"), "Server deployment report should summarize payment readiness.");
     assert(!deploymentReportBody.includes("zl_server_"), "Server deployment report must not expose generated secret values.");
+    const strictDeploymentReportPath = path.join(tempDir, "server-deployment-report-strict.md");
+    const strictDeploymentReport = await runNodeScript("scripts/generate-server-deployment-report.js", [
+      "--strict",
+      "--output",
+      strictDeploymentReportPath
+    ], {
+      env: {
+        ZEROLAG_ENV_FILE: sqliteEnvPath
+      }
+    });
+    assert(strictDeploymentReport.status === 1, "Strict server deployment report should fail while production URLs are not configured.");
+    assert(fs.existsSync(strictDeploymentReportPath), "Strict server deployment report should still write a Markdown file.");
+    assert(strictDeploymentReport.stderr.includes("strict gate failed"), "Strict server deployment report should explain that a gate failed.");
+    assert(!fs.readFileSync(strictDeploymentReportPath, "utf8").includes("zl_server_"), "Strict server deployment report must not expose generated secret values.");
     const refusedEnvOverwrite = await runNodeScript("scripts/generate-server-secrets.js", [
       "--write",
       sqliteEnvPath

@@ -7,6 +7,7 @@ Generate the current machine-readable checklist first:
 ```powershell
 npm run deploy:checklist
 npm run server:deployment-report
+npm run server:deployment-report:strict
 ```
 
 ## 1. Desktop Release Config
@@ -22,6 +23,7 @@ npm run server:deployment-report
 - For SQLite paid testing, generate the private env template with `npm run server:secrets -- --profile sqlite --write`.
 - Run `npm run server:env-check -- --profile sqlite`; `npm run server:check:strict` also repeats this redacted env-file validation.
 - Run `npm run server:deployment-report` to generate a private deployment summary for env, storage, payment, update, and public endpoint readiness without printing secret values.
+- Run `npm run server:deployment-report:strict` before a paid public release; it fails when production env, storage, payment, URLs, or runtime guards are not ready.
 - Keep `.secrets/server.env` private and outside Git.
 - If migrating existing JSON state, run `npm run server:migrate-sqlite -- --input <json> --output <sqlite>` before enabling SQLite mode.
 - After migration, run `npm run server:backup-sqlite -- --input <sqlite> --output <sqlite-backup>` and keep the backup private.
