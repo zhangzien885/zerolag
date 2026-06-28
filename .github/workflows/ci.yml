@@ -44,11 +44,15 @@ jobs:
           npm run server:migrate-sqlite -- --input $jsonState --output $sqliteState --allow-empty
           npm run server:backup-sqlite -- --input $sqliteState --output $sqliteBackup
 
+          $runtimeSessionPrivateKeyB64 = node -e "const crypto=require('crypto'); const { privateKey }=crypto.generateKeyPairSync('rsa',{modulusLength:2048}); process.stdout.write(Buffer.from(privateKey.export({type:'pkcs8',format:'pem'})).toString('base64'));"
           $envFile = Join-Path $strictRoot "server.env"
           @(
             "ZEROLAG_SERVER_SECRET=zl_server_ci_abcdefghijklmnopqrstuvwxyz1234567890",
             "ZEROLAG_ADMIN_SECRET=zl_admin_ci_abcdefghijklmnopqrstuvwxyz1234567890",
             "ZEROLAG_PAYMENT_WEBHOOK_SECRET=zl_payment_ci_abcdefghijklmnopqrstuvwxyz1234567890",
+            "ZEROLAG_RUNTIME_SESSION_KEY_VERSION=runtime-session-v1",
+            "ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM=RSA-SHA256",
+            "ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64=$runtimeSessionPrivateKeyB64",
             "ZEROLAG_SERVER_HOST=0.0.0.0",
             "ZEROLAG_SERVER_PORT=8787",
             "ZEROLAG_SERVER_STATE_PATH=$jsonState",

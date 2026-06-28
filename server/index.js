@@ -21,6 +21,7 @@ const defaultAdminSecret = "zerolag-dev-admin-secret-change-before-production";
 const defaultPaymentWebhookSecret = "zerolag-dev-payment-webhook-secret-change-before-production";
 const defaultPaymentProvider = "manual";
 const defaultRuntimeSessionKeyVersion = "runtime-session-v1";
+const defaultRuntimeSessionProofAlgorithm = "HMAC-SHA256";
 const defaultPaymentAllowedProviders = [
   "manual",
   "manual-admin",
@@ -152,6 +153,55 @@ function runtimeSessionKeyVersionFromOptions(options = {}) {
     .replace(/[^a-zA-Z0-9_.-]/g, "_")
     .slice(0, 64);
   return value || defaultRuntimeSessionKeyVersion;
+}
+
+function normalizeRuntimeSessionProofAlgorithm(value) {
+  const normalized = String(value || defaultRuntimeSessionProofAlgorithm)
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized === "RSA-SHA256" ? "RSA-SHA256" : defaultRuntimeSessionProofAlgorithm;
+}
+
+function decodeRuntimeSessionPrivateKey(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  return raw.replace(/\\n/g, "\n");
+}
+
+function decodeRuntimeSessionPrivateKeyBase64(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  try {
+    return Buffer.from(raw, "base64").toString("utf8").replace(/\\n/g, "\n").trim();
+  } catch {
+    return "";
+  }
+}
+
+function runtimeSessionPrivateKeyPemFromOptions(options = {}) {
+  const input = options.runtimeSession || {};
+  return decodeRuntimeSessionPrivateKey(
+    input.privateKeyPem || process.env.ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_PEM
+  ) || decodeRuntimeSessionPrivateKeyBase64(
+    input.privateKeyBase64
+      || input.privateKeyB64
+      || process.env.ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64
+  );
+}
+
+function runtimeSessionProofConfigFromOptions(options = {}) {
+  const input = options.runtimeSession || {};
+  const algorithm = normalizeRuntimeSessionProofAlgorithm(
+    input.proofAlgorithm || input.algorithm || process.env.ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM
+  );
+
+  return {
+    algorithm,
+    privateKeyPem: runtimeSessionPrivateKeyPemFromOptions(options)
+  };
 }
 
 function paymentProviderAllowed(provider, options = {}) {
@@ -738,7 +788,9 @@ function serverReadiness(options = {}) {
       paymentUrlConfigured: payment.urlTemplate !== defaultPaymentUrlTemplate
     },
     runtimeSession: {
-      keyVersion: runtimeSessionKeyVersionFromOptions(options)
+      keyVersion: runtimeSessionKeyVersionFromOptions(options),
+      proofAlgorithm: runtimeSessionProofConfigFromOptions(options).algorithm,
+      asymmetricProofConfigured: Boolean(runtimeSessionPrivateKeyPemFromOptions(options))
     },
     warnings
   };
@@ -1025,13 +1077,14 @@ function issueToken(state, subscription, options = {}) {
 
 function rotateSubscriptionRuntimeSession(subscription, input = {}, options = {}) {
   const now = nowIso();
+  const proofConfig = runtimeSessionProofConfigFromOptions(options);
   subscription.runtimeSessionId = randomId("rsess");
   subscription.runtimeSessionIssuedAt = now;
   subscription.runtimeSessionRotatedAt = now;
   subscription.runtimeSessionRotateReason = String(input.reason || "validation").slice(0, 64);
   subscription.runtimeSessionKeyVersion = runtimeSessionKeyVersionFromOptions(options);
   subscription.runtimeSessionRevision = Number(subscription.runtimeSessionRevision || 0) + 1;
-  subscription.runtimeSessionProofAlgorithm = "HMAC-SHA256";
+  subscription.runtimeSessionProofAlgorithm = proofConfig.algorithm;
   subscription.runtimeSessionProof = signRuntimeSessionProof(subscription, options);
 
   return {
@@ -1054,7 +1107,20 @@ function runtimeSessionProofBody(subscription) {
 }
 
 function signRuntimeSessionProof(subscription, options = {}) {
-  return `sha256=${hmac(serverSecretFromOptions(options), runtimeSessionProofBody(subscription))}`;
+  const proofConfig = runtimeSessionProofConfigFromOptions(options);
+  const body = runtimeSessionProofBody(subscription);
+  if (proofConfig.algorithm === "RSA-SHA256") {
+    if (!proofConfig.privateKeyPem) {
+      throw new Error("ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_PEM or ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64 is required for RSA-SHA256 runtime session proofs.");
+    }
+
+    const signer = crypto.createSign("RSA-SHA256");
+    signer.update(body);
+    signer.end();
+    return `rsa-sha256=${signer.sign(proofConfig.privateKeyPem).toString("base64url")}`;
+  }
+
+  return `sha256=${hmac(serverSecretFromOptions(options), body)}`;
 }
 
 function invalidateSubscriptionTokens(state, subscriptionId) {
@@ -1100,7 +1166,7 @@ function successLicensePayload(subscription, token) {
     sessionId: subscription.runtimeSessionId || "",
     runtimeSessionKeyVersion: subscription.runtimeSessionKeyVersion || defaultRuntimeSessionKeyVersion,
     runtimeSessionRevision: Number(subscription.runtimeSessionRevision || 0),
-    runtimeSessionProofAlgorithm: subscription.runtimeSessionProofAlgorithm || "HMAC-SHA256",
+    runtimeSessionProofAlgorithm: subscription.runtimeSessionProofAlgorithm || defaultRuntimeSessionProofAlgorithm,
     runtimeSessionProof: subscription.runtimeSessionProof || ""
   };
 }

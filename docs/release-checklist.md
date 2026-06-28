@@ -25,6 +25,7 @@ npm run server:deployment-report:strict
 - For SQLite paid testing, generate the private env template with `npm run server:secrets -- --profile sqlite --write`.
 - Run `npm run server:env-check -- --profile sqlite`; `npm run server:check:strict` also repeats this redacted env-file validation.
 - Confirm `ZEROLAG_RUNTIME_SESSION_KEY_VERSION` is present in the private env file and matches the runtime-session signing strategy for this release.
+- Confirm `ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM=RSA-SHA256` before paid public release, with `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64` or `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_PEM` stored only on the server.
 - Run `npm run server:deployment-report:smoke` to verify Markdown, JSON, strict failure behavior, and redaction before trusting deployment reports.
 - Run `npm run server:deployment-report` to generate a private deployment summary for env, storage, payment, update, and public endpoint readiness without printing secret values.
 - Run `npm run server:deployment-report:json` when CI, deployment scripts, or private dashboards need a machine-readable readiness result.

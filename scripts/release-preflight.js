@@ -108,6 +108,8 @@ function main() {
   const build = packageJson.build || {};
   addIssue(issues, ciWorkflow.includes("npm run ci"), "GitHub CI workflow must run npm run ci.");
   addIssue(issues, ciWorkflow.includes("ZEROLAG_STATE_STORE=sqlite"), "GitHub CI strict server sample must exercise SQLite state storage.");
+  addIssue(issues, ciWorkflow.includes("ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM=RSA-SHA256"), "GitHub CI strict server sample must exercise RSA runtime session proofs.");
+  addIssue(issues, ciWorkflow.includes("ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64"), "GitHub CI strict server sample must configure a runtime session RSA private key.");
   addIssue(issues, ciWorkflow.includes("npm run server:migrate-sqlite"), "GitHub CI strict server sample must create a SQLite state file.");
   addIssue(issues, ciWorkflow.includes("npm run server:backup-sqlite"), "GitHub CI strict server sample must create a SQLite backup.");
   addIssue(issues, ciWorkflow.includes("npm run server:env-check -- --profile sqlite --strict"), "GitHub CI strict server sample must run strict SQLite env validation.");

@@ -129,6 +129,7 @@ Start the server, then create a code through the admin API:
 ```powershell
 $env:ZEROLAG_ADMIN_SECRET="change-this-before-production"
 $env:ZEROLAG_RUNTIME_SESSION_KEY_VERSION="runtime-session-v1"
+$env:ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM="HMAC-SHA256"
 npm run server:admin -- create-code ZL-PRO-TEST-002 30 1
 npm run server:admin -- orders
 npm run server:admin -- complete-latest manual_trade_id
@@ -198,6 +199,8 @@ $env:ZEROLAG_TRUST_PROXY="0"
 Keep rate limiting enabled in production, and add edge protection through the hosting provider or reverse proxy before public release. Set `ZEROLAG_TRUST_PROXY=1` only when your reverse proxy overwrites client IP headers safely.
 
 `ZEROLAG_RUNTIME_SESSION_KEY_VERSION` is a safe deployment label returned with server-issued runtime sessions. Increase it when rotating the runtime-session signing strategy so desktop clients and support reports can identify which version authorized a Boost session.
+
+`ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM` defaults to `HMAC-SHA256` for local development. Before a paid public release, set it to `RSA-SHA256` and provide the private key only on the server through `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64` or `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_PEM`. Do not ship, log, or commit the RSA private key.
 
 Successful activation and validation responses also include a `runtimeSessionProof` bound to the current subscription, device, expiry, session ID, key version, and revision. The desktop client stores it inside the signed runtime-session file for the guard layer; admin summaries and subscription lists intentionally do not expose the raw proof.
 
@@ -320,6 +323,7 @@ For a paid release:
 - Use a strong `ZEROLAG_SERVER_SECRET`.
 - Use a strong `ZEROLAG_ADMIN_SECRET`.
 - Use a strong `ZEROLAG_PAYMENT_WEBHOOK_SECRET`.
+- Configure `ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM=RSA-SHA256` and keep the runtime-session private key on the server only.
 - Configure `ZEROLAG_PAYMENT_PROVIDER`, `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS`, and `ZEROLAG_PAYMENT_URL_TEMPLATE` for the real payment provider.
 - Keep rate limiting enabled and add reverse-proxy protection for public traffic.
 - Keep server state backups enabled until JSON state is replaced by a real database.

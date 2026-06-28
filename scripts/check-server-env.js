@@ -40,6 +40,14 @@ function normalizePaymentProvider(value) {
     .replace(/[^a-z0-9_-]/g, "_");
 }
 
+function normalizeRuntimeSessionProofAlgorithm(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function paymentProviderList(value) {
   return String(value || "")
     .split(",")
@@ -63,6 +71,24 @@ function isDisabled(value) {
 
 function isSafeKeyVersion(value) {
   return /^[a-zA-Z0-9_.-]{3,64}$/.test(String(value || "").trim());
+}
+
+function decodePrivateKeyText(entries) {
+  const pem = value(entries, "ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_PEM", "").trim();
+  if (pem) return pem.replace(/\\n/g, "\n");
+
+  const encoded = value(entries, "ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64", "").trim();
+  if (!encoded) return "";
+
+  try {
+    return Buffer.from(encoded, "base64").toString("utf8").trim();
+  } catch {
+    return "";
+  }
+}
+
+function looksLikePrivateKey(value) {
+  return /-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(String(value || ""));
 }
 
 function readEnvFile(filePath) {
@@ -108,11 +134,15 @@ function inspect(entries, profile) {
   const paymentAllowedProviders = paymentProviderList(value(entries, "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS", ""));
   const paymentUrlTemplate = value(entries, "ZEROLAG_PAYMENT_URL_TEMPLATE", "");
   const runtimeSessionKeyVersion = value(entries, "ZEROLAG_RUNTIME_SESSION_KEY_VERSION", "");
+  const runtimeSessionProofAlgorithm = normalizeRuntimeSessionProofAlgorithm(value(entries, "ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM", ""));
+  const runtimeSessionPrivateKeyText = decodePrivateKeyText(entries);
+  const runtimeSessionAsymmetricProofConfigured = Boolean(runtimeSessionPrivateKeyText);
   const required = [
     "ZEROLAG_SERVER_SECRET",
     "ZEROLAG_ADMIN_SECRET",
     "ZEROLAG_PAYMENT_WEBHOOK_SECRET",
     "ZEROLAG_RUNTIME_SESSION_KEY_VERSION",
+    "ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM",
     "ZEROLAG_SERVER_HOST",
     "ZEROLAG_SERVER_PORT",
     "ZEROLAG_STATE_STORE",
@@ -144,6 +174,17 @@ function inspect(entries, profile) {
   addIssue(issues, isStrongSecret(value(entries, "ZEROLAG_ADMIN_SECRET"), defaultAdminSecret), "ZEROLAG_ADMIN_SECRET must be a custom strong secret.");
   addIssue(issues, isStrongSecret(value(entries, "ZEROLAG_PAYMENT_WEBHOOK_SECRET"), defaultPaymentWebhookSecret), "ZEROLAG_PAYMENT_WEBHOOK_SECRET must be a custom strong secret.");
   addIssue(issues, isSafeKeyVersion(runtimeSessionKeyVersion), "ZEROLAG_RUNTIME_SESSION_KEY_VERSION must be 3-64 safe characters.");
+  addIssue(issues, ["HMAC-SHA256", "RSA-SHA256"].includes(runtimeSessionProofAlgorithm), "ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM must be HMAC-SHA256 or RSA-SHA256.");
+  addIssue(
+    issues,
+    runtimeSessionProofAlgorithm !== "RSA-SHA256" || runtimeSessionAsymmetricProofConfigured,
+    "ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_PEM or ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64 is required when runtime session proof algorithm is RSA-SHA256."
+  );
+  addIssue(
+    issues,
+    runtimeSessionProofAlgorithm !== "RSA-SHA256" || looksLikePrivateKey(runtimeSessionPrivateKeyText),
+    "Runtime session RSA private key must be a PEM private key."
+  );
   addIssue(issues, !isDisabled(value(entries, "ZEROLAG_RATE_LIMIT_DISABLED")), "ZEROLAG_RATE_LIMIT_DISABLED must not be 1.");
   addIssue(issues, !isDisabled(value(entries, "ZEROLAG_SERVER_BACKUP_DISABLED")), "ZEROLAG_SERVER_BACKUP_DISABLED must not be 1.");
   addIssue(issues, !isDisabled(value(entries, "ZEROLAG_MAINTENANCE_DISABLED")), "ZEROLAG_MAINTENANCE_DISABLED must not be 1.");
@@ -151,6 +192,7 @@ function inspect(entries, profile) {
 
   addIssue(warnings, paymentProvider !== defaultPaymentProvider, "Payment provider is still manual.");
   addIssue(warnings, paymentUrlTemplate && paymentUrlTemplate !== defaultPaymentUrlTemplate, "Payment URL template is still the local placeholder.");
+  addIssue(warnings, runtimeSessionProofAlgorithm !== "HMAC-SHA256", "Runtime session proof algorithm is still HMAC-SHA256; RSA-SHA256 is recommended before paid public release.");
   addIssue(
     warnings,
     !paymentAllowedProviders.some((provider) => testPaymentProviders.has(provider)),
@@ -172,6 +214,8 @@ function inspect(entries, profile) {
       paymentProvider,
       paymentAllowedProviderCount: paymentAllowedProviders.length,
       runtimeSessionKeyVersion,
+      runtimeSessionProofAlgorithm,
+      runtimeSessionAsymmetricProofConfigured,
       rateLimitEnabled: !isDisabled(value(entries, "ZEROLAG_RATE_LIMIT_DISABLED")),
       backupsEnabled: !isDisabled(value(entries, "ZEROLAG_SERVER_BACKUP_DISABLED")),
       maintenanceEnabled: !isDisabled(value(entries, "ZEROLAG_MAINTENANCE_DISABLED"))

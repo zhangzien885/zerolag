@@ -5,7 +5,7 @@ This report is designed for private deployment review and never prints secret va
 
 ## Snapshot
 
-- Generated at: `2026-06-28T12:29:56.416Z`
+- Generated at: `2026-06-28T16:56:28.357Z`
 - Report JSON: `npm run server:deployment-report:json`
 - App version: `0.1.0`
 - App mode: `development`
@@ -56,6 +56,9 @@ This report is designed for private deployment review and never prints secret va
 - Rate limiting enabled: `yes`
 - State backups enabled: `yes`
 - Automatic maintenance enabled: `yes`
+- Runtime session key version: `runtime-session-v1`
+- Runtime session proof algorithm: `HMAC-SHA256`
+- Runtime session asymmetric proof configured: `no`
 
 ## Payment And Membership
 

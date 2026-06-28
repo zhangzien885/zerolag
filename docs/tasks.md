@@ -69,7 +69,7 @@
 - Replace local demo license with server-side account, device, and subscription validation. First client contract and client-side integration seam are in place.
 - Implement the native Windows Service wrapper executable as the primary runtime tuning cleanup layer. Electron worker mode, service manifest, service worker, install/uninstall scripts, packaging resources, and smoke checks are in place.
 - Wire the installer to invoke the Task Scheduler fallback after a real service-install failure. Fallback scripts, manifest entries, packaging resources, gated NSIS hook, and smoke checks are in place.
-- Harden signed runtime sessions with server-issued session IDs and key rotation. Server-issued runtime session IDs, key-version labels, and HMAC proofs are in place; externally verifiable runtime session key material is still required.
+- Harden signed runtime sessions with server-issued session IDs and key rotation. Server-issued runtime session IDs, key-version labels, HMAC proofs, and configurable server-side RSA proofs are in place; native guard public-key verification and full production key rotation are still required.
 - Clean runtime tuning after app force kill, crash, logout, restart, subscription expiry, integrity failure, or server authorization failure.
 - Add visible uninstall flow that removes service/task and restores the original power plan.
 - Add payment integration for WeChat Pay / Alipay or another provider.
@@ -128,6 +128,7 @@
 - Added installer-managed Task Scheduler fallback assets with logon/periodic triggers, explicit registration gating, packaging resources, and smoke checks.
 - Added a gated NSIS installer guard hook that tries visible Windows Service registration first, falls back to the visible Task Scheduler guard on failure, and removes guard entries during uninstall when explicitly enabled.
 - Added server-issued runtime session IDs, runtime session revision tracking, configurable runtime session key-version labels, server HMAC runtime-session proofs, desktop runtime-session wiring, and guard smoke coverage for v2 signed runtime sessions.
+- Added configurable runtime-session proof signing so development can keep HMAC while paid release environments can issue server-only RSA-SHA256 runtime-session proofs without exposing private key material to the desktop client.
 - Added release preflight checks and a release checklist for packaging, signing, update metadata, production config, and strict final gates.
 - Added Electron Builder packaging scripts and Windows NSIS installer configuration, with build-resource guidance for the final Windows icon and signing assets.
 - Added a reproducible ZeroLag Windows icon generator and generated `build/icon.ico` for packaged builds.

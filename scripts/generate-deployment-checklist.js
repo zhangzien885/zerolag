@@ -60,6 +60,14 @@ function paymentProviderList(value) {
     .filter(Boolean);
 }
 
+function normalizeRuntimeSessionProofAlgorithm(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "HMAC-SHA256";
+}
+
 function checkbox(done, label, detail = "") {
   return `- [${done ? "x" : " "}] ${label}${detail ? ` - ${detail}` : ""}`;
 }
@@ -86,6 +94,11 @@ function buildChecklist() {
     "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS",
     "manual,manual-admin,manual-signed-webhook,signed-webhook,self-test"
   ));
+  const runtimeSessionProofAlgorithm = normalizeRuntimeSessionProofAlgorithm(env("ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM", "HMAC-SHA256"));
+  const runtimeSessionAsymmetricProofConfigured = Boolean(
+    env("ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_PEM")
+    || env("ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64")
+  );
   const paymentUrlTemplate = env("ZEROLAG_PAYMENT_URL_TEMPLATE", defaultPaymentUrlTemplate);
   const statePath = env("ZEROLAG_SERVER_STATE_PATH", "");
   const backupDir = env("ZEROLAG_SERVER_BACKUP_DIR", "");
@@ -116,6 +129,8 @@ function buildChecklist() {
     checkbox(Boolean(backupDir), "Durable backup directory is configured", backupDir ? "configured" : "missing"),
     checkbox(stateStore === "sqlite", "SQLite state store is selected for wider paid testing", `current: ${code(stateStore)}`),
     checkbox(stateStore !== "sqlite" || Boolean(sqliteStatePath), "SQLite state path is configured", stateStore === "sqlite" ? statusText(Boolean(sqliteStatePath), "configured", "missing") : "not using SQLite"),
+    checkbox(runtimeSessionProofAlgorithm === "RSA-SHA256", "Runtime session proof uses RSA-SHA256 for paid release", `current: ${code(runtimeSessionProofAlgorithm)}`),
+    checkbox(runtimeSessionProofAlgorithm !== "RSA-SHA256" || runtimeSessionAsymmetricProofConfigured, "Runtime session private key is configured only on the server"),
     checkbox(env("ZEROLAG_RATE_LIMIT_DISABLED") !== "1", "Server rate limiting is enabled"),
     checkbox(env("ZEROLAG_SERVER_BACKUP_DISABLED") !== "1", "Server state backups are enabled"),
     checkbox(env("ZEROLAG_MAINTENANCE_DISABLED") !== "1", "Automatic maintenance is enabled")

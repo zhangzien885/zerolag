@@ -201,6 +201,28 @@ function createMemoryStateStore(initialState = null) {
   };
 }
 
+function runtimeSessionProofBodyFromResponse(body, deviceHash) {
+  return JSON.stringify({
+    subscriptionId: body.subscriptionId || "",
+    deviceHash,
+    expiresAt: body.expiresAt || "",
+    sessionId: body.sessionId || "",
+    keyVersion: body.runtimeSessionKeyVersion || "runtime-session-v1",
+    revision: Number(body.runtimeSessionRevision || 0)
+  });
+}
+
+function verifyRsaRuntimeSessionProof(body, deviceHash, publicKeyPem) {
+  const proof = String(body.runtimeSessionProof || "");
+  const signature = proof.startsWith("rsa-sha256=") ? proof.slice("rsa-sha256=".length) : "";
+  if (!signature) return false;
+
+  const verifier = crypto.createVerify("RSA-SHA256");
+  verifier.update(runtimeSessionProofBodyFromResponse(body, deviceHash));
+  verifier.end();
+  return verifier.verify(publicKeyPem, Buffer.from(signature, "base64url"));
+}
+
 async function main() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-server-test-"));
   const options = {
@@ -241,6 +263,8 @@ async function main() {
     assert(readiness.body.maintenance.enabled === true, "Readiness should include maintenance status.");
     assert(readiness.body.payment.provider === "manual", "Readiness should include payment provider status.");
     assert(readiness.body.runtimeSession.keyVersion === "runtime-session-v1", "Readiness should include runtime session key version.");
+    assert(readiness.body.runtimeSession.proofAlgorithm === "HMAC-SHA256", "Readiness should include runtime session proof algorithm.");
+    assert(readiness.body.runtimeSession.asymmetricProofConfigured === false, "Readiness should report whether asymmetric runtime proof is configured.");
     assert(readiness.body.storage.kind === "json-file", "Readiness should report default JSON file storage.");
     assert(
       readiness.body.warnings.includes("PAYMENT_PROVIDER_MANUAL"),
@@ -278,6 +302,47 @@ async function main() {
     } finally {
       await new Promise((resolve) => {
         memoryServer.close(resolve);
+      });
+    }
+
+    const rsaCode = "ZL-PRO-RSA-TEST";
+    const rsaDeviceHash = crypto.createHash("sha256").update("device-rsa").digest("hex");
+    const rsaKeys = crypto.generateKeyPairSync("rsa", { modulusLength: 2048 });
+    const rsaPrivateKeyPem = rsaKeys.privateKey.export({ type: "pkcs8", format: "pem" });
+    const rsaPublicKeyPem = rsaKeys.publicKey.export({ type: "spki", format: "pem" });
+    const rsaOptions = {
+      stateStore: createMemoryStateStore(),
+      serverSecret: "rsa-store-secret",
+      adminSecret: "rsa-store-admin",
+      paymentWebhookSecret: "rsa-store-payment",
+      runtimeSession: {
+        proofAlgorithm: "RSA-SHA256",
+        privateKeyPem: rsaPrivateKeyPem
+      }
+    };
+    addActivationCode(rsaCode, { durationDays: 30, maxUses: 1 }, rsaOptions);
+    const rsaServer = createAppServer(rsaOptions);
+    const rsaPort = await listen(rsaServer);
+    try {
+      const rsaReadiness = await requestJson(rsaPort, "/v1/admin/readiness", null, {
+        "X-ZeroLag-Admin-Secret": "rsa-store-admin"
+      });
+      assert(rsaReadiness.statusCode === 200, "RSA runtime proof readiness failed.");
+      assert(rsaReadiness.body.runtimeSession.proofAlgorithm === "RSA-SHA256", "Readiness should report RSA runtime proof algorithm.");
+      assert(rsaReadiness.body.runtimeSession.asymmetricProofConfigured === true, "Readiness should report configured RSA runtime proof key.");
+      const rsaActivated = await requestJson(rsaPort, "/v1/licenses/activate", {
+        activationCode: rsaCode,
+        deviceHash: rsaDeviceHash,
+        appVersion: "0.1.0",
+        channel: "rsa-store"
+      });
+      assert(rsaActivated.statusCode === 200 && rsaActivated.body.active, "RSA runtime proof activation failed.");
+      assert(rsaActivated.body.runtimeSessionProofAlgorithm === "RSA-SHA256", "Activation should return RSA runtime proof algorithm.");
+      assert(/^rsa-sha256=[A-Za-z0-9_-]+$/i.test(rsaActivated.body.runtimeSessionProof || ""), "Activation should return an RSA runtime session proof.");
+      assert(verifyRsaRuntimeSessionProof(rsaActivated.body, rsaDeviceHash, rsaPublicKeyPem), "RSA runtime session proof should verify with the public key.");
+    } finally {
+      await new Promise((resolve) => {
+        rsaServer.close(resolve);
       });
     }
 
@@ -323,6 +388,7 @@ async function main() {
     assert(envTemplate.status === 0, `Server env template command failed: ${envTemplate.stderr || envTemplate.stdout}`);
     assert(envTemplate.stdout.includes("# Profile: json"), "Default server env template should use the JSON profile.");
     assert(envTemplate.stdout.includes("ZEROLAG_RUNTIME_SESSION_KEY_VERSION=runtime-session-v1"), "Server env template should include runtime session key version.");
+    assert(envTemplate.stdout.includes("ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM=HMAC-SHA256"), "Server env template should include runtime session proof algorithm.");
     assert(envTemplate.stdout.includes("ZEROLAG_PAYMENT_ALLOWED_PROVIDERS=manual,manual-admin"), "Server env template should use a safer payment allowlist.");
     assert(envTemplate.stdout.includes("# ZEROLAG_STATE_STORE=sqlite"), "Default server env template should document SQLite opt-in.");
     const sqliteEnvPath = path.join(tempDir, "sqlite-server.env");
@@ -337,6 +403,7 @@ async function main() {
     assert(sqliteEnvFile.includes("# Profile: sqlite"), "SQLite server env template should record its profile.");
     assert(sqliteEnvFile.includes("ZEROLAG_STATE_STORE=sqlite"), "SQLite server env template should activate SQLite storage.");
     assert(sqliteEnvFile.includes("ZEROLAG_RUNTIME_SESSION_KEY_VERSION=runtime-session-v1"), "SQLite server env template should include runtime session key version.");
+    assert(sqliteEnvFile.includes("ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM=HMAC-SHA256"), "SQLite server env template should include runtime session proof algorithm.");
     assert(sqliteEnvFile.includes("ZEROLAG_SQLITE_BACKUP_MAX_AGE_HOURS=24"), "SQLite server env template should include backup freshness settings.");
     const sqliteEnvCheck = await runNodeScript("scripts/check-server-env.js", [
       "--file",
@@ -349,6 +416,8 @@ async function main() {
     assert(sqliteEnvCheckBody.ok === true, "SQLite server env check should return ok.");
     assert(sqliteEnvCheckBody.summary.stateStore === "sqlite", "SQLite server env check should report sqlite storage.");
     assert(sqliteEnvCheckBody.summary.runtimeSessionKeyVersion === "runtime-session-v1", "SQLite server env check should report runtime session key version.");
+    assert(sqliteEnvCheckBody.summary.runtimeSessionProofAlgorithm === "HMAC-SHA256", "SQLite server env check should report runtime session proof algorithm.");
+    assert(sqliteEnvCheckBody.summary.runtimeSessionAsymmetricProofConfigured === false, "SQLite server env check should report asymmetric runtime proof status.");
     assert(!sqliteEnvCheck.stdout.includes("zl_server_"), "Server env check must not print generated secret values.");
     const deploymentReportPath = path.join(tempDir, "server-deployment-report.md");
     const deploymentReport = await runNodeScript("scripts/generate-server-deployment-report.js", [
@@ -366,6 +435,8 @@ async function main() {
     assert(deploymentReportBody.includes("State store from env: `sqlite`"), "Server deployment report should summarize env storage.");
     assert(deploymentReportBody.includes("Payment provider from env:"), "Server deployment report should summarize payment readiness.");
     assert(deploymentReportBody.includes("Runtime session key version: `runtime-session-v1`"), "Server deployment report should summarize runtime session key version.");
+    assert(deploymentReportBody.includes("Runtime session proof algorithm: `HMAC-SHA256`"), "Server deployment report should summarize runtime session proof algorithm.");
+    assert(deploymentReportBody.includes("Runtime session asymmetric proof configured: `no`"), "Server deployment report should summarize asymmetric runtime proof status.");
     assert(!deploymentReportBody.includes("zl_server_"), "Server deployment report must not expose generated secret values.");
     const deploymentReportJson = await runNodeScript("scripts/generate-server-deployment-report.js", [
       "--json",
@@ -381,6 +452,8 @@ async function main() {
     assert(deploymentReportJsonBody.snapshot.privateEnvFile.loaded === true, "Server deployment JSON report should show the private env file loaded.");
     assert(deploymentReportJsonBody.storage.stateStore === "sqlite", "Server deployment JSON report should summarize storage.");
     assert(deploymentReportJsonBody.runtimeGuards.runtimeSessionKeyVersion === "runtime-session-v1", "Server deployment JSON report should summarize runtime session key version.");
+    assert(deploymentReportJsonBody.runtimeGuards.runtimeSessionProofAlgorithm === "HMAC-SHA256", "Server deployment JSON report should summarize runtime session proof algorithm.");
+    assert(deploymentReportJsonBody.runtimeGuards.runtimeSessionAsymmetricProofConfigured === false, "Server deployment JSON report should summarize asymmetric runtime proof status.");
     assert(Array.isArray(deploymentReportJsonBody.gates) && deploymentReportJsonBody.gates.length >= 1, "Server deployment JSON report should include gate results.");
     assert(!deploymentReportJson.stdout.includes("zl_server_"), "Server deployment JSON report must not expose generated secret values.");
     const strictDeploymentReportPath = path.join(tempDir, "server-deployment-report-strict.md");
@@ -529,6 +602,8 @@ async function main() {
         ZEROLAG_ADMIN_SECRET: "self-test-admin-secret-123456789012345678901",
         ZEROLAG_PAYMENT_WEBHOOK_SECRET: "self-test-payment-secret-12345678901234567",
         ZEROLAG_RUNTIME_SESSION_KEY_VERSION: "runtime-session-v1",
+        ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM: "RSA-SHA256",
+        ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64: Buffer.from(rsaPrivateKeyPem).toString("base64"),
         ZEROLAG_SERVER_HOST: "0.0.0.0",
         ZEROLAG_SERVER_PORT: "8787",
         ZEROLAG_SERVER_STATE_PATH: migrationJsonPath,

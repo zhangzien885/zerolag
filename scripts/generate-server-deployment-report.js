@@ -45,6 +45,15 @@ function paymentProviderList(value) {
     .filter(Boolean);
 }
 
+function normalizeRuntimeSessionProofAlgorithm(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized || "HMAC-SHA256";
+}
+
 function isHttpsUrl(value) {
   return /^https:\/\//i.test(String(value || ""));
 }
@@ -135,6 +144,11 @@ function buildReport() {
   const sqliteBackupDir = env("ZEROLAG_SQLITE_BACKUP_DIR", "");
   const backupMaxAgeHours = env("ZEROLAG_SQLITE_BACKUP_MAX_AGE_HOURS", "24");
   const runtimeSessionKeyVersion = env("ZEROLAG_RUNTIME_SESSION_KEY_VERSION", "runtime-session-v1");
+  const runtimeSessionProofAlgorithm = normalizeRuntimeSessionProofAlgorithm(env("ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM", "HMAC-SHA256"));
+  const runtimeSessionAsymmetricProofConfigured = Boolean(
+    env("ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_PEM")
+    || env("ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64")
+  );
   const rateLimitEnabled = env("ZEROLAG_RATE_LIMIT_DISABLED") !== "1";
   const backupsEnabled = env("ZEROLAG_SERVER_BACKUP_DISABLED") !== "1";
   const maintenanceEnabled = env("ZEROLAG_MAINTENANCE_DISABLED") !== "1";
@@ -231,6 +245,10 @@ function buildReport() {
         paymentProvider: envCheck.summary.paymentProvider || paymentProvider,
         paymentAllowedProviderCount: envCheck.summary.paymentAllowedProviderCount || paymentAllowedProviders.length,
         runtimeSessionKeyVersion: envCheck.summary.runtimeSessionKeyVersion || runtimeSessionKeyVersion,
+        runtimeSessionProofAlgorithm: envCheck.summary.runtimeSessionProofAlgorithm || runtimeSessionProofAlgorithm,
+        runtimeSessionAsymmetricProofConfigured: envCheck.summary.runtimeSessionAsymmetricProofConfigured === undefined
+          ? runtimeSessionAsymmetricProofConfigured
+          : Boolean(envCheck.summary.runtimeSessionAsymmetricProofConfigured),
         rateLimitEnabled: Boolean(envCheck.summary.rateLimitEnabled),
         backupsEnabled: Boolean(envCheck.summary.backupsEnabled),
         maintenanceEnabled: Boolean(envCheck.summary.maintenanceEnabled)
@@ -254,7 +272,9 @@ function buildReport() {
       rateLimitEnabled,
       backupsEnabled,
       maintenanceEnabled,
-      runtimeSessionKeyVersion
+      runtimeSessionKeyVersion,
+      runtimeSessionProofAlgorithm,
+      runtimeSessionAsymmetricProofConfigured
     },
     publicEndpoints
   };
@@ -312,6 +332,8 @@ ${listMessages(envCheck.warnings, envFileLoad.path, "No env warnings detected.")
 - State backups enabled: ${code(yesNo(backupsEnabled))}
 - Automatic maintenance enabled: ${code(yesNo(maintenanceEnabled))}
 - Runtime session key version: ${code(runtimeSessionKeyVersion)}
+- Runtime session proof algorithm: ${code(runtimeSessionProofAlgorithm)}
+- Runtime session asymmetric proof configured: ${code(yesNo(runtimeSessionAsymmetricProofConfigured))}
 
 ## Payment And Membership
 

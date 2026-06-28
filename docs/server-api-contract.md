@@ -92,12 +92,16 @@ npm run server:check:strict
 
 Server-side commands automatically load `.secrets/server.env` when it exists. Existing system environment variables remain higher priority, so deployment hosts can override file values without editing the repository. Set `ZEROLAG_ENV_FILE` to use a different private env file for staging or deployment checks.
 
+Runtime session proofs default to `HMAC-SHA256` so local development remains simple. Before a paid public release, switch `ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM` to `RSA-SHA256` and keep the private key only on the license server. Desktop clients and support reports should only receive the proof string and non-secret key-version label.
+
 Minimum production server variables:
 
 - `ZEROLAG_SERVER_SECRET`: custom strong secret for hashing activation codes and tokens.
 - `ZEROLAG_ADMIN_SECRET`: custom strong secret for private admin endpoints.
 - `ZEROLAG_PAYMENT_WEBHOOK_SECRET`: custom strong secret for payment callbacks.
 - `ZEROLAG_RUNTIME_SESSION_KEY_VERSION`: safe key-version label returned with server-issued runtime sessions, for example `runtime-session-v1`.
+- `ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM`: `HMAC-SHA256` for local development or `RSA-SHA256` for paid public release.
+- `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64` or `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_PEM`: server-only RSA private key material required when `ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM=RSA-SHA256`.
 - `ZEROLAG_PAYMENT_PROVIDER`: active checkout provider returned during order creation, for example `wechat_pay` or `alipay`.
 - `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS`: comma-separated signed webhook provider allowlist.
 - `ZEROLAG_PAYMENT_URL_TEMPLATE`: checkout URL template; supports `{orderId}`, `{amountCents}`, `{currency}`, and `{plan}`.
@@ -199,8 +203,8 @@ Success response:
   "sessionId": "rsess_123",
   "runtimeSessionKeyVersion": "runtime-session-v1",
   "runtimeSessionRevision": 1,
-  "runtimeSessionProofAlgorithm": "HMAC-SHA256",
-  "runtimeSessionProof": "sha256=<server_runtime_session_proof>"
+  "runtimeSessionProofAlgorithm": "RSA-SHA256",
+  "runtimeSessionProof": "rsa-sha256=<server_runtime_session_proof>"
 }
 ```
 
@@ -243,8 +247,8 @@ Success response:
   "sessionId": "rsess_456",
   "runtimeSessionKeyVersion": "runtime-session-v1",
   "runtimeSessionRevision": 2,
-  "runtimeSessionProofAlgorithm": "HMAC-SHA256",
-  "runtimeSessionProof": "sha256=<rotated_server_runtime_session_proof>"
+  "runtimeSessionProofAlgorithm": "RSA-SHA256",
+  "runtimeSessionProof": "rsa-sha256=<rotated_server_runtime_session_proof>"
 }
 ```
 

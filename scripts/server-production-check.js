@@ -304,6 +304,7 @@ function main() {
   console.log(`Port: ${port}`);
   console.log(`Env file: ${envFileLoad.loaded ? envFileLoad.path : `${envFileLoad.path} (not loaded)`}`);
   console.log(`Env file summary: ${envFileCheck.summary && envFileCheck.summary.stateStore ? `stateStore=${envFileCheck.summary.stateStore}, paymentProvider=${envFileCheck.summary.paymentProvider}` : "unavailable"}`);
+  console.log(`Runtime session proof: ${envFileCheck.summary && envFileCheck.summary.runtimeSessionProofAlgorithm ? `${envFileCheck.summary.runtimeSessionProofAlgorithm}, asymmetricKey=${envFileCheck.summary.runtimeSessionAsymmetricProofConfigured ? "yes" : "no"}` : "unavailable"}`);
   console.log(`State store: ${stateStore}`);
   console.log(`State: ${statePath}`);
   if (stateStore === "sqlite") console.log(`SQLite state: ${sqliteStatePath}`);

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-28T12:29:56.166Z",
+  "generatedAt": "2026-06-28T16:56:28.787Z",
   "ready": false,
   "strictFailureSummary": "Private env file passes validation, SQLite storage and backup paths are configured, Payment provider is no longer local manual mode, Payment provider allowlist excludes test webhook providers, Checkout URL template is configured, Public website, purchase, API, update, and support URLs are production HTTPS",
   "snapshot": {
@@ -64,6 +64,9 @@
       "sqliteConfigured": false,
       "paymentProvider": "manual",
       "paymentAllowedProviderCount": 5,
+      "runtimeSessionKeyVersion": "runtime-session-v1",
+      "runtimeSessionProofAlgorithm": "HMAC-SHA256",
+      "runtimeSessionAsymmetricProofConfigured": false,
       "rateLimitEnabled": false,
       "backupsEnabled": false,
       "maintenanceEnabled": false
@@ -86,7 +89,10 @@
   "runtimeGuards": {
     "rateLimitEnabled": true,
     "backupsEnabled": true,
-    "maintenanceEnabled": true
+    "maintenanceEnabled": true,
+    "runtimeSessionKeyVersion": "runtime-session-v1",
+    "runtimeSessionProofAlgorithm": "HMAC-SHA256",
+    "runtimeSessionAsymmetricProofConfigured": false
   },
   "publicEndpoints": [
     {

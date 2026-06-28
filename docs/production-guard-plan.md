@@ -78,7 +78,7 @@ Implemented in prototype:
 - Detached watchdog process cleanup after app force kill.
 - Signed runtime session file with tamper rejection.
 - Runtime-session expiry cleanup.
-- Server-issued runtime session IDs, key-version labels, and HMAC proofs, written into the signed desktop runtime session when server membership is active.
+- Server-issued runtime session IDs, key-version labels, and HMAC/RSA proofs, written into the signed desktop runtime session when server membership is active.
 - Temporary Task Scheduler fallback while Boost is active.
 - Encrypted tuning package instead of a plain JSON template.
 - Integrity verification for protected files.
@@ -98,6 +98,6 @@ Still required for paid production:
 - Native Windows Service wrapper executable.
 - Installer service registration without the private-validation guard after the native wrapper is ready.
 - Enable the NSIS guard hook in the final signed installer after the native service wrapper is ready and privately validated.
-- Asymmetric or externally verifiable runtime session key material and full production key rotation.
+- Native guard verification of the RSA runtime-session public key and full production key rotation.
 - Server-side subscription/session validation.
 - Uninstaller cleanup.
