@@ -52,6 +52,18 @@ function collectFailures(report) {
     if (!item.ok) failures.push(`Desktop release: ${item.name} - ${item.nextStep || "not ready"}`);
   }
 
+  const packageAudit = report.packageAudit || {};
+  if (packageAudit.packagingPolicyReady !== true) {
+    failures.push("Package audit: packaging policy must be runtime-only and avoid broad scripts globs.");
+  }
+
+  const forbiddenHelpersPresent = Array.isArray(packageAudit.forbiddenHelpersPresent)
+    ? packageAudit.forbiddenHelpersPresent
+    : [];
+  for (const helper of forbiddenHelpersPresent) {
+    failures.push(`Package audit: forbidden helper is present in the customer package - ${helper}`);
+  }
+
   const serverDeployment = report.serverDeployment || {};
   const serverGates = Array.isArray(serverDeployment.gates) ? serverDeployment.gates : [];
   if (!serverGates.length) {

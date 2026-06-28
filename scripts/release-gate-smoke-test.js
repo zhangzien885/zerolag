@@ -61,6 +61,10 @@ function writePassingReport(tempDir) {
         nextStep: "Ready"
       }
     ],
+    packageAudit: {
+      packagingPolicyReady: true,
+      forbiddenHelpersPresent: []
+    },
     serverDeployment: {
       ready: true,
       strictFailureSummary: "",
@@ -81,6 +85,16 @@ function writePassingReport(tempDir) {
 
   fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   return reportPath;
+}
+
+function writeForbiddenHelperReport(tempDir) {
+  const reportPath = writePassingReport(tempDir);
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  report.packageAudit = {
+    packagingPolicyReady: true,
+    forbiddenHelpersPresent: ["scripts/generate-runtime-session-keys.js"]
+  };
+  fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
 }
 
 function main() {
@@ -130,6 +144,25 @@ function main() {
     assert(passing.stdout.includes("ZeroLag release gate passed."), "Release gate should print a clear passing header.");
     assertNoSensitiveText(passing.stdout, "Passing release gate stdout");
     assertNoSensitiveText(passing.stderr, "Passing release gate stderr");
+
+    writeForbiddenHelperReport(tempDir);
+    const forbiddenHelper = spawnSync(process.execPath, [
+      path.join(rootDir, "scripts", "check-release-gate.js"),
+      "--no-generate",
+      "--output-dir",
+      tempDir
+    ], {
+      cwd: rootDir,
+      env: isolatedEnv(tempDir),
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+
+    assert(forbiddenHelper.status === 1, "Release gate should fail when the package audit finds a forbidden helper.");
+    assert(forbiddenHelper.stdout.includes("Package audit:"), "Release gate should explain package audit failures.");
+    assert(forbiddenHelper.stdout.includes("scripts/generate-runtime-session-keys.js"), "Release gate should name the forbidden helper.");
+    assertNoSensitiveText(forbiddenHelper.stdout, "Forbidden-helper release gate stdout");
+    assertNoSensitiveText(forbiddenHelper.stderr, "Forbidden-helper release gate stderr");
 
     console.log("ZeroLag release gate smoke test passed.");
   } finally {

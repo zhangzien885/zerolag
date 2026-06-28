@@ -146,6 +146,7 @@
 - Added package content audit to the release candidate report so runtime-only script packaging and forbidden helper exposure are visible before release.
 - Added a release report smoke test that verifies candidate-report JSON, Markdown, server deployment gates, and redaction in a temporary output directory.
 - Added a final release gate command with a smoke test that fails until desktop readiness, server deployment gates, installer artifacts, signing, and Git cleanliness are ready.
+- Extended the final release gate so package-audit failures block release when forbidden internal helpers appear in the customer package.
 - Added website release metadata publishing so the static download page can display release status, installer link, and SHA256 checksum from verified release artifacts.
 - Added website smoke checks for release JSON schema, download panel wiring, checksum rules, and public-facing copy guardrails.
 - Added isolated website release publishing smoke tests for both available and preparing states, without mutating the real website manifest.
