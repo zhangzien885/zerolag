@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { loadServerEnvFile } = require("./env");
 
 const rootDir = path.join(__dirname, "..");
 const defaultDataDir = path.join(__dirname, "data");
@@ -1576,6 +1577,7 @@ function attachAutomaticMaintenance(server, options = {}) {
 }
 
 function startServer(options = {}) {
+  loadServerEnvFile();
   const port = Number(options.port || process.env.ZEROLAG_SERVER_PORT || 8787);
   const host = options.host || process.env.ZEROLAG_SERVER_HOST || "127.0.0.1";
   const server = createAppServer(options);

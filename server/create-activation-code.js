@@ -1,4 +1,8 @@
 const crypto = require("crypto");
+const { loadServerEnvFile } = require("./env");
+
+loadServerEnvFile();
+
 const { addActivationCode } = require("./index");
 
 function usage() {

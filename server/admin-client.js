@@ -1,6 +1,10 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const { loadServerEnvFile } = require("./env");
+
+loadServerEnvFile();
+
 const { signPaymentWebhook } = require("./index");
 
 const baseUrl = process.env.ZEROLAG_ADMIN_API_BASE_URL || "http://127.0.0.1:8787";

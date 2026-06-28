@@ -115,6 +115,7 @@
 - Added a configurable official support/contact link in the desktop toolbox and production readiness checks for `supportUrl`.
 - Added membership expiry and renewal guidance so users see remaining Pro time before access runs out.
 - Added a desktop toolbox version center for manual update checks and user-visible version/channel status.
+- Added automatic private server env-file loading for service startup, admin tools, activation-code creation, and production readiness checks.
 
 ## Known Boundaries
 

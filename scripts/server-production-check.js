@@ -1,11 +1,14 @@
 const fs = require("fs");
 const path = require("path");
+const { loadServerEnvFile } = require("../server/env");
 
 const rootDir = path.join(__dirname, "..");
 const strict = process.argv.includes("--strict");
 const defaultServerSecret = "zerolag-dev-server-secret-change-before-production";
 const defaultAdminSecret = "zerolag-dev-admin-secret-change-before-production";
 const defaultPaymentWebhookSecret = "zerolag-dev-payment-webhook-secret-change-before-production";
+
+loadServerEnvFile();
 
 function env(name, fallback = "") {
   return process.env[name] || fallback;

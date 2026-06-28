@@ -36,6 +36,23 @@ Default URL:
 http://127.0.0.1:8787
 ```
 
+## Private Environment File
+
+Generate strong local secrets for private testing or deployment preparation:
+
+```powershell
+npm run server:secrets -- --write
+```
+
+Server commands automatically load `.secrets/server.env` when it exists, including `server:start`, `server:create-code`, `server:admin`, and `server:check`. Existing system environment variables stay higher priority, so a host provider or Windows service can still override file values.
+
+To test with a different env file:
+
+```powershell
+$env:ZEROLAG_ENV_FILE="D:\zerolag-private\server.env"
+npm run server:check:strict
+```
+
 ## Create A Test Code
 
 ```powershell

@@ -86,6 +86,8 @@ npm run server:check:strict
 
 `server:secrets` generates strong private values for the three required server secrets. `--write` saves them to `.secrets/server.env`, which is ignored by Git.
 
+Server-side commands automatically load `.secrets/server.env` when it exists. Existing system environment variables remain higher priority, so deployment hosts can override file values without editing the repository. Set `ZEROLAG_ENV_FILE` to use a different private env file for staging or deployment checks.
+
 Minimum production server variables:
 
 - `ZEROLAG_SERVER_SECRET`: custom strong secret for hashing activation codes and tokens.
