@@ -347,6 +347,31 @@ async function main() {
         migrationSqlitePath
       ]);
       assert(refusedOverwrite.status === 1, "SQLite migration should refuse to overwrite existing output without --force.");
+      const backupSqlitePath = path.join(migrationTempDir, "backup-state.sqlite");
+      const backup = await runNodeScript("scripts/backup-sqlite-state.js", [
+        "--input",
+        migrationSqlitePath,
+        "--output",
+        backupSqlitePath
+      ]);
+      assert(backup.status === 0, `SQLite backup command failed: ${backup.stderr || backup.stdout}`);
+      const backupBody = JSON.parse(backup.stdout);
+      assert(backupBody.ok === true, "SQLite backup command should return ok.");
+      assert(fs.existsSync(backupSqlitePath), "SQLite backup command should create the output file.");
+      const backupStore = createSqliteStateStore(backupSqlitePath);
+      try {
+        const backupState = backupStore.loadState();
+        assert(Object.keys(backupState.activationCodes || {}).length >= 1, "Backed-up SQLite state should include activation codes.");
+      } finally {
+        backupStore.close();
+      }
+      const refusedBackupOverwrite = await runNodeScript("scripts/backup-sqlite-state.js", [
+        "--input",
+        migrationSqlitePath,
+        "--output",
+        backupSqlitePath
+      ]);
+      assert(refusedBackupOverwrite.status === 1, "SQLite backup should refuse to overwrite existing output without --force.");
     } finally {
       fs.rmSync(migrationTempDir, { recursive: true, force: true });
     }

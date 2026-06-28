@@ -150,6 +150,7 @@
 - Added a state storage abstraction seam plus contract docs so the server can migrate from JSON files toward SQLite/PostgreSQL without rewriting every route at once.
 - Added an optional SQLite state store prototype using Node's built-in SQLite module, while keeping JSON file storage as the default.
 - Added a JSON-to-SQLite migration command with read-back checksum verification and overwrite protection.
+- Added a SQLite state backup command with read-back checksum verification and overwrite protection for wider paid testing.
 
 ## Known Boundaries
 

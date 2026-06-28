@@ -51,6 +51,16 @@ npm run server:migrate-sqlite -- --input D:\zerolag-data\server-state.json --out
 
 The migration command refuses to update an existing SQLite file unless `--force` is provided. It reads the migrated state back and compares a SHA256 digest before reporting success.
 
+## SQLite Backup Export
+
+Before enabling SQLite for wider paid testing, export a private backup and verify it can be read back:
+
+```powershell
+npm run server:backup-sqlite -- --input D:\zerolag-data\server-state.sqlite --output D:\zerolag-backups\server-state-backup.sqlite
+```
+
+When `--output` is omitted, the command writes a timestamped SQLite backup under `ZEROLAG_SQLITE_BACKUP_DIR`, `ZEROLAG_SERVER_BACKUP_DIR`, or `server/data/backups`. It refuses to update an existing backup unless `--force` is provided, then compares a SHA256 digest after writing.
+
 ## Safety Rules
 
 - `loadState()` should return plain JSON data only.

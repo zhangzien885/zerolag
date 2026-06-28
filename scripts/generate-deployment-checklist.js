@@ -174,6 +174,7 @@ Run these in order before a paid public release:
 \`\`\`powershell
 npm run deploy:checklist
 npm run server:migrate-sqlite -- --input <json-state> --output <sqlite-state>
+npm run server:backup-sqlite -- --input <sqlite-state> --output <sqlite-backup>
 npm run production:check:strict
 npm run server:check:strict
 npm run release:preflight:strict
