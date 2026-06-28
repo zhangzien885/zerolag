@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "serviceName": "ZeroLagRuntimeGuard",
+  "displayName": "ZeroLag Runtime Guard",
+  "description": "Visible Windows Service guard that restores ZeroLag runtime-only performance state after crashes, forced exits, expiry, or uninstall.",
+  "serviceBinary": "ZeroLagGuard.exe",
+  "serviceBinaryStatus": "planned",
+  "startupType": "Automatic",
+  "account": "NT AUTHORITY\\LocalService",
+  "visibleInWindowsServices": true,
+  "sessionFile": "%LOCALAPPDATA%\\ZeroLag\\runtime-session.json",
+  "watchdogScript": "scripts/runtime-watchdog.js",
+  "installScript": "build/install-runtime-guard-service.ps1",
+  "uninstallScript": "build/uninstall-runtime-guard-service.ps1",
+  "taskSchedulerFallback": {
+    "taskName": "ZeroLagRuntimeGuard",
+    "enabledWhenServiceInstallFails": true,
+    "highestPrivileges": true
+  },
+  "allowedActions": [
+    "verify signed runtime session",
+    "detect missing desktop heartbeat",
+    "restore original power plan",
+    "delete ZeroLag runtime power plans",
+    "remove stale runtime session file",
+    "run one cleanup pass during uninstall"
+  ],
+  "cleanupTriggers": [
+    "desktop exit",
+    "desktop force kill",
+    "desktop crash",
+    "user logoff",
+    "windows restart",
+    "subscription expiry",
+    "integrity failure",
+    "server authorization failure",
+    "uninstall"
+  ],
+  "prohibitedBehaviors": [
+    "hide service from Windows service tools",
+    "block Task Manager",
+    "kill user processes",
+    "delete user files",
+    "disable antivirus",
+    "disable firewall",
+    "disable Windows Security"
+  ]
+}

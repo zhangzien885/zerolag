@@ -79,12 +79,14 @@ Implemented in prototype:
 - Temporary Task Scheduler fallback while Boost is active.
 - Encrypted tuning package instead of a plain JSON template.
 - Integrity verification for protected files.
+- Windows Service guard manifest plus install/uninstall script assets.
+- CI smoke test for transparent service-guard packaging and prohibited behavior guardrails.
 
 Still required for paid production:
 
-- Windows Service guard.
+- Windows Service guard executable.
 - Installer-managed Task Scheduler fallback.
 - Server-issued signed session IDs and key rotation.
 - Server-side subscription/session validation.
-- Installer integration.
+- Installer invocation of the service install/uninstall scripts.
 - Uninstaller cleanup.

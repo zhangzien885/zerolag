@@ -60,6 +60,7 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 - Generate or replace the Windows icon at `build/icon.ico`.
 - Run `npm run pack:dir` for an unpacked local build.
 - Run `npm run package:smoke` to verify the unpacked build contains the executable, app archive, icon, and unpacked runtime watchdog.
+- Run `npm run guard:service:smoke` to verify the Windows Service guard manifest, install script, uninstall script, and packaged resources.
 - Run `npm run dist:win` only after the strict release gates are satisfied.
 - Run `npm run installer:smoke` to verify the installer executable, blockmap, update metadata, and Windows installer settings.
 - Run `npm run release:artifacts` to generate public checksum and artifact metadata files for the download page.

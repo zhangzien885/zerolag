@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T14:01:31.334Z",
+  "generatedAt": "2026-06-28T14:12:37.948Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "566a95f705482a1389b5cd65e7a6ec238c3b753eb246d191b3bffcbb20e56026"
+      "sha256": "4c0c8f1ef7ad10cec4305cb2a0c5afcf0593f210d6be02d40fe4302597e30624"
     },
     {
       "path": "main.js",
@@ -44,11 +44,15 @@
     },
     {
       "path": "scripts/package-smoke-test.js",
-      "sha256": "b708dfcad300348d55fb3555646cde41a990cb763ab2b33e46c2de7e6fd40ed2"
+      "sha256": "d23eb62a12b4ce504a77364a7c0c70557505c5b1b49d3867108f55c321da9b92"
     },
     {
       "path": "scripts/installer-smoke-test.js",
       "sha256": "8b7985ca78e83df49523079634102c275554d740c58b042133274810c1a018ad"
+    },
+    {
+      "path": "scripts/service-guard-smoke-test.js",
+      "sha256": "50fbe05c57ceb192fe22e706ea8219786570baf9c7394f99875c7834d95bc557"
     },
     {
       "path": "scripts/generate-release-artifacts.js",
@@ -92,7 +96,7 @@
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "42087cf619f97c62933ed00f7f4a91cb383167d13f050fc3271b8e910b9d6b6a"
+      "sha256": "d4c340c21268b11dac318da95989addf2bdfd3f5b4498a1795bb9716323c6f7c"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -157,7 +161,19 @@
     {
       "path": "assets/zerolag-power-plan-template.protected.json",
       "sha256": "03088e08120ee7508d175a61b3b6f66ee31a657ec592adfd60e5f352f890fc6d"
+    },
+    {
+      "path": "build/service-guard.json",
+      "sha256": "0126d098c66f4b0a7f45a4c6394780c27a53773965bfa2ae0a6bb90a257c2c08"
+    },
+    {
+      "path": "build/install-runtime-guard-service.ps1",
+      "sha256": "a29fc1bc1292595aa85451d9447a9f34854fe38f9efdb6959cf166811d4b1318"
+    },
+    {
+      "path": "build/uninstall-runtime-guard-service.ps1",
+      "sha256": "ea17673b2f475733319e94a07aae2b36a9aa5e195e3b89bd847a91f979dfcf20"
     }
   ],
-  "signature": "56dbbbcb2ae33e3fd16e6920f90bdb84b5605655b6ac806db0652b6d2b85477a"
+  "signature": "b95501e9e6c6a4545f314fc42d2353e568de2ac6c1f04449e440b71f7a9a2038"
 }
