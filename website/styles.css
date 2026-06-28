@@ -795,6 +795,22 @@ details p,
   white-space: nowrap;
 }
 
+.release-notes {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.release-notes li {
+  border-top: 1px solid rgba(196, 255, 220, 0.12);
+  color: var(--text);
+  padding-top: 8px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .faq-section {
   display: grid;
   gap: 12px;

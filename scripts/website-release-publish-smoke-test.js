@@ -89,7 +89,13 @@ function testAvailableRelease(tempDir) {
   writeJson(paths.update, {
     latest: "1.2.3",
     downloadUrl: "https://cdn.zerolag.app/releases/ZeroLag-Setup-1.2.3.exe",
-    releaseNotes: ["启动更顺滑", "下载校验信息已更新"]
+    releaseNotes: [
+      "Startup feels smoother",
+      "",
+      42,
+      "Checksum info updated",
+      "x".repeat(180)
+    ]
   });
   writeJson(paths.config, {
     releaseChannel: "stable",
@@ -107,6 +113,10 @@ function testAvailableRelease(tempDir) {
   assertOk(output.installer.sha256 === "a".repeat(64), "Installer checksum was not preserved.");
   assertOk(output.updateMetadata.sha256 === "b".repeat(64), "Update metadata checksum was not preserved.");
   assertOk(output.readiness.ok === 2 && output.readiness.total === 3, "Readiness summary is incorrect.");
+  assertOk(output.releaseNotes.length === 3, "Release notes should keep only public non-empty strings.");
+  assertOk(output.releaseNotes[0] === "Startup feels smoother", "First release note was not preserved.");
+  assertOk(output.releaseNotes[1] === "Checksum info updated", "Second release note was not preserved.");
+  assertOk(output.releaseNotes[2].length === 160 && output.releaseNotes[2].endsWith("..."), "Long release notes should be truncated.");
 }
 
 function testPreparingRelease(tempDir) {

@@ -64,6 +64,11 @@ function assertReleaseManifest(release) {
   assertOk(["preparing", "available"].includes(release.status), "website/release.json status must be preparing or available.");
   assertOk(typeof release.downloadReady === "boolean", "website/release.json downloadReady must be boolean.");
   assertOk(Array.isArray(release.releaseNotes), "website/release.json releaseNotes must be an array.");
+  assertOk(release.releaseNotes.length <= 6, "website/release.json releaseNotes must expose at most 6 public notes.");
+  for (const note of release.releaseNotes) {
+    assertOk(typeof note === "string" && note.trim().length > 0, "website/release.json releaseNotes must contain non-empty strings.");
+    assertOk(note.length <= 160, "website/release.json releaseNotes entries must be 160 characters or less.");
+  }
   assertOk(release.installer && typeof release.installer === "object", "website/release.json installer must be an object.");
   assertOk(release.updateMetadata && typeof release.updateMetadata === "object", "website/release.json updateMetadata must be an object.");
   assertOk(release.readiness && typeof release.readiness === "object", "website/release.json readiness must be an object.");
@@ -99,6 +104,7 @@ function main() {
     "releaseStatus",
     "releaseDescription",
     "releaseChecksum",
+    "releaseNotes",
     "downloadPrimary",
     "downloadSecondary"
   ].forEach((id) => assertHas(indexHtml, `id="${id}"`, "website download panel"));
@@ -107,8 +113,10 @@ function main() {
   assertHas(scriptJs, "fetch(\"./release.json\"", "website release loader");
   assertHas(scriptJs, "cache: \"no-store\"", "website release loader");
   assertHas(scriptJs, "renderRelease", "website release renderer");
+  assertHas(scriptJs, "renderReleaseNotes", "website release notes renderer");
   assertHas(scriptJs, "rel = \"noopener\"", "external download link safety");
   assertHas(stylesCss, ".release-checksum", "website release checksum style");
+  assertHas(stylesCss, ".release-notes", "website release notes style");
 
   assertNoForbiddenCopy("website/index.html", indexHtml);
   assertNoForbiddenCopy("website/script.js", scriptJs);

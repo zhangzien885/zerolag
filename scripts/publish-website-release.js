@@ -40,6 +40,17 @@ function readinessSummary(report) {
   };
 }
 
+function publicReleaseNotes(notes) {
+  if (!Array.isArray(notes)) return [];
+
+  return notes
+    .filter((note) => typeof note === "string")
+    .map((note) => note.trim())
+    .filter(Boolean)
+    .slice(0, 6)
+    .map((note) => (note.length > 160 ? `${note.slice(0, 157)}...` : note));
+}
+
 function main() {
   assertOk(fs.existsSync(releaseArtifactsPath), "Release artifacts are missing. Run `npm run release:artifacts` first.");
 
@@ -59,7 +70,7 @@ function main() {
     downloadUrl,
     supportUrl,
     generatedAt: new Date().toISOString(),
-    releaseNotes: Array.isArray(updateManifest.releaseNotes) ? updateManifest.releaseNotes : [],
+    releaseNotes: publicReleaseNotes(updateManifest.releaseNotes),
     installer: {
       file: installer.file || "",
       size: installer.size || 0,

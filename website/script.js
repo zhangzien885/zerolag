@@ -7,6 +7,7 @@ const downloadIntro = document.querySelector("#downloadIntro");
 const releaseStatus = document.querySelector("#releaseStatus");
 const releaseDescription = document.querySelector("#releaseDescription");
 const releaseChecksum = document.querySelector("#releaseChecksum");
+const releaseNotes = document.querySelector("#releaseNotes");
 const downloadPrimary = document.querySelector("#downloadPrimary");
 const downloadSecondary = document.querySelector("#downloadSecondary");
 
@@ -46,6 +47,18 @@ function setExternalLink(anchor, url) {
   anchor.rel = "noopener";
 }
 
+function renderReleaseNotes(notes) {
+  if (!releaseNotes || !Array.isArray(notes) || notes.length === 0) return;
+
+  releaseNotes.innerHTML = "";
+  for (const note of notes.slice(0, 6)) {
+    const item = document.createElement("li");
+    item.textContent = String(note);
+    releaseNotes.appendChild(item);
+  }
+  releaseNotes.hidden = false;
+}
+
 function renderRelease(release) {
   if (!release || !release.version) return;
 
@@ -73,6 +86,8 @@ function renderRelease(release) {
     downloadPrimary.textContent = "下载 Windows 安装包";
     setExternalLink(downloadPrimary, release.downloadUrl);
   }
+
+  renderReleaseNotes(release.releaseNotes);
 
   downloadSecondary.textContent = "查看校验信息";
   downloadSecondary.href = "./release.json";
