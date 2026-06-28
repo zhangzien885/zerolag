@@ -107,7 +107,8 @@ function main() {
     "copyChecksumButton",
     "releaseNotes",
     "downloadPrimary",
-    "downloadSecondary"
+    "downloadSecondary",
+    "downloadSupport"
   ].forEach((id) => assertHas(indexHtml, `id="${id}"`, "website download panel"));
 
   assertHas(indexHtml, "./script.js", "website page");
@@ -118,10 +119,13 @@ function main() {
   assertHas(scriptJs, "formatBytes", "website installer size formatter");
   assertHas(scriptJs, "copyReleaseChecksum", "website checksum copy handler");
   assertHas(scriptJs, "clipboard.writeText", "website checksum clipboard path");
+  assertHas(scriptJs, "release.supportUrl", "website support link wiring");
   assertHas(scriptJs, "rel = \"noopener\"", "external download link safety");
   assertHas(stylesCss, ".release-checksum", "website release checksum style");
   assertHas(stylesCss, ".checksum-copy-button", "website checksum copy button style");
   assertHas(stylesCss, ".release-notes", "website release notes style");
+  assertHas(stylesCss, ".support-button", "website support button style");
+  assertHas(stylesCss, "[hidden]", "website hidden element style");
 
   assertNoForbiddenCopy("website/index.html", indexHtml);
   assertNoForbiddenCopy("website/script.js", scriptJs);

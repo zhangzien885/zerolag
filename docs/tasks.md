@@ -133,6 +133,7 @@
 - Added sanitized public release notes rendering on the website download panel, sourced from verified release metadata.
 - Added human-readable installer size display on the website download panel while keeping byte-accurate release metadata.
 - Added a website download-panel control for copying the full installer SHA256 checksum, with smoke-test coverage.
+- Added a website download-panel support CTA that opens the configured production support URL when available.
 
 ## Known Boundaries
 

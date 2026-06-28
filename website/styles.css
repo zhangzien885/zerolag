@@ -52,6 +52,10 @@ a {
   text-decoration: none;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .page-noise {
   position: fixed;
   inset: 0;
@@ -184,6 +188,12 @@ a {
 .secondary-button {
   color: var(--green);
   background: rgba(167, 255, 90, 0.07);
+}
+
+.support-button {
+  border-color: rgba(255, 199, 89, 0.34);
+  color: #ffd889;
+  background: rgba(255, 199, 89, 0.07);
 }
 
 .header-cta:hover,

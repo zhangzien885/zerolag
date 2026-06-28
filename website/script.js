@@ -11,6 +11,7 @@ const copyChecksumButton = document.querySelector("#copyChecksumButton");
 const releaseNotes = document.querySelector("#releaseNotes");
 const downloadPrimary = document.querySelector("#downloadPrimary");
 const downloadSecondary = document.querySelector("#downloadSecondary");
+const downloadSupport = document.querySelector("#downloadSupport");
 let fullReleaseChecksum = "";
 
 if (memoryTicker) {
@@ -107,6 +108,12 @@ function renderReleaseNotes(notes) {
 
 function renderRelease(release) {
   if (!release || !release.version) return;
+
+  if (release.supportUrl && downloadSupport) {
+    downloadSupport.hidden = false;
+    downloadSupport.textContent = "遇到问题？联系支持";
+    setExternalLink(downloadSupport, release.supportUrl);
+  }
 
   if (!release.downloadReady) {
     releaseStatus.textContent = `ZeroLag ${release.version} 准备中`;
