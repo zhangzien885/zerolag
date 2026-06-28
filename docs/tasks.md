@@ -143,6 +143,7 @@
 - Gated `release:verify` and `release:build` so website release metadata is published only after the final release gate passes.
 - Added release candidate report generation with version, Git state, installer checksum status, readiness checks, and final release commands.
 - Added server deployment gate status to the release candidate report so desktop release readiness and server readiness are reviewed together.
+- Added package content audit to the release candidate report so runtime-only script packaging and forbidden helper exposure are visible before release.
 - Added a release report smoke test that verifies candidate-report JSON, Markdown, server deployment gates, and redaction in a temporary output directory.
 - Added a final release gate command with a smoke test that fails until desktop readiness, server deployment gates, installer artifacts, signing, and Git cleanliness are ready.
 - Added website release metadata publishing so the static download page can display release status, installer link, and SHA256 checksum from verified release artifacts.

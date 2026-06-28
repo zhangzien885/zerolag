@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const cp = require("child_process");
+const asarTools = require("@electron/asar");
 
 const rootDir = path.join(__dirname, "..");
 const defaultDistDir = path.join(rootDir, "dist");
@@ -58,6 +59,54 @@ function status(ok) {
 
 function line(label, value) {
   return `| ${label} | ${value} |`;
+}
+
+function readAsarFiles(asarPath) {
+  if (!fs.existsSync(asarPath)) return [];
+  try {
+    return asarTools.listPackage(asarPath)
+      .map((item) => item.replace(/\\/g, "/").replace(/^\/+/, ""))
+      .filter(Boolean);
+  } catch (_error) {
+    return [];
+  }
+}
+
+function buildPackageAudit(packageJson) {
+  const build = packageJson.build || {};
+  const packageFilesText = JSON.stringify(build.files || []);
+  const allowedRuntimeScripts = [
+    "scripts/runtime-guard-core.js",
+    "scripts/runtime-guard-service.js",
+    "scripts/runtime-watchdog.js"
+  ];
+  const forbiddenHelpers = [
+    "scripts/generate-runtime-session-keys.js",
+    "scripts/runtime-session-keygen-smoke-test.js",
+    "scripts/generate-server-secrets.js",
+    "scripts/check-server-env.js",
+    "scripts/sign-update-manifest.js",
+    "scripts/local-integration.js",
+    "scripts/release-preflight.js",
+    "scripts/server-smoke-test.js",
+    "scripts/package-smoke-test.js"
+  ];
+  const broadScriptGlobs = ["scripts/**/*.js", "scripts/**"];
+  const asarPath = path.join(rootDir, "dist", "win-unpacked", "resources", "app.asar");
+  const asarFiles = readAsarFiles(asarPath);
+  const asarFileSet = new Set(asarFiles);
+
+  return {
+    policy: broadScriptGlobs.some((glob) => packageFilesText.includes(glob)) ? "broad-scripts" : "runtime-only",
+    asarPresent: fs.existsSync(asarPath),
+    asarFileCount: asarFiles.length,
+    allowedRuntimeScripts,
+    allowedRuntimeScriptsPresent: allowedRuntimeScripts.filter((relativePath) => asarFileSet.has(relativePath)),
+    forbiddenHelpers,
+    forbiddenHelpersPresent: forbiddenHelpers.filter((relativePath) => asarFileSet.has(relativePath)),
+    packagingPolicyReady: !broadScriptGlobs.some((glob) => packageFilesText.includes(glob))
+      && allowedRuntimeScripts.every((relativePath) => packageFilesText.includes(relativePath))
+  };
 }
 
 function buildReadiness(packageJson, appConfig, updateManifest, releaseArtifacts) {
@@ -131,6 +180,18 @@ function renderMarkdown(report) {
     line("SHA256", report.installer.sha256 || "missing"),
     line("Artifact manifest", report.artifactManifestExists ? "present" : "missing"),
     "",
+    "## Package Content Audit",
+    "",
+    "| Item | Value |",
+    "| --- | --- |",
+    line("Packaging policy", report.packageAudit.policy),
+    line("Policy ready", report.packageAudit.packagingPolicyReady ? "yes" : "no"),
+    line("Unpacked app archive", report.packageAudit.asarPresent ? "present" : "missing"),
+    line("Archive file count", report.packageAudit.asarPresent ? report.packageAudit.asarFileCount : "not built"),
+    line("Allowed runtime scripts", report.packageAudit.allowedRuntimeScripts.join(", ")),
+    line("Allowed runtime scripts present", report.packageAudit.asarPresent ? report.packageAudit.allowedRuntimeScriptsPresent.join(", ") : "not built"),
+    line("Forbidden helpers present", report.packageAudit.forbiddenHelpersPresent.length ? report.packageAudit.forbiddenHelpersPresent.join(", ") : "none"),
+    "",
     "## Readiness Checks",
     "",
     "| Check | Status | Next step |",
@@ -183,6 +244,7 @@ function main() {
     },
     artifactManifestExists: fs.existsSync(releaseArtifactsPath),
     installer: releaseArtifacts.installer || {},
+    packageAudit: buildPackageAudit(packageJson),
     serverDeployment: serverDeploymentReport(),
     readiness: buildReadiness(packageJson, appConfig, updateManifest, releaseArtifacts)
   };

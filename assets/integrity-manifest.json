@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T18:41:15.177Z",
+  "generatedAt": "2026-06-28T19:07:47.840Z",
   "files": [
     {
       "path": "package.json",
@@ -92,11 +92,11 @@
     },
     {
       "path": "scripts/generate-release-report.js",
-      "sha256": "d34fc15801bba409d5cc06fea9d7fff7769a6a775daa98220f28aa127996df11"
+      "sha256": "cd64b0c7a41dfa28a55b6ca812a6e5a2b900731cbdbc98bd4dbcd197de703fdf"
     },
     {
       "path": "scripts/release-report-smoke-test.js",
-      "sha256": "59d0ff97a0043b4f1deaa6a817c328236c4c62e6ba1eadac5a95629c0d04862b"
+      "sha256": "1192ffa7290343b2feca3d318ea3ea21f8bfa632f15a3153605fcbf77bb000f2"
     },
     {
       "path": "scripts/ci-report-artifact-smoke-test.js",
@@ -219,5 +219,5 @@
       "sha256": "4c2f2e026519154d9549d810f6ecbd0cc2028d2aeb09ff35c37c03869cb70a67"
     }
   ],
-  "signature": "d7823865109d6f13e22f8c6a84520a8a7a88bbc5f2edfc93ea3f258a67924afe"
+  "signature": "8e7c71ca38cd578d918f352d6bea16bdb4a57e891a98a01b32e0bbf8ce21fa73"
 }

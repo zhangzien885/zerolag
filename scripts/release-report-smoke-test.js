@@ -72,10 +72,15 @@ function main() {
     const report = JSON.parse(jsonBody);
 
     assert(report.productName === "ZeroLag", "Release report should include the product name.");
+    assert(report.packageAudit && report.packageAudit.policy === "runtime-only", "Release report should include runtime-only package audit policy.");
+    assert(report.packageAudit.packagingPolicyReady === true, "Release report should mark package policy as ready.");
+    assert(Array.isArray(report.packageAudit.forbiddenHelpersPresent), "Release report should list forbidden packaged helpers.");
     assert(report.serverDeployment && Array.isArray(report.serverDeployment.gates), "Release report should include server deployment gates.");
     assert(report.serverDeployment.gates.length >= 1, "Release report should include at least one server deployment gate.");
     assert(report.serverDeployment.snapshot.privateEnvFile.path === "missing-server.env (external)", "Release report should sanitize the smoke env path.");
     assert(markdownBody.includes("## Server Deployment Gates"), "Release report Markdown should render server deployment gates.");
+    assert(markdownBody.includes("## Package Content Audit"), "Release report Markdown should render package content audit.");
+    assert(markdownBody.includes("Forbidden helpers present"), "Release report Markdown should include forbidden helper audit.");
     assert(markdownBody.includes("Server deployment strict gate is not ready"), "Release report Markdown should include strict-gate status.");
     assert(markdownBody.includes("npm run server:deployment-report:strict"), "Release report Markdown should include the strict server gate command.");
     assertNoSensitiveText(jsonBody, "Release report JSON");
