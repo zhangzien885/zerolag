@@ -397,6 +397,35 @@ async function main() {
         restoredSqlitePath
       ]);
       assert(refusedRestoreOverwrite.status === 1, "SQLite restore should refuse to overwrite existing output without --force.");
+      const sqliteCheckEnv = {
+        ZEROLAG_SERVER_SECRET: "self-test-server-secret-12345678901234567890",
+        ZEROLAG_ADMIN_SECRET: "self-test-admin-secret-123456789012345678901",
+        ZEROLAG_PAYMENT_WEBHOOK_SECRET: "self-test-payment-secret-12345678901234567",
+        ZEROLAG_SERVER_HOST: "0.0.0.0",
+        ZEROLAG_SERVER_STATE_PATH: migrationJsonPath,
+        ZEROLAG_SERVER_BACKUP_DIR: migrationTempDir,
+        ZEROLAG_STATE_STORE: "sqlite",
+        ZEROLAG_SQLITE_STATE_PATH: restoredSqlitePath,
+        ZEROLAG_SQLITE_BACKUP_DIR: migrationTempDir,
+        ZEROLAG_PAYMENT_PROVIDER: "wechat_pay",
+        ZEROLAG_PAYMENT_ALLOWED_PROVIDERS: "wechat_pay",
+        ZEROLAG_PAYMENT_URL_TEMPLATE: "https://pay.zerolag.test/checkout/{orderId}"
+      };
+      const sqliteProductionCheck = await runNodeScript("scripts/server-production-check.js", ["--strict"], {
+        env: sqliteCheckEnv
+      });
+      assert(sqliteProductionCheck.status === 0, `SQLite production check should pass: ${sqliteProductionCheck.stderr || sqliteProductionCheck.stdout}`);
+      assert(sqliteProductionCheck.stdout.includes("SQLite summary: activationCodes="), "SQLite production check should print a safe state summary.");
+      const missingSqlitePath = path.join(migrationTempDir, "missing-state.sqlite");
+      const missingSqliteProductionCheck = await runNodeScript("scripts/server-production-check.js", ["--strict"], {
+        env: {
+          ...sqliteCheckEnv,
+          ZEROLAG_SQLITE_STATE_PATH: missingSqlitePath
+        }
+      });
+      assert(missingSqliteProductionCheck.status === 1, "SQLite production check should fail when the SQLite state file is missing.");
+      assert(missingSqliteProductionCheck.stdout.includes("SQLite state file does not exist"), "Missing SQLite check should explain the blocking issue.");
+      assert(!fs.existsSync(missingSqlitePath), "SQLite production check must not create a missing SQLite file.");
     } finally {
       fs.rmSync(migrationTempDir, { recursive: true, force: true });
     }

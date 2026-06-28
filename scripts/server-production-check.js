@@ -48,6 +48,96 @@ function paymentProviderList(value) {
     .filter(Boolean);
 }
 
+function stateSummary(state) {
+  return {
+    activationCodes: Object.keys(state.activationCodes || {}).length,
+    orders: Object.keys(state.orders || {}).length,
+    subscriptions: Object.keys(state.subscriptions || {}).length,
+    tokens: Object.keys(state.tokens || {}).length,
+    websiteEvents: Number(state.websiteEvents && state.websiteEvents.total || 0),
+    auditEvents: Array.isArray(state.auditEvents) ? state.auditEvents.length : 0
+  };
+}
+
+function inspectSqliteState(sqliteStatePath) {
+  if (!fs.existsSync(sqliteStatePath)) {
+    return {
+      exists: false,
+      readable: false,
+      hasTable: false,
+      hasState: false,
+      summary: null,
+      error: ""
+    };
+  }
+
+  const sqlite = require("node:sqlite");
+  let database = null;
+  try {
+    database = new sqlite.DatabaseSync(sqliteStatePath, { readOnly: true });
+    const table = database
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get("state_documents");
+    if (!table) {
+      return {
+        exists: true,
+        readable: true,
+        hasTable: false,
+        hasState: false,
+        summary: null,
+        error: ""
+      };
+    }
+
+    const row = database
+      .prepare("SELECT value FROM state_documents WHERE key = ?")
+      .get("server");
+    if (!row) {
+      return {
+        exists: true,
+        readable: true,
+        hasTable: true,
+        hasState: false,
+        summary: null,
+        error: ""
+      };
+    }
+
+    const state = JSON.parse(row.value);
+    return {
+      exists: true,
+      readable: true,
+      hasTable: true,
+      hasState: true,
+      summary: stateSummary(state),
+      error: ""
+    };
+  } catch (error) {
+    return {
+      exists: true,
+      readable: false,
+      hasTable: false,
+      hasState: false,
+      summary: null,
+      error: error.message
+    };
+  } finally {
+    if (database) database.close();
+  }
+}
+
+function formatStateSummary(summary) {
+  if (!summary) return "unavailable";
+  return [
+    `activationCodes=${summary.activationCodes}`,
+    `orders=${summary.orders}`,
+    `subscriptions=${summary.subscriptions}`,
+    `tokens=${summary.tokens}`,
+    `websiteEvents=${summary.websiteEvents}`,
+    `auditEvents=${summary.auditEvents}`
+  ].join(", ");
+}
+
 function main() {
   const issues = [];
   const warnings = [];
@@ -57,12 +147,14 @@ function main() {
   const port = env("ZEROLAG_SERVER_PORT", "8787");
   const stateStore = normalizePaymentProvider(env("ZEROLAG_STATE_STORE", "json"));
   const sqliteStatePath = env("ZEROLAG_SQLITE_STATE_PATH", path.join(rootDir, "server", "data", "server-state.sqlite"));
+  const sqliteBackupDir = env("ZEROLAG_SQLITE_BACKUP_DIR", backupDir);
   const paymentProvider = normalizePaymentProvider(env("ZEROLAG_PAYMENT_PROVIDER", defaultPaymentProvider));
   const paymentAllowedProviders = paymentProviderList(env(
     "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS",
     "manual,manual-admin,manual-signed-webhook,signed-webhook,self-test"
   ));
   const paymentUrlTemplate = env("ZEROLAG_PAYMENT_URL_TEMPLATE", defaultPaymentUrlTemplate);
+  const sqliteInspection = stateStore === "sqlite" && sqliteStatePath ? inspectSqliteState(sqliteStatePath) : null;
 
   addIssue(issues, isStrongSecret(env("ZEROLAG_SERVER_SECRET", defaultServerSecret), defaultServerSecret), "ZEROLAG_SERVER_SECRET must be a custom strong secret.");
   addIssue(issues, isStrongSecret(env("ZEROLAG_ADMIN_SECRET", defaultAdminSecret), defaultAdminSecret), "ZEROLAG_ADMIN_SECRET must be a custom strong secret.");
@@ -86,7 +178,28 @@ function main() {
   addIssue(warnings, host !== "127.0.0.1" && host !== "localhost", "Server host is local-only; use a reverse proxy or public bind intentionally for production.");
   addIssue(warnings, stateStore === "sqlite", "State store is still JSON file storage; SQLite is recommended before wider paid testing.");
   if (stateStore === "sqlite") {
+    const sqliteExists = Boolean(sqliteInspection && sqliteInspection.exists);
+    const sqliteReadable = Boolean(sqliteInspection && sqliteInspection.readable);
+    const sqliteHasTable = Boolean(sqliteInspection && sqliteInspection.hasTable);
     addIssue(warnings, Boolean(sqliteStatePath), "ZEROLAG_SQLITE_STATE_PATH is not configured.");
+    addIssue(issues, fs.existsSync(path.dirname(sqliteStatePath)), `SQLite state directory does not exist: ${path.dirname(sqliteStatePath)}`);
+    addIssue(issues, sqliteExists, `SQLite state file does not exist: ${sqliteStatePath}`);
+    addIssue(
+      issues,
+      !sqliteExists || sqliteReadable,
+      `SQLite state file could not be read${sqliteInspection && sqliteInspection.error ? `: ${sqliteInspection.error}` : "."}`
+    );
+    addIssue(
+      issues,
+      !sqliteReadable || sqliteHasTable,
+      "SQLite state file is missing the state_documents table; run the JSON migration or restore a verified backup."
+    );
+    addIssue(
+      issues,
+      !sqliteReadable || !sqliteHasTable || Boolean(sqliteInspection && sqliteInspection.hasState),
+      "SQLite state file does not contain a server state document; run the JSON migration or restore a verified backup."
+    );
+    addIssue(warnings, fs.existsSync(sqliteBackupDir), `SQLite backup directory does not exist yet: ${sqliteBackupDir}`);
   }
   addIssue(warnings, paymentProvider !== defaultPaymentProvider, "Payment provider is still manual; configure ZEROLAG_PAYMENT_PROVIDER before paid release.");
   addIssue(
@@ -103,7 +216,9 @@ function main() {
   console.log(`State store: ${stateStore}`);
   console.log(`State: ${statePath}`);
   if (stateStore === "sqlite") console.log(`SQLite state: ${sqliteStatePath}`);
+  if (stateStore === "sqlite") console.log(`SQLite summary: ${formatStateSummary(sqliteInspection && sqliteInspection.summary)}`);
   console.log(`Backup: ${backupDir}`);
+  if (stateStore === "sqlite") console.log(`SQLite backup: ${sqliteBackupDir}`);
   console.log(`Payment provider: ${paymentProvider}`);
 
   if (warnings.length) {

@@ -192,6 +192,8 @@ npm run server:start
 
 SQLite mode is intended for wider paid testing before a full PostgreSQL-style async storage migration. The JSON file store remains the default.
 
+`npm run server:check:strict` verifies the configured SQLite state file can be read and contains a server state document before wider paid testing.
+
 To migrate an existing JSON state file into SQLite:
 
 ```powershell

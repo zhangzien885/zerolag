@@ -41,6 +41,8 @@ npm run server:start
 
 The default remains JSON file storage unless `ZEROLAG_STATE_STORE=sqlite` is set.
 
+`npm run server:check:strict` validates the configured SQLite path, verifies the database can be read, confirms the `state_documents` table exists, and prints only safe state counts.
+
 ## JSON To SQLite Migration
 
 Existing JSON state can be imported into SQLite before switching the server over:
