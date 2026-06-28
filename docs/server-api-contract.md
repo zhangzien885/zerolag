@@ -52,6 +52,8 @@ X-ZeroLag-Admin-Secret: ADMIN_SECRET
 
 Returns a non-secret operational summary for private checks, including state-file status, backup status, update-manifest status, rate-limit status, data counts, and whether deployment secrets are still using development defaults.
 
+Run `npm run server:smoke` before exposing the service. It starts a temporary local API instance, checks public health, and verifies the admin readiness endpoint using the loaded server secret configuration without mutating real membership state.
+
 Admin maintenance cleanup:
 
 ```http

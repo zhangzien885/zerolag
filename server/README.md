@@ -36,6 +36,22 @@ Default URL:
 http://127.0.0.1:8787
 ```
 
+## Smoke Test
+
+Before opening a server to real users, run a local smoke test:
+
+```powershell
+npm run server:smoke
+```
+
+The smoke test loads the same private env file as the server, starts a temporary local API instance, checks `/v1/health`, and verifies `/v1/admin/readiness` with the configured admin secret. By default it uses isolated temporary state so it does not mutate real membership data.
+
+To intentionally test against the configured state path:
+
+```powershell
+npm run server:smoke -- --live-state
+```
+
 ## Private Environment File
 
 Generate strong local secrets for private testing or deployment preparation:

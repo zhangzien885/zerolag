@@ -51,10 +51,12 @@ npm run production:check
 npm run production:check:strict
 npm run server:check
 npm run server:check:strict
+npm run server:smoke
 npm run server:secrets
 ```
 
 `production:check` validates desktop release config. `server:check` validates server deployment environment variables. Use the `:strict` variants before a real paid release.
+`server:smoke` starts a temporary local license server, checks public health, and verifies the admin readiness endpoint with the loaded server secret configuration.
 `server:secrets` prints strong private server secrets; use `npm run server:secrets -- --write` to save them under `.secrets/server.env`.
 
 Server commands automatically load `.secrets/server.env` when it exists. Existing system environment variables stay higher priority, and `ZEROLAG_ENV_FILE` can point commands at another private env file for staging or deployment tests.

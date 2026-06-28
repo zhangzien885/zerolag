@@ -17,6 +17,7 @@ const protectedFiles = [
   "scripts/local-integration.js",
   "scripts/production-check.js",
   "scripts/server-production-check.js",
+  "scripts/server-smoke-test.js",
   "scripts/generate-server-secrets.js",
   "server/env.js",
   "assets/zerolag-logo.svg",
