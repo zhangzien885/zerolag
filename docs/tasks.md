@@ -140,6 +140,7 @@
 - Added an admin CLI command for viewing aggregate website CTA analytics without exposing user-level data.
 - Added bounded website analytics aggregation so public event dimensions cannot grow the server state without limit.
 - Added CORS and preflight support for the public website analytics endpoint while keeping sensitive endpoints private.
+- Added a private admin CSV export for aggregate website CTA analytics.
 
 ## Known Boundaries
 

@@ -258,6 +258,14 @@ async function main() {
     assert(adminAnalyticsBody.websiteEvents.total === 2, "Admin analytics command should expose website event total.");
     assert(adminAnalyticsBody.websiteEvents.events.download_click === 1, "Admin analytics command should expose download clicks.");
     assert(adminAnalyticsBody.websiteEvents.events.purchase_click === 1, "Admin analytics command should expose purchase clicks.");
+    const analyticsCsvPath = path.join(tempDir, "website-analytics.csv");
+    const adminAnalyticsCsv = await runAdminClient(port, ["analytics-csv", analyticsCsvPath]);
+    assert(adminAnalyticsCsv.status === 0, `Admin analytics CSV command failed: ${adminAnalyticsCsv.stderr || adminAnalyticsCsv.stdout}`);
+    assert(fs.existsSync(analyticsCsvPath), "Admin analytics CSV command should write a CSV file.");
+    const analyticsCsv = fs.readFileSync(analyticsCsvPath, "utf8");
+    assert(analyticsCsv.startsWith("metric,key,count,updatedAt\n"), "Admin analytics CSV should include a stable header.");
+    assert(analyticsCsv.includes("event,download_click,1,"), "Admin analytics CSV should include download clicks.");
+    assert(analyticsCsv.includes("event,purchase_click,1,"), "Admin analytics CSV should include purchase clicks.");
 
     for (let index = 0; index < 80; index += 1) {
       const noisyWebsiteEvent = await requestJson(port, "/v1/website/events", {

@@ -25,6 +25,7 @@ function usage() {
   console.log("  node server/admin-client.js revoke-subscription [subscriptionId] [reason]");
   console.log("  node server/admin-client.js audit-events [limit] [type]");
   console.log("  node server/admin-client.js analytics");
+  console.log("  node server/admin-client.js analytics-csv [outputFile]");
   console.log("  node server/admin-client.js cleanup");
   console.log("  node server/admin-client.js export-state [outputFile]");
   console.log("  node server/admin-client.js readiness");
@@ -117,6 +118,32 @@ function analyticsPayloadFromSummary(summary) {
       daily: websiteEvents.daily || {}
     }
   };
+}
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, "\"\"")}"` : text;
+}
+
+function sortedMetricRows(metric, map, updatedAt) {
+  return Object.entries(map || {})
+    .sort((left, right) => Number(right[1] || 0) - Number(left[1] || 0) || left[0].localeCompare(right[0]))
+    .map(([key, count]) => [metric, key, Number(count || 0), updatedAt]);
+}
+
+function analyticsCsvFromSummary(summary) {
+  const analytics = analyticsPayloadFromSummary(summary).websiteEvents;
+  const rows = [
+    ["metric", "key", "count", "updatedAt"],
+    ["total", "all", analytics.total, analytics.updatedAt],
+    ...sortedMetricRows("event", analytics.events, analytics.updatedAt),
+    ...sortedMetricRows("version", analytics.versions, analytics.updatedAt),
+    ...sortedMetricRows("channel", analytics.channels, analytics.updatedAt),
+    ...sortedMetricRows("status", analytics.statuses, analytics.updatedAt),
+    ...sortedMetricRows("day", analytics.daily, analytics.updatedAt)
+  ];
+
+  return `${rows.map((row) => row.map(csvEscape).join(",")).join("\n")}\n`;
 }
 
 async function main() {
@@ -283,6 +310,25 @@ async function main() {
     }
 
     console.log(JSON.stringify(analyticsPayloadFromSummary(response.body.summary), null, 2));
+    return;
+  }
+
+  if (command === "analytics-csv") {
+    const outputFile = path.resolve(process.argv[3] || `zerolag-website-analytics-${Date.now()}.csv`);
+    const response = await requestJson("/v1/admin/summary");
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      console.log(JSON.stringify(response.body, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+
+    fs.mkdirSync(path.dirname(outputFile), { recursive: true });
+    fs.writeFileSync(outputFile, analyticsCsvFromSummary(response.body.summary), "utf8");
+    console.log(JSON.stringify({
+      ok: true,
+      outputFile,
+      websiteEvents: analyticsPayloadFromSummary(response.body.summary).websiteEvents
+    }, null, 2));
     return;
   }
 
