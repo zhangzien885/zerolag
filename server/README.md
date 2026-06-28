@@ -67,6 +67,7 @@ For wider paid testing after migrating to SQLite, generate the private env file 
 
 ```powershell
 npm run server:secrets -- --profile sqlite --write
+npm run server:env-check -- --profile sqlite
 ```
 
 Server commands automatically load `.secrets/server.env` when it exists, including `server:start`, `server:create-code`, `server:admin`, and `server:check`. Existing system environment variables stay higher priority, so a host provider or Windows service can still override file values.

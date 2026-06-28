@@ -335,11 +335,40 @@ async function main() {
     assert(sqliteEnvFile.includes("# Profile: sqlite"), "SQLite server env template should record its profile.");
     assert(sqliteEnvFile.includes("ZEROLAG_STATE_STORE=sqlite"), "SQLite server env template should activate SQLite storage.");
     assert(sqliteEnvFile.includes("ZEROLAG_SQLITE_BACKUP_MAX_AGE_HOURS=24"), "SQLite server env template should include backup freshness settings.");
+    const sqliteEnvCheck = await runNodeScript("scripts/check-server-env.js", [
+      "--file",
+      sqliteEnvPath,
+      "--profile",
+      "sqlite"
+    ]);
+    assert(sqliteEnvCheck.status === 0, `SQLite server env check should pass: ${sqliteEnvCheck.stderr || sqliteEnvCheck.stdout}`);
+    const sqliteEnvCheckBody = JSON.parse(sqliteEnvCheck.stdout);
+    assert(sqliteEnvCheckBody.ok === true, "SQLite server env check should return ok.");
+    assert(sqliteEnvCheckBody.summary.stateStore === "sqlite", "SQLite server env check should report sqlite storage.");
+    assert(!sqliteEnvCheck.stdout.includes("zl_server_"), "Server env check must not print generated secret values.");
     const refusedEnvOverwrite = await runNodeScript("scripts/generate-server-secrets.js", [
       "--write",
       sqliteEnvPath
     ]);
     assert(refusedEnvOverwrite.status === 1, "Server env template write should refuse to overwrite without --force.");
+    const badEnvPath = path.join(tempDir, "bad-server.env");
+    fs.writeFileSync(badEnvPath, [
+      "ZEROLAG_SERVER_SECRET=dev",
+      "ZEROLAG_ADMIN_SECRET=dev",
+      "ZEROLAG_PAYMENT_WEBHOOK_SECRET=dev",
+      "ZEROLAG_SERVER_PORT=not-a-port",
+      "ZEROLAG_STATE_STORE=sqlite",
+      "ZEROLAG_RATE_LIMIT_DISABLED=1"
+    ].join("\n"), "utf8");
+    const badEnvCheck = await runNodeScript("scripts/check-server-env.js", [
+      "--file",
+      badEnvPath,
+      "--profile",
+      "sqlite"
+    ]);
+    assert(badEnvCheck.status === 1, "Server env check should fail for missing keys, weak secrets, and unsafe switches.");
+    const badEnvCheckBody = JSON.parse(badEnvCheck.stdout);
+    assert(badEnvCheckBody.issues.length >= 1, "Bad server env check should report issues.");
 
     const migrationTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-sqlite-migration-test-"));
     try {

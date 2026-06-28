@@ -32,6 +32,7 @@ const protectedFiles = [
   "scripts/backup-sqlite-state.js",
   "scripts/restore-sqlite-state.js",
   "scripts/check-sqlite-backups.js",
+  "scripts/check-server-env.js",
   "scripts/generate-server-secrets.js",
   "scripts/update-signing-smoke-test.js",
   "server/env.js",

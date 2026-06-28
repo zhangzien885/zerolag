@@ -60,6 +60,7 @@ Run these in order before a paid public release:
 ```powershell
 npm run deploy:checklist
 npm run server:secrets -- --profile sqlite --write
+npm run server:env-check -- --profile sqlite
 npm run server:migrate-sqlite -- --input <json-state> --output <sqlite-state>
 npm run server:backup-sqlite -- --input <sqlite-state> --output <sqlite-backup>
 npm run server:check-sqlite-backups -- --dir <sqlite-backup-dir> --max-age-hours 24
