@@ -180,6 +180,8 @@ The HTML report is a local private dashboard for quick visual review and should 
 
 The JSON-state MVP now writes state through a temporary file and atomic rename. Before overwriting an existing state file, the server keeps a rolling backup under `server/data/backups` by default. If the main state JSON is corrupted, `loadState` attempts to recover from the newest readable backup.
 
+The server also accepts a custom synchronous `stateStore` option for future database migration work. See `docs/state-storage-contract.md` for the current contract.
+
 Optional environment variables:
 
 ```powershell

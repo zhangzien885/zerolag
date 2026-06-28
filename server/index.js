@@ -243,20 +243,42 @@ function applyRateLimit(request, response, routeKey, options = {}) {
   return false;
 }
 
-function loadState(options = {}) {
+function normalizeStateRecord(input) {
+  return {
+    ...createEmptyState(),
+    ...(input && typeof input === "object" && !Array.isArray(input) ? input : {})
+  };
+}
+
+function stateStoreFromOptions(options = {}) {
+  const store = options.stateStore;
+  if (!store || typeof store !== "object") return null;
+  if (typeof store.loadState !== "function" || typeof store.saveState !== "function") {
+    throw new Error("stateStore must provide loadState() and saveState(state).");
+  }
+  return store;
+}
+
+function loadStateFromJsonFile(options = {}) {
   const statePath = statePathFromOptions(options);
   if (!fs.existsSync(statePath)) {
     return createEmptyState();
   }
 
   try {
-    return {
-      ...createEmptyState(),
-      ...JSON.parse(fs.readFileSync(statePath, "utf8"))
-    };
+    return normalizeStateRecord(JSON.parse(fs.readFileSync(statePath, "utf8")));
   } catch {
     return loadLatestBackupState(options) || createEmptyState();
   }
+}
+
+function loadState(options = {}) {
+  const store = stateStoreFromOptions(options);
+  if (store) {
+    return normalizeStateRecord(store.loadState() || createEmptyState());
+  }
+
+  return loadStateFromJsonFile(options);
 }
 
 function safeTimestampForFileName(date = new Date()) {
@@ -264,6 +286,11 @@ function safeTimestampForFileName(date = new Date()) {
 }
 
 function listBackupFiles(options = {}) {
+  const store = stateStoreFromOptions(options);
+  if (store) {
+    return typeof store.listBackups === "function" ? store.listBackups() : [];
+  }
+
   const config = backupConfigFromOptions(options);
   if (!fs.existsSync(config.dir)) return [];
 
@@ -294,6 +321,8 @@ function pruneBackupFiles(options = {}) {
 }
 
 function backupCurrentStateFile(statePath, options = {}) {
+  if (stateStoreFromOptions(options)) return null;
+
   const config = backupConfigFromOptions(options);
   if (!config.enabled || config.retention === 0 || !fs.existsSync(statePath)) return null;
 
@@ -309,10 +338,7 @@ function backupCurrentStateFile(statePath, options = {}) {
 function loadLatestBackupState(options = {}) {
   for (const backup of listBackupFiles(options)) {
     try {
-      return {
-        ...createEmptyState(),
-        ...JSON.parse(fs.readFileSync(backup.filePath, "utf8"))
-      };
+      return normalizeStateRecord(JSON.parse(fs.readFileSync(backup.filePath, "utf8")));
     } catch {
       // Keep scanning older backups if the latest snapshot is also damaged.
     }
@@ -328,6 +354,12 @@ function writeFileAtomic(filePath, content) {
 }
 
 function saveState(state, options = {}) {
+  const store = stateStoreFromOptions(options);
+  if (store) {
+    store.saveState(normalizeStateRecord(state));
+    return;
+  }
+
   const statePath = statePathFromOptions(options);
   fs.mkdirSync(path.dirname(statePath), { recursive: true });
   backupCurrentStateFile(statePath, options);
@@ -627,7 +659,13 @@ function updateManifestReadiness() {
 
 function serverReadiness(options = {}) {
   const statePath = statePathFromOptions(options);
-  const backup = backupConfigFromOptions(options);
+  const stateStore = stateStoreFromOptions(options);
+  const backup = stateStore
+    ? {
+      enabled: typeof stateStore.listBackups === "function",
+      retention: 0
+    }
+    : backupConfigFromOptions(options);
   const backupFiles = listBackupFiles(options);
   const state = loadState(options);
   const rateLimit = rateLimitConfigFromOptions(options, "admin");
@@ -639,7 +677,7 @@ function serverReadiness(options = {}) {
   if (adminSecretFromOptions(options) === defaultAdminSecret) warnings.push("ADMIN_SECRET_DEFAULT");
   if (paymentWebhookSecretFromOptions(options) === defaultPaymentWebhookSecret) warnings.push("PAYMENT_WEBHOOK_SECRET_DEFAULT");
   if (payment.provider === defaultPaymentProvider) warnings.push("PAYMENT_PROVIDER_MANUAL");
-  if (!backup.enabled || backup.retention === 0) warnings.push("BACKUP_DISABLED");
+  if (!stateStore && (!backup.enabled || backup.retention === 0)) warnings.push("BACKUP_DISABLED");
 
   const updateManifest = updateManifestReadiness();
   if (updateManifest.exists && !updateManifest.valid) warnings.push("UPDATE_MANIFEST_INVALID");
@@ -652,6 +690,10 @@ function serverReadiness(options = {}) {
       path: statePath,
       file: fileSnapshot(statePath),
       summary: stateSummary(state)
+    },
+    storage: {
+      kind: stateStore ? String(stateStore.kind || "custom") : "json-file",
+      backups: backup.enabled
     },
     backups: {
       enabled: backup.enabled,

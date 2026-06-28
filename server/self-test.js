@@ -3,7 +3,7 @@ const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
 const { spawn } = require("child_process");
-const { addActivationCode, createAppServer, loadState, signPaymentWebhook } = require("./index");
+const { addActivationCode, createAppServer, loadState, saveState, signPaymentWebhook } = require("./index");
 
 function requestJson(port, pathname, body, headers = {}) {
   return new Promise((resolve, reject) => {
@@ -155,6 +155,27 @@ function runAdminClient(port, args, options = {}) {
   });
 }
 
+function cloneJson(value) {
+  return value ? JSON.parse(JSON.stringify(value)) : value;
+}
+
+function createMemoryStateStore(initialState = null) {
+  let current = cloneJson(initialState);
+
+  return {
+    kind: "memory-test",
+    loadState() {
+      return cloneJson(current);
+    },
+    saveState(state) {
+      current = cloneJson(state);
+    },
+    listBackups() {
+      return [];
+    }
+  };
+}
+
 async function main() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-server-test-"));
   const options = {
@@ -194,10 +215,45 @@ async function main() {
     assert(readiness.body.secrets.adminSecret === "custom", "Readiness should report custom admin secret.");
     assert(readiness.body.maintenance.enabled === true, "Readiness should include maintenance status.");
     assert(readiness.body.payment.provider === "manual", "Readiness should include payment provider status.");
+    assert(readiness.body.storage.kind === "json-file", "Readiness should report default JSON file storage.");
     assert(
       readiness.body.warnings.includes("PAYMENT_PROVIDER_MANUAL"),
       "Readiness should warn when payment provider is still manual."
     );
+
+    const memoryCode = "ZL-PRO-MEMORY-TEST";
+    const memoryStore = createMemoryStateStore();
+    const memoryOptions = {
+      stateStore: memoryStore,
+      serverSecret: "memory-store-secret",
+      adminSecret: "memory-store-admin",
+      paymentWebhookSecret: "memory-store-payment"
+    };
+    addActivationCode(memoryCode, { durationDays: 30, maxUses: 1 }, memoryOptions);
+    const memoryState = loadState(memoryOptions);
+    assert(Object.keys(memoryState.activationCodes).length === 1, "Custom state store should load saved state.");
+    memoryState.version = 1;
+    saveState(memoryState, memoryOptions);
+    const memoryServer = createAppServer(memoryOptions);
+    const memoryPort = await listen(memoryServer);
+    try {
+      const memoryReadiness = await requestJson(memoryPort, "/v1/admin/readiness", null, {
+        "X-ZeroLag-Admin-Secret": "memory-store-admin"
+      });
+      assert(memoryReadiness.statusCode === 200, "Custom state store readiness failed.");
+      assert(memoryReadiness.body.storage.kind === "memory-test", "Readiness should report custom state store kind.");
+      const memoryActivated = await requestJson(memoryPort, "/v1/licenses/activate", {
+        activationCode: memoryCode,
+        deviceHash,
+        appVersion: "0.1.0",
+        channel: "memory-store"
+      });
+      assert(memoryActivated.statusCode === 200 && memoryActivated.body.active, "Custom state store activation failed.");
+    } finally {
+      await new Promise((resolve) => {
+        memoryServer.close(resolve);
+      });
+    }
 
     const websitePreflight = await requestOptions(port, "/v1/website/events", {
       Origin: "https://zerolag.app",
