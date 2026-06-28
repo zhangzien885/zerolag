@@ -126,11 +126,27 @@ If the subscription is expired, refunded, revoked, moved to another device, or p
   "message": "新版本已准备好。",
   "downloadUrl": "https://zerolag.example/download",
   "releaseNotes": ["优化启动速度", "提升状态检测稳定性"],
+  "signatureAlgorithm": "RSA-SHA256",
   "signature": "base64-signature"
 }
 ```
 
-Production builds should sign update metadata and configure `updatePublicKeyPem`.
+Production builds should sign update metadata and configure `updatePublicKeyPem`. Remote production manifests without a valid signature are rejected by the desktop client.
+
+Generate and store keys privately:
+
+```powershell
+npm run update:sign -- --generate-keypair .\.secrets\update-private.pem .\.secrets\update-public.pem
+```
+
+Sign the manifest before upload:
+
+```powershell
+npm run update:sign -- assets\update.json .\.secrets\update-private.pem
+npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
+```
+
+Copy only the public key into production `assets/app-config.json` as `updatePublicKeyPem`. Never ship or commit the private key.
 
 ## POST `/v1/orders/create`
 

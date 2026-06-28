@@ -17,6 +17,14 @@ function isPlaceholderUrl(value) {
   return /example\.com|localhost|127\.0\.0\.1/i.test(String(value || ""));
 }
 
+function normalizePem(value) {
+  return String(value || "").replace(/\\n/g, "\n").trim();
+}
+
+function isPublicKeyPem(value) {
+  return /^-----BEGIN PUBLIC KEY-----[\s\S]+-----END PUBLIC KEY-----$/m.test(normalizePem(value));
+}
+
 function addIssue(issues, ok, message) {
   if (!ok) issues.push(message);
 }
@@ -40,6 +48,7 @@ function main() {
   addIssue(issues, !productionMode || isHttpsUrl(config.apiBaseUrl), "Production apiBaseUrl must be HTTPS.");
   addIssue(issues, !productionMode || isHttpsUrl(config.updateManifestUrl), "Production updateManifestUrl must be HTTPS.");
   addIssue(issues, !productionMode || Boolean(config.updatePublicKeyPem), "Production updatePublicKeyPem is required for signed update metadata.");
+  addIssue(issues, !productionMode || isPublicKeyPem(config.updatePublicKeyPem), "Production updatePublicKeyPem must be a PEM public key.");
   addIssue(issues, !productionMode || config.allowLocalDemoLicense === false, "Production must disable local demo license activation.");
 
   console.log("ZeroLag production readiness");

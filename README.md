@@ -46,6 +46,18 @@ npm run production:check:strict
 
 `production:check` gives a readiness report. `production:check:strict` should be used before a real paid release.
 
+## Signed updates
+
+Production update prompts should use signed metadata:
+
+```powershell
+npm run update:sign -- --generate-keypair .\.secrets\update-private.pem .\.secrets\update-public.pem
+npm run update:sign -- assets\update.json .\.secrets\update-private.pem
+npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
+```
+
+Keep the private key outside Git. Put only the public key into `assets/app-config.json` as `updatePublicKeyPem` for production builds.
+
 ## License server MVP
 
 ```powershell

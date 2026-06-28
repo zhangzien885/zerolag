@@ -292,6 +292,76 @@ function compareVersions(left, right) {
   return 0;
 }
 
+function stableStringify(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(",")}]`;
+  }
+
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value);
+}
+
+function updateManifestSigningBody(manifest) {
+  const payload = { ...(manifest || {}) };
+  delete payload.signature;
+  delete payload.signatureError;
+  delete payload.signatureValid;
+  delete payload.signed;
+  delete payload.source;
+  return stableStringify(payload);
+}
+
+function normalizePem(value) {
+  return String(value || "").replace(/\\n/g, "\n").trim();
+}
+
+function verifyUpdateManifestSignature(manifest, publicKeyPem) {
+  const signature = String(manifest && manifest.signature ? manifest.signature : "").trim();
+  if (!signature) {
+    return {
+      signed: false,
+      verified: false,
+      error: "UPDATE_MANIFEST_UNSIGNED"
+    };
+  }
+
+  const publicKey = normalizePem(publicKeyPem);
+  if (!publicKey) {
+    return {
+      signed: true,
+      verified: false,
+      error: "UPDATE_PUBLIC_KEY_MISSING"
+    };
+  }
+
+  try {
+    const verified = crypto.verify(
+      "sha256",
+      Buffer.from(updateManifestSigningBody(manifest), "utf8"),
+      publicKey,
+      Buffer.from(signature, "base64")
+    );
+
+    return {
+      signed: true,
+      verified,
+      error: verified ? "" : "UPDATE_SIGNATURE_INVALID"
+    };
+  } catch {
+    return {
+      signed: true,
+      verified: false,
+      error: "UPDATE_SIGNATURE_INVALID"
+    };
+  }
+}
+
 function readUpdateStatus() {
   const current = app.getVersion();
   const fallback = {
@@ -330,10 +400,11 @@ function readUpdateStatus() {
   }
 }
 
-function normalizeUpdateManifest(manifest, current) {
+function normalizeUpdateManifest(manifest, current, config = {}) {
   const latest = manifest.latest || current;
   const minSupported = manifest.minSupported || current;
   const force = Boolean(manifest.force) || compareVersions(current, minSupported) < 0;
+  const signature = verifyUpdateManifestSignature(manifest, config.updatePublicKeyPem);
 
   return {
     current,
@@ -346,7 +417,9 @@ function normalizeUpdateManifest(manifest, current) {
     releaseNotes: Array.isArray(manifest.releaseNotes) ? manifest.releaseNotes : [],
     downloadUrl: manifest.downloadUrl || "",
     source: manifest.source || "local",
-    signed: Boolean(manifest.signature)
+    signed: signature.signed,
+    signatureValid: signature.verified,
+    signatureError: signature.error
   };
 }
 
@@ -366,7 +439,15 @@ async function readUpdateStatusV2() {
   if (config.updateManifestUrl) {
     const remote = await requestJson(config.updateManifestUrl, { timeoutMs: 6000 });
     if (remote.ok && remote.data) {
-      return normalizeUpdateManifest({ ...remote.data, source: "remote" }, current);
+      const update = normalizeUpdateManifest({ ...remote.data, source: "remote" }, current, config);
+      if (isProductionMode() && !update.signatureValid) {
+        return {
+          ...fallback,
+          error: update.signatureError || "UPDATE_SIGNATURE_INVALID"
+        };
+      }
+
+      return update;
     }
 
     if (isProductionMode()) {
@@ -382,7 +463,15 @@ async function readUpdateStatusV2() {
   }
 
   try {
-    return normalizeUpdateManifest(JSON.parse(fs.readFileSync(updateManifestPath, "utf8")), current);
+    const update = normalizeUpdateManifest(JSON.parse(fs.readFileSync(updateManifestPath, "utf8")), current, config);
+    if (isProductionMode() && update.signed && !update.signatureValid) {
+      return {
+        ...fallback,
+        error: update.signatureError || "UPDATE_SIGNATURE_INVALID"
+      };
+    }
+
+    return update;
   } catch {
     return fallback;
   }
