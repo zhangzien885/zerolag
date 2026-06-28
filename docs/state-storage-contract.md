@@ -63,6 +63,14 @@ npm run server:backup-sqlite -- --input D:\zerolag-data\server-state.sqlite --ou
 
 When `--output` is omitted, the command writes a timestamped SQLite backup under `ZEROLAG_SQLITE_BACKUP_DIR`, `ZEROLAG_SERVER_BACKUP_DIR`, or `server/data/backups`. It refuses to update an existing backup unless `--force` is provided, then compares a SHA256 digest after writing.
 
+Backups can be inspected without printing activation codes, tokens, or order details:
+
+```powershell
+npm run server:check-sqlite-backups -- --dir D:\zerolag-backups --max-age-hours 24
+```
+
+Use `--all` when you want to verify every `.sqlite` backup in the folder instead of only the newest one.
+
 ## SQLite Restore
 
 Private recovery can restore a verified backup into a new or existing SQLite state file:

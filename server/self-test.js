@@ -322,6 +322,7 @@ async function main() {
     try {
       const migrationJsonPath = path.join(migrationTempDir, "source-state.json");
       const migrationSqlitePath = path.join(migrationTempDir, "target-state.sqlite");
+      const migrationBackupDir = path.join(migrationTempDir, "sqlite-backups");
       fs.copyFileSync(options.statePath, migrationJsonPath);
       const migration = await runNodeScript("scripts/migrate-state-to-sqlite.js", [
         "--input",
@@ -347,7 +348,7 @@ async function main() {
         migrationSqlitePath
       ]);
       assert(refusedOverwrite.status === 1, "SQLite migration should refuse to overwrite existing output without --force.");
-      const backupSqlitePath = path.join(migrationTempDir, "backup-state.sqlite");
+      const backupSqlitePath = path.join(migrationBackupDir, "backup-state.sqlite");
       const backup = await runNodeScript("scripts/backup-sqlite-state.js", [
         "--input",
         migrationSqlitePath,
@@ -372,6 +373,28 @@ async function main() {
         backupSqlitePath
       ]);
       assert(refusedBackupOverwrite.status === 1, "SQLite backup should refuse to overwrite existing output without --force.");
+      const backupCheck = await runNodeScript("scripts/check-sqlite-backups.js", [
+        "--dir",
+        migrationBackupDir,
+        "--min-count",
+        "1",
+        "--max-age-hours",
+        "1"
+      ]);
+      assert(backupCheck.status === 0, `SQLite backup check command failed: ${backupCheck.stderr || backupCheck.stdout}`);
+      const backupCheckBody = JSON.parse(backupCheck.stdout);
+      assert(backupCheckBody.ok === true, "SQLite backup check should return ok.");
+      assert(backupCheckBody.latest.fileName === "backup-state.sqlite", "SQLite backup check should inspect the newest backup.");
+      assert(backupCheckBody.checks[0].summary.activationCodes >= 1, "SQLite backup check should include safe summary counts.");
+      const corruptBackupPath = path.join(migrationBackupDir, "corrupt-state.sqlite");
+      fs.writeFileSync(corruptBackupPath, "not a sqlite database", "utf8");
+      const corruptBackupCheck = await runNodeScript("scripts/check-sqlite-backups.js", [
+        "--dir",
+        migrationBackupDir,
+        "--all"
+      ]);
+      assert(corruptBackupCheck.status === 1, "SQLite backup check should fail when any checked backup is corrupt.");
+      assert(corruptBackupCheck.stdout.includes("corrupt-state.sqlite"), "SQLite backup check should identify the corrupt backup file.");
       const restoredSqlitePath = path.join(migrationTempDir, "restored-state.sqlite");
       const restore = await runNodeScript("scripts/restore-sqlite-state.js", [
         "--input",
