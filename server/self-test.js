@@ -115,6 +115,41 @@ async function main() {
     const health = await requestJson(port, "/health");
     assert(health.statusCode === 200 && health.body.ok, "Health check failed.");
 
+    const rateTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-rate-limit-test-"));
+    const rateServer = createAppServer({
+      statePath: path.join(rateTempDir, "server-state.json"),
+      serverSecret: "rate-limit-test-secret",
+      adminSecret: "rate-limit-test-admin",
+      paymentWebhookSecret: "rate-limit-test-payment",
+      rateLimit: {
+        namespace: "self-test-rate-limit",
+        windowMs: 60 * 1000,
+        max: 1
+      }
+    });
+    const ratePort = await listen(rateServer);
+    try {
+      const firstLimitedOrder = await requestJson(ratePort, "/v1/orders/create", {
+        plan: "ZeroLag Pro Monthly",
+        deviceHash,
+        channel: "rate-limit-test"
+      });
+      assert(firstLimitedOrder.statusCode === 201, "First limited request should pass.");
+
+      const blockedLimitedOrder = await requestJson(ratePort, "/v1/orders/create", {
+        plan: "ZeroLag Pro Monthly",
+        deviceHash,
+        channel: "rate-limit-test"
+      }, {
+        "X-Forwarded-For": "203.0.113.10"
+      });
+      assert(blockedLimitedOrder.statusCode === 429, "Repeated limited request should be blocked.");
+      assert(Boolean(blockedLimitedOrder.body.message), "Rate limit response should include a message.");
+    } finally {
+      rateServer.close();
+      fs.rmSync(rateTempDir, { recursive: true, force: true });
+    }
+
     const deniedAdmin = await requestJson(port, "/v1/admin/activation-codes", {
       code: adminCode
     });

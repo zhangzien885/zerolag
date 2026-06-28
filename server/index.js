@@ -8,6 +8,17 @@ const defaultDataDir = path.join(__dirname, "data");
 const defaultStatePath = path.join(defaultDataDir, "server-state.json");
 const updateManifestPath = path.join(rootDir, "assets", "update.json");
 const maxAuditEvents = 2000;
+const defaultRateLimitWindowMs = 60 * 1000;
+const defaultRateLimitMax = 120;
+const defaultRateLimitByRoute = {
+  "orders:create": 30,
+  "orders:status": 240,
+  "payments:webhook": 120,
+  "licenses:activate": 20,
+  "licenses:validate": 240,
+  admin: 120
+};
+const rateLimitBuckets = new Map();
 
 function nowIso() {
   return new Date().toISOString();
@@ -66,6 +77,76 @@ function paymentWebhookSecretFromOptions(options = {}) {
   return options.paymentWebhookSecret
     || process.env.ZEROLAG_PAYMENT_WEBHOOK_SECRET
     || "zerolag-dev-payment-webhook-secret-change-before-production";
+}
+
+function positiveNumber(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : fallback;
+}
+
+function rateLimitConfigFromOptions(options = {}, routeKey = "default") {
+  const input = options.rateLimit || {};
+  const routeDefaultMax = defaultRateLimitByRoute[routeKey] || defaultRateLimitMax;
+  return {
+    enabled: input.enabled !== false && process.env.ZEROLAG_RATE_LIMIT_DISABLED !== "1",
+    max: Math.max(1, Math.floor(positiveNumber(
+      input.maxByRoute && input.maxByRoute[routeKey]
+        ? input.maxByRoute[routeKey]
+        : input.max || process.env.ZEROLAG_RATE_LIMIT_MAX,
+      routeDefaultMax
+    ))),
+    namespace: String(input.namespace || statePathFromOptions(options)),
+    trustProxy: input.trustProxy === true || process.env.ZEROLAG_TRUST_PROXY === "1",
+    windowMs: positiveNumber(input.windowMs || process.env.ZEROLAG_RATE_LIMIT_WINDOW_MS, defaultRateLimitWindowMs)
+  };
+}
+
+function clientIpFromRequest(request, config) {
+  if (!config.trustProxy) {
+    return request.socket.remoteAddress || "unknown";
+  }
+
+  const forwardedFor = String(request.headers["x-forwarded-for"] || "")
+    .split(",")[0]
+    .trim();
+  return forwardedFor || String(request.headers["x-real-ip"] || "").trim() || request.socket.remoteAddress || "unknown";
+}
+
+function cleanupRateLimitBuckets(now) {
+  if (rateLimitBuckets.size < 5000) return;
+
+  for (const [key, bucket] of rateLimitBuckets.entries()) {
+    if (bucket.resetAt <= now) {
+      rateLimitBuckets.delete(key);
+    }
+  }
+}
+
+function applyRateLimit(request, response, routeKey, options = {}) {
+  const config = rateLimitConfigFromOptions(options, routeKey);
+  if (!config.enabled) return true;
+
+  const now = Date.now();
+  cleanupRateLimitBuckets(now);
+  const key = `${config.namespace}:${routeKey}:${clientIpFromRequest(request, config)}`;
+  const bucket = rateLimitBuckets.get(key);
+
+  if (!bucket || bucket.resetAt <= now) {
+    rateLimitBuckets.set(key, {
+      count: 1,
+      resetAt: now + config.windowMs
+    });
+    return true;
+  }
+
+  bucket.count += 1;
+  if (bucket.count <= config.max) return true;
+
+  response.setHeader("Retry-After", String(Math.max(1, Math.ceil((bucket.resetAt - now) / 1000))));
+  jsonResponse(response, 429, {
+    message: "Too many requests. Please try again later."
+  });
+  return false;
 }
 
 function loadState(options = {}) {
@@ -1052,73 +1133,87 @@ async function routeRequest(request, response, options = {}) {
     }
 
     if (request.method === "POST" && url.pathname === "/v1/orders/create") {
+      if (!applyRateLimit(request, response, "orders:create", options)) return;
       await createOrder(request, response, options);
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/v1/payments/webhook") {
+      if (!applyRateLimit(request, response, "payments:webhook", options)) return;
       await paymentWebhook(request, response, options);
       return;
     }
 
     const orderStatusMatch = url.pathname.match(/^\/v1\/orders\/([^/]+)$/);
     if (request.method === "GET" && orderStatusMatch) {
+      if (!applyRateLimit(request, response, "orders:status", options)) return;
       await getOrderStatus(request, response, options, orderStatusMatch[1]);
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/v1/admin/activation-codes") {
+      if (!applyRateLimit(request, response, "admin", options)) return;
       await createActivationCodeAdmin(request, response, options);
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/v1/admin/orders/complete") {
+      if (!applyRateLimit(request, response, "admin", options)) return;
       await completeOrderAdmin(request, response, options);
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/v1/admin/orders/refund") {
+      if (!applyRateLimit(request, response, "admin", options)) return;
       await refundOrderAdmin(request, response, options);
       return;
     }
 
     if (request.method === "GET" && url.pathname === "/v1/admin/orders") {
+      if (!applyRateLimit(request, response, "admin", options)) return;
       await listOrdersAdmin(request, response, options);
       return;
     }
 
     if (request.method === "GET" && url.pathname === "/v1/admin/subscriptions") {
+      if (!applyRateLimit(request, response, "admin", options)) return;
       await listSubscriptionsAdmin(request, response, options);
       return;
     }
 
     const subscriptionAdminMatch = url.pathname.match(/^\/v1\/admin\/subscriptions\/([^/]+)$/);
     if (request.method === "GET" && subscriptionAdminMatch) {
+      if (!applyRateLimit(request, response, "admin", options)) return;
       await getSubscriptionAdmin(request, response, options, subscriptionAdminMatch[1]);
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/v1/admin/subscriptions/revoke") {
+      if (!applyRateLimit(request, response, "admin", options)) return;
       await revokeSubscriptionAdmin(request, response, options);
       return;
     }
 
     if (request.method === "GET" && url.pathname === "/v1/admin/audit-events") {
+      if (!applyRateLimit(request, response, "admin", options)) return;
       await listAuditEventsAdmin(request, response, options);
       return;
     }
 
     if (request.method === "GET" && url.pathname === "/v1/admin/summary") {
+      if (!applyRateLimit(request, response, "admin", options)) return;
       await adminSummary(request, response, options);
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/v1/licenses/activate") {
+      if (!applyRateLimit(request, response, "licenses:activate", options)) return;
       await activateLicense(request, response, options);
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/v1/licenses/validate") {
+      if (!applyRateLimit(request, response, "licenses:validate", options)) return;
       await validateLicense(request, response, options);
       return;
     }

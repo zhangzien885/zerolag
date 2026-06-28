@@ -12,6 +12,17 @@ Payment webhooks require the `X-ZeroLag-Signature` header. The signature must be
 sha256=<hmac_sha256(raw_body, ZEROLAG_PAYMENT_WEBHOOK_SECRET)>
 ```
 
+Sensitive public, payment, and admin endpoints are rate limited per client IP. A blocked request returns:
+
+```json
+{
+  "message": "Too many requests. Please try again later."
+}
+```
+
+Production deployments should keep app-level rate limiting enabled and add reverse-proxy or hosting-provider protection at the edge.
+Only enable trusted proxy IP headers when the reverse proxy overwrites them safely.
+
 ## Configuration
 
 The desktop client reads production endpoints from `assets/app-config.json`.

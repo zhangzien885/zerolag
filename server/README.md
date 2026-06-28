@@ -20,6 +20,7 @@ It provides:
 - `GET /v1/updates/manifest`
 - local activation-code creation for early testing
 - device binding and token rotation
+- in-memory rate limiting for public, payment, and admin endpoints
 
 ## Start Locally
 
@@ -79,6 +80,27 @@ sha256=<hmac_sha256_of_raw_json_body>
 
 Set `ZEROLAG_PAYMENT_WEBHOOK_SECRET` to a strong value before connecting a real payment provider.
 
+## Rate Limiting
+
+The server applies lightweight in-memory rate limits before sensitive handlers run. Defaults are tuned for the MVP:
+
+- `POST /v1/orders/create`: 30 requests per minute per client IP
+- `POST /v1/licenses/activate`: 20 requests per minute per client IP
+- `POST /v1/licenses/validate`: 240 requests per minute per client IP
+- `POST /v1/payments/webhook`: 120 requests per minute per client IP
+- admin endpoints: 120 requests per minute per client IP
+
+Optional environment variables:
+
+```powershell
+$env:ZEROLAG_RATE_LIMIT_MAX="120"
+$env:ZEROLAG_RATE_LIMIT_WINDOW_MS="60000"
+$env:ZEROLAG_RATE_LIMIT_DISABLED="0"
+$env:ZEROLAG_TRUST_PROXY="0"
+```
+
+Keep rate limiting enabled in production, and add edge protection through the hosting provider or reverse proxy before public release. Set `ZEROLAG_TRUST_PROXY=1` only when your reverse proxy overwrites client IP headers safely.
+
 ## Order Flow MVP
 
 The server now supports a provider-neutral order flow:
@@ -123,6 +145,7 @@ For a paid release:
 - Use a strong `ZEROLAG_SERVER_SECRET`.
 - Use a strong `ZEROLAG_ADMIN_SECRET`.
 - Use a strong `ZEROLAG_PAYMENT_WEBHOOK_SECRET`.
+- Keep rate limiting enabled and add reverse-proxy protection for public traffic.
 - Move state from JSON to a real database.
 - Replace the manual payment placeholder with WeChat Pay, Alipay, Stripe, or another provider that calls the signed webhook.
 
