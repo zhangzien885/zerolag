@@ -84,7 +84,7 @@ function main() {
   const gitignore = readTextIfExists(".gitignore");
   const ciWorkflow = readTextIfExists(".github/workflows/ci.yml");
 
-  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:verify", "release:artifacts", "release:report", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "server:check", "server:smoke", "server:test", "deploy:checklist", "integrity:verify", "update:sign", "update:smoke"].forEach((scriptName) => {
+  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:verify", "release:artifacts", "release:report", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "server:check", "server:smoke", "server:test", "server:migrate-sqlite", "deploy:checklist", "integrity:verify", "update:sign", "update:smoke"].forEach((scriptName) => {
     addIssue(issues, hasScript(packageJson, scriptName), `package.json script is missing: ${scriptName}`);
   });
 
@@ -93,6 +93,7 @@ function main() {
   addIssue(issues, gitignore.includes(".secrets/"), ".gitignore must keep .secrets/ out of Git.");
   addIssue(issues, gitignore.includes("dist/"), ".gitignore must keep dist/ build outputs out of Git.");
   addIssue(issues, gitignore.includes("out/"), ".gitignore must keep out/ build outputs out of Git.");
+  addIssue(issues, gitignore.includes("server/data/*.sqlite"), ".gitignore must keep SQLite server state out of Git.");
   addIssue(issues, isSemver(packageJson.version), "package.json version must be semantic, for example 1.0.0.");
   addIssue(issues, Boolean(packageJson.author), "package.json author must be set for packaged builds.");
   addIssue(issues, Boolean(build.appId), "Installer packaging config must define build.appId.");

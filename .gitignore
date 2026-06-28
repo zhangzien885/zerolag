@@ -9,6 +9,9 @@ out/
 Thumbs.db
 server/data/server-state.json
 server/data/*.local.json
+server/data/*.sqlite
+server/data/*.sqlite-wal
+server/data/*.sqlite-shm
 server/data/backups/
 .secrets/
 *.private.pem

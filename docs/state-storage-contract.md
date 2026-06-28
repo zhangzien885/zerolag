@@ -41,6 +41,16 @@ npm run server:start
 
 The default remains JSON file storage unless `ZEROLAG_STATE_STORE=sqlite` is set.
 
+## JSON To SQLite Migration
+
+Existing JSON state can be imported into SQLite before switching the server over:
+
+```powershell
+npm run server:migrate-sqlite -- --input D:\zerolag-data\server-state.json --output D:\zerolag-data\server-state.sqlite
+```
+
+The migration command refuses to update an existing SQLite file unless `--force` is provided. It reads the migrated state back and compares a SHA256 digest before reporting success.
+
 ## Safety Rules
 
 - `loadState()` should return plain JSON data only.

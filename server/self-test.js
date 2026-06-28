@@ -156,6 +156,30 @@ function runAdminClient(port, args, options = {}) {
   });
 }
 
+function runNodeScript(relativePath, args = [], options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [path.join(__dirname, "..", relativePath), ...args], {
+      cwd: path.join(__dirname, ".."),
+      env: {
+        ...process.env,
+        ...(options.env || {})
+      },
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.on("error", reject);
+    child.on("close", (status) => {
+      resolve({ status, stdout, stderr });
+    });
+  });
+}
+
 function cloneJson(value) {
   return value ? JSON.parse(JSON.stringify(value)) : value;
 }
@@ -292,6 +316,39 @@ async function main() {
     } finally {
       sqliteStore.close();
       fs.rmSync(sqliteTempDir, { recursive: true, force: true });
+    }
+
+    const migrationTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-sqlite-migration-test-"));
+    try {
+      const migrationJsonPath = path.join(migrationTempDir, "source-state.json");
+      const migrationSqlitePath = path.join(migrationTempDir, "target-state.sqlite");
+      fs.copyFileSync(options.statePath, migrationJsonPath);
+      const migration = await runNodeScript("scripts/migrate-state-to-sqlite.js", [
+        "--input",
+        migrationJsonPath,
+        "--output",
+        migrationSqlitePath
+      ]);
+      assert(migration.status === 0, `SQLite migration command failed: ${migration.stderr || migration.stdout}`);
+      const migrationBody = JSON.parse(migration.stdout);
+      assert(migrationBody.ok === true, "SQLite migration command should return ok.");
+      assert(fs.existsSync(migrationSqlitePath), "SQLite migration command should create the output file.");
+      const migratedStore = createSqliteStateStore(migrationSqlitePath);
+      try {
+        const migratedState = migratedStore.loadState();
+        assert(Object.keys(migratedState.activationCodes || {}).length >= 1, "Migrated SQLite state should include activation codes.");
+      } finally {
+        migratedStore.close();
+      }
+      const refusedOverwrite = await runNodeScript("scripts/migrate-state-to-sqlite.js", [
+        "--input",
+        migrationJsonPath,
+        "--output",
+        migrationSqlitePath
+      ]);
+      assert(refusedOverwrite.status === 1, "SQLite migration should refuse to overwrite existing output without --force.");
+    } finally {
+      fs.rmSync(migrationTempDir, { recursive: true, force: true });
     }
 
     const websitePreflight = await requestOptions(port, "/v1/website/events", {

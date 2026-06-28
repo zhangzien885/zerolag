@@ -192,6 +192,12 @@ npm run server:start
 
 SQLite mode is intended for wider paid testing before a full PostgreSQL-style async storage migration. The JSON file store remains the default.
 
+To migrate an existing JSON state file into SQLite:
+
+```powershell
+npm run server:migrate-sqlite -- --input D:\zerolag-data\server-state.json --output D:\zerolag-data\server-state.sqlite
+```
+
 Optional environment variables:
 
 ```powershell
