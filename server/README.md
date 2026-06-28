@@ -84,10 +84,13 @@ npm run server:check:strict
 Generate a private server deployment summary before paid testing or release:
 
 ```powershell
+npm run server:deployment-report:smoke
 npm run server:deployment-report
 ```
 
 The report writes `docs/server-deployment-report.generated.md` by default and summarizes env validation, storage, backup, payment, update, and public endpoint readiness. It does not print secret values, activation codes, subscription tokens, or full external paths.
+
+The smoke command uses an isolated temporary environment to confirm Markdown, JSON, strict-mode failure behavior, and redaction still work without touching real deployment files.
 
 Generate the same deployment state as redacted JSON for CI, deployment scripts, or a private ops dashboard:
 

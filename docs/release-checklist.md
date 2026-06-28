@@ -6,6 +6,7 @@ Generate the current machine-readable checklist first:
 
 ```powershell
 npm run deploy:checklist
+npm run server:deployment-report:smoke
 npm run server:deployment-report
 npm run server:deployment-report:json
 npm run server:deployment-report:strict
@@ -23,6 +24,7 @@ npm run server:deployment-report:strict
 - Generate private server secrets with `npm run server:secrets -- --write`.
 - For SQLite paid testing, generate the private env template with `npm run server:secrets -- --profile sqlite --write`.
 - Run `npm run server:env-check -- --profile sqlite`; `npm run server:check:strict` also repeats this redacted env-file validation.
+- Run `npm run server:deployment-report:smoke` to verify Markdown, JSON, strict failure behavior, and redaction before trusting deployment reports.
 - Run `npm run server:deployment-report` to generate a private deployment summary for env, storage, payment, update, and public endpoint readiness without printing secret values.
 - Run `npm run server:deployment-report:json` when CI, deployment scripts, or private dashboards need a machine-readable readiness result.
 - Run `npm run server:deployment-report:strict` before a paid public release; it fails when production env, storage, payment, URLs, or runtime guards are not ready.

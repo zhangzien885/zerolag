@@ -150,6 +150,7 @@
 - Added a private server deployment report command that summarizes env, storage, backup, payment, update, and endpoint readiness without exposing secret values.
 - Added a redacted JSON server deployment report for CI, deployment scripts, and private operations dashboards.
 - Added a strict private server deployment report gate that fails until env, SQLite backup readiness, payment provider, production URLs, and runtime guards are ready.
+- Added a deployment-report smoke test that verifies Markdown output, JSON output, strict gate failure, and redaction in an isolated temporary environment.
 - Expanded private server env generation with JSON and SQLite profiles, payment placeholders, SQLite backup freshness settings, and overwrite protection.
 - Added a redacted private server env checker for missing keys, weak secrets, unsafe switches, storage profile mismatches, and payment placeholder warnings.
 - Integrated redacted private env-file validation into strict server production checks so deployment config drift is caught automatically.
