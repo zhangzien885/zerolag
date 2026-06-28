@@ -158,6 +158,8 @@ npm run pack:dir
 npm run package:smoke
 npm run package:verify
 npm run dist:win
+npm run installer:smoke
+npm run installer:verify
 ```
 
-`icon:generate` creates the Windows icon from the ZeroLag visual style. `pack:dir` creates an unpacked desktop build for local verification. `package:smoke` checks the current unpacked build output. `package:verify` rebuilds the unpacked app and runs that smoke test. `dist:win` is the Windows NSIS installer entry point for release builds. Before a public installer, configure real production URLs, sign update metadata, and set up Windows code signing.
+`icon:generate` creates the Windows icon from the ZeroLag visual style. `pack:dir` creates an unpacked desktop build for local verification. `package:smoke` checks the current unpacked build output. `package:verify` rebuilds the unpacked app and runs that smoke test. `dist:win` is the Windows NSIS installer entry point for release builds. `installer:smoke` checks the existing installer `.exe`, blockmap, update metadata, and Windows installer settings. `installer:verify` rebuilds the installer and then runs that smoke test. Before a public installer, configure real production URLs, sign update metadata, and set up Windows code signing.
