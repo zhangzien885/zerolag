@@ -67,7 +67,7 @@
 ## Production Must Have
 
 - Replace local demo license with server-side account, device, and subscription validation. First client contract and client-side integration seam are in place.
-- Implement the native Windows Service guard executable as the primary runtime tuning cleanup layer. Service manifest, service worker, install/uninstall scripts, packaging resources, and smoke checks are in place.
+- Implement the native Windows Service wrapper executable as the primary runtime tuning cleanup layer. Electron worker mode, service manifest, service worker, install/uninstall scripts, packaging resources, and smoke checks are in place.
 - Move the prototype Task Scheduler guard into the installer as a production fallback if service installation fails.
 - Harden signed runtime sessions with server-issued session IDs and key rotation.
 - Clean runtime tuning after app force kill, crash, logout, restart, subscription expiry, integrity failure, or server authorization failure.
@@ -123,6 +123,7 @@
 - Added a CI report-artifact smoke test that verifies generated deployment/release reports are parseable and do not expose private env values.
 - Added transparent Windows Service guard packaging assets, install/uninstall scripts, service guard smoke checks, and release-preflight coverage for the formal cleanup layer.
 - Added a reusable runtime guard core plus service worker that can clean invalid or stale runtime sessions in dry-run-tested service mode.
+- Added a desktop `--runtime-guard-service` entry so the installed ZeroLag executable can run the guard worker without opening the UI.
 - Added release preflight checks and a release checklist for packaging, signing, update metadata, production config, and strict final gates.
 - Added Electron Builder packaging scripts and Windows NSIS installer configuration, with build-resource guidance for the final Windows icon and signing assets.
 - Added a reproducible ZeroLag Windows icon generator and generated `build/icon.ico` for packaged builds.
@@ -176,6 +177,6 @@
 ## Known Boundaries
 
 - A determined user with administrator access may still inspect Windows runtime state while tuning is active.
-- The prototype watchdog and temporary task guard improve cleanup, but production still requires the compiled Windows Service guard executable and installer invocation.
+- The prototype watchdog, Electron worker mode, and temporary task guard improve cleanup, but production still requires the native Windows Service wrapper and installer invocation.
 - Local-only license protection is not enough for paid release.
 - Current prototype makes aggressive performance changes and may require reboot for full effect.

@@ -1,6 +1,7 @@
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
   [string]$ServiceName = "ZeroLagRuntimeGuard",
+  [string]$ServiceBinary = "",
   [string]$NodeBinary = "",
   [string]$WatchdogScript = "",
   [string]$SessionPath = "$env:LOCALAPPDATA\ZeroLag\runtime-session.json",
@@ -10,7 +11,9 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-if ($CleanupOnce -and $NodeBinary -and $WatchdogScript -and (Test-Path -LiteralPath $NodeBinary) -and (Test-Path -LiteralPath $WatchdogScript)) {
+if ($CleanupOnce -and $ServiceBinary -and (Test-Path -LiteralPath $ServiceBinary)) {
+  & $ServiceBinary "--runtime-guard-service" "--session" $SessionPath "--once"
+} elseif ($CleanupOnce -and $NodeBinary -and $WatchdogScript -and (Test-Path -LiteralPath $NodeBinary) -and (Test-Path -LiteralPath $WatchdogScript)) {
   & $NodeBinary $WatchdogScript $SessionPath "--once"
 }
 

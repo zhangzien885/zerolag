@@ -94,6 +94,7 @@ function main() {
   const appConfig = readJson(path.join(rootDir, "assets", "app-config.json"));
   const updateManifest = readJson(path.join(rootDir, "assets", "update.json"));
   const serviceGuard = readJson(path.join(rootDir, "build", "service-guard.json"));
+  const mainJs = readTextIfExists("main.js");
   const gitignore = readTextIfExists(".gitignore");
   const ciWorkflow = readTextIfExists(".github/workflows/ci.yml");
 
@@ -135,8 +136,11 @@ function main() {
   addIssue(issues, hasWindowsNsisTarget(build), "Installer packaging config must target Windows NSIS.");
   addIssue(issues, build.win && build.win.requestedExecutionLevel === "requireAdministrator", "Windows package must request administrator execution.");
   addIssue(issues, serviceGuard.serviceName === "ZeroLagRuntimeGuard", "Windows Service guard manifest must use the ZeroLagRuntimeGuard service name.");
+  addIssue(issues, serviceGuard.serviceBinary === "ZeroLag.exe", "Windows Service guard manifest must use the installed ZeroLag executable for worker mode.");
+  addIssue(issues, serviceGuard.serviceBinaryStatus === "electron-worker-mode", "Windows Service guard manifest must mark the Electron worker-mode entry.");
   addIssue(issues, serviceGuard.serviceWorker === "service-guard/runtime-guard-service.js", "Windows Service guard manifest must point to the runtime guard service worker.");
   addIssue(issues, serviceGuard.serviceCore === "service-guard/runtime-guard-core.js", "Windows Service guard manifest must point to the runtime guard core.");
+  addIssue(issues, mainJs.includes("--runtime-guard-service"), "main.js must expose the runtime guard service mode before normal app startup.");
   addIssue(issues, serviceGuard.visibleInWindowsServices === true, "Windows Service guard must remain visible in Windows service tools.");
   addIssue(issues, Array.isArray(serviceGuard.prohibitedBehaviors) && serviceGuard.prohibitedBehaviors.includes("block Task Manager"), "Windows Service guard manifest must forbid blocking Task Manager.");
   addIssue(issues, Array.isArray(serviceGuard.prohibitedBehaviors) && serviceGuard.prohibitedBehaviors.includes("disable Windows Security"), "Windows Service guard manifest must forbid disabling Windows Security.");
@@ -159,7 +163,7 @@ function main() {
   addReleaseGate(issues, warnings, build.asar === true, "Installer packaging should keep app files inside an asar archive.");
   addReleaseGate(issues, warnings, JSON.stringify(build.asarUnpack || []).includes("runtime-guard-core"), "Runtime guard core must stay unpacked for packaged watchdog execution.");
   addReleaseGate(issues, warnings, JSON.stringify(build.asarUnpack || []).includes("runtime-watchdog"), "Runtime watchdog must stay unpacked for packaged cleanup execution.");
-  addReleaseGate(issues, warnings, serviceGuard.serviceBinaryStatus === "implemented", "Native Windows Service executable is not implemented yet; runtime worker is ready for the service wrapper.");
+  addReleaseGate(issues, warnings, serviceGuard.nativeServiceWrapperStatus === "implemented", "Native Windows Service wrapper is not implemented yet; Electron worker mode is ready for the installer entry.");
   addReleaseGate(issues, warnings, fileExists("build/icon.ico"), "Final Windows icon is not configured at build/icon.ico.");
   addReleaseGate(issues, warnings, hasStrongCodeSigningSignal(), "Windows code-signing certificate environment is not configured in this shell.");
 

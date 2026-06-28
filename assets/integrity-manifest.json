@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T14:28:41.916Z",
+  "generatedAt": "2026-06-28T14:52:56.846Z",
   "files": [
     {
       "path": "package.json",
@@ -8,7 +8,7 @@
     },
     {
       "path": "main.js",
-      "sha256": "2874cfea147323db487834bf63ef858a194ce39f8c14309304e76cc364017f37"
+      "sha256": "e0fd355d27b3757ee19739865f39d3f66216a187830b84696c11f31e211526ca"
     },
     {
       "path": "preload.js",
@@ -36,7 +36,7 @@
     },
     {
       "path": "scripts/runtime-guard-service.js",
-      "sha256": "c9d7c9904050d79add86afa7a13d10b12f4a7f2b948bd0ac085482ea1368d85e"
+      "sha256": "4c0d54b4f1d1db4bf91c1abfb128ffa788b7891cc85f3957d5b4395d1b070c61"
     },
     {
       "path": "scripts/runtime-guard-service-smoke-test.js",
@@ -64,7 +64,7 @@
     },
     {
       "path": "scripts/service-guard-smoke-test.js",
-      "sha256": "a214e101159eb758b9e4c60a0dfdcfa4ffce9695bd37acc051618246d7aa4d50"
+      "sha256": "b70c46a3f9604b29a285601ed9f58487ddd9c8f4569e82732529dfd77f3abcd5"
     },
     {
       "path": "scripts/generate-release-artifacts.js",
@@ -108,7 +108,7 @@
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "10c77c50f0a291538294b5025a9fea316da0624941fb22e99b57746c8f49e3a3"
+      "sha256": "aaf0aa1fb7edb424faffacacf2e3ca8a927ef30a935d223d4d34d657015a1ba8"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -176,16 +176,16 @@
     },
     {
       "path": "build/service-guard.json",
-      "sha256": "98d1549e624ff50261a62fde9b0b96f39d3aab2e8ba0265fa644d0a7c27f01d5"
+      "sha256": "1245fe6b9435cd4d9988a974ca12782e8190327d62448d4102d641b330babe84"
     },
     {
       "path": "build/install-runtime-guard-service.ps1",
-      "sha256": "a29fc1bc1292595aa85451d9447a9f34854fe38f9efdb6959cf166811d4b1318"
+      "sha256": "5e53a17631a2c0f34860ee110eb50bf03945bc77a9378f508e00ecae92c22812"
     },
     {
       "path": "build/uninstall-runtime-guard-service.ps1",
-      "sha256": "ea17673b2f475733319e94a07aae2b36a9aa5e195e3b89bd847a91f979dfcf20"
+      "sha256": "0d37619a7230f9b929a9f7de2d0c71991f9cba6ef7810885cae91dc31e422e56"
     }
   ],
-  "signature": "e938875eb55ede910d7460f6e30d288d3860892ba43bad1a8d2d42ce1b5f70b8"
+  "signature": "ee3f03dec71e4e86754ad28c46bdc1338322ddf7d38b23499bb6c2c07e57dc02"
 }

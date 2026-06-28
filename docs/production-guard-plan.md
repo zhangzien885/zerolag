@@ -81,14 +81,15 @@ Implemented in prototype:
 - Integrity verification for protected files.
 - Windows Service guard manifest plus install/uninstall script assets.
 - Runtime guard core and service worker that reuse the same signed-session cleanup flow as the desktop watchdog.
+- Desktop entry mode `--runtime-guard-service`, allowing the installed ZeroLag executable to run the guard worker without opening the UI.
 - CI smoke test for transparent service-guard packaging and prohibited behavior guardrails.
 - CI smoke test for service-worker cleanup behavior in dry-run mode.
 
 Still required for paid production:
 
-- Windows Service guard executable.
+- Native Windows Service wrapper executable.
 - Installer-managed Task Scheduler fallback.
 - Server-issued signed session IDs and key rotation.
 - Server-side subscription/session validation.
-- Installer invocation of the service install/uninstall scripts with the native service executable.
+- Installer invocation of the service install/uninstall scripts with the native service wrapper once it is available.
 - Uninstaller cleanup.

@@ -18,6 +18,7 @@ const templateProtectionSecret = "zerolag-template-protection-v1";
 const runtimeSessionSecret = "zerolag-runtime-session-prototype-v1";
 const demoActivationCode = "ZL-PRO-DEMO-2026";
 const runtimeGuardTaskName = "ZeroLagRuntimeGuard";
+const runtimeGuardServiceMode = process.argv.includes("--runtime-guard-service");
 const skipElevation = process.argv.includes("--no-elevation");
 const skipRuntimePlan = process.argv.includes("--no-runtime-plan");
 
@@ -2158,6 +2159,15 @@ function createWindow() {
   win.loadFile(path.join(__dirname, "src", "index.html"));
 }
 
+if (runtimeGuardServiceMode) {
+  const { main: runRuntimeGuardService } = require("./scripts/runtime-guard-service");
+  runRuntimeGuardService().then(() => {
+    app.exit(0);
+  }).catch((error) => {
+    console.error(error.message);
+    app.exit(1);
+  });
+} else {
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
   appIntegrityStatus = verifyAppIntegrity();
@@ -2281,3 +2291,4 @@ app.on("activate", () => {
 
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
+}

@@ -5,6 +5,7 @@ const rootDir = path.join(__dirname, "..");
 const manifestPath = path.join(rootDir, "build", "service-guard.json");
 const installScriptPath = path.join(rootDir, "build", "install-runtime-guard-service.ps1");
 const uninstallScriptPath = path.join(rootDir, "build", "uninstall-runtime-guard-service.ps1");
+const mainJsPath = path.join(rootDir, "main.js");
 const packageJsonPath = path.join(rootDir, "package.json");
 const requiredAllowedActions = [
   "verify signed runtime session",
@@ -77,6 +78,7 @@ function main() {
   const manifest = readJson(manifestPath);
   const installScript = readText(installScriptPath);
   const uninstallScript = readText(uninstallScriptPath);
+  const mainJs = readText(mainJsPath);
   const packageJson = readJson(packageJsonPath);
   const packageText = readText(packageJsonPath);
   const targets = extraResourceTargets(packageJson).join("\n");
@@ -87,7 +89,9 @@ function main() {
   assertOk(manifest.visibleInWindowsServices === true, "Service guard must stay visible in Windows service tools.");
   assertOk(manifest.account === "NT AUTHORITY\\LocalService", "Service guard should use the LocalService account.");
   assertOk(manifest.startupType === "Automatic", "Service guard should start automatically after install.");
-  assertOk(manifest.serviceBinaryStatus === "worker-implemented", "Manifest should mark the runtime worker as implemented until the native service executable exists.");
+  assertOk(manifest.serviceBinary === "ZeroLag.exe", "Manifest should use the installed ZeroLag executable for worker mode.");
+  assertOk(manifest.serviceBinaryStatus === "electron-worker-mode", "Manifest should mark the Electron worker-mode service entry.");
+  assertOk(manifest.nativeServiceWrapperStatus === "planned", "Manifest should keep the native service wrapper status explicit.");
   assertOk(manifest.serviceWorker === "service-guard/runtime-guard-service.js", "Manifest service worker path is wrong.");
   assertOk(manifest.serviceCore === "service-guard/runtime-guard-core.js", "Manifest service core path is wrong.");
   assertOk(manifest.installScript === "build/install-runtime-guard-service.ps1", "Manifest install script path is wrong.");
@@ -98,11 +102,14 @@ function main() {
   includesAll(manifest.prohibitedBehaviors, requiredProhibitedBehaviors, "prohibitedBehaviors");
 
   assertOk(installScript.includes("sc.exe create"), "Install script must create a Windows Service.");
+  assertOk(installScript.includes("--runtime-guard-service"), "Install script must start ZeroLag in runtime guard service mode.");
+  assertOk(installScript.includes("ProgramData\\ZeroLag\\guard"), "Install script must write guard health/log state under ProgramData.");
   assertOk(installScript.includes("NT AUTHORITY\\LocalService"), "Install script must configure LocalService.");
   assertOk(installScript.includes("start= auto"), "Install script must configure automatic startup.");
   assertOk(installScript.includes("SupportsShouldProcess"), "Install script must support WhatIf/Confirm semantics.");
   assertOk(uninstallScript.includes("Stop-Service"), "Uninstall script must stop the service.");
   assertOk(uninstallScript.includes("sc.exe delete"), "Uninstall script must remove the service registration.");
+  assertOk(uninstallScript.includes("--runtime-guard-service"), "Uninstall script must use the runtime guard service mode for cleanup.");
   assertOk(uninstallScript.includes("--once"), "Uninstall script must offer one cleanup pass before removal.");
   assertNoForbiddenText(installScript, "Install script");
   assertNoForbiddenText(uninstallScript, "Uninstall script");
@@ -120,6 +127,9 @@ function main() {
   assertOk((packageJson.scripts.check || "").includes("scripts/runtime-guard-service.js"), "npm run check must syntax-check runtime-guard-service.js.");
   assertOk(JSON.stringify(packageJson.build.asarUnpack || []).includes("runtime-guard-core"), "runtime-guard-core must be unpacked for watchdog execution.");
   assertOk(JSON.stringify(packageJson.build.asarUnpack || []).includes("runtime-watchdog"), "runtime-watchdog must be unpacked for cleanup execution.");
+  assertOk(mainJs.includes("--runtime-guard-service"), "main.js must expose the runtime guard service mode.");
+  assertOk(mainJs.includes("runRuntimeGuardService"), "main.js must call the runtime guard service worker.");
+  assertOk(mainJs.indexOf("runtimeGuardServiceMode") < mainJs.indexOf("app.whenReady"), "Runtime guard service mode must be selected before normal app startup.");
   assertNoForbiddenText(packageText, "package.json");
 
   console.log("ZeroLag service guard smoke test passed.");

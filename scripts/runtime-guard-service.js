@@ -88,5 +88,6 @@ if (require.main === module) {
 
 module.exports = {
   defaultSessionPath,
-  dryRunCommand
+  dryRunCommand,
+  main
 };
