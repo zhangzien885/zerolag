@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T06:50:15.234Z",
+  "generatedAt": "2026-06-28T06:56:24.183Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "db6cd94ffaa942b16002ce55a15a63c9c5b6b10c97618830f82113294841f0b5"
+      "sha256": "4bbeb5d83e09be836d1873cef264b807512eb8da7a9a21a74a6211ac52669e2d"
     },
     {
       "path": "main.js",
@@ -63,12 +63,16 @@
       "sha256": "afa07cfb5d3a4fe4997aeba93400caa22f56088d59541aa5864666c25f4d9ec8"
     },
     {
+      "path": "scripts/website-smoke-test.js",
+      "sha256": "4690d6054dd1138cce3ca9f794768d4e0a4913f1188e562860864d84e8a799b0"
+    },
+    {
       "path": "scripts/production-check.js",
       "sha256": "498716e8c5201678adacbeb5c98ba873b991e4627059c64e264daa4a480429b0"
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "67dce6a4924eaebfd8dde987af437707b79dffda6b0ef4fa5840eb704553ae0e"
+      "sha256": "ba21c34c8a11eed619fd9a133b78c81f39e12845a4d985ae17c9624255e251f6"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -103,5 +107,5 @@
       "sha256": "03088e08120ee7508d175a61b3b6f66ee31a657ec592adfd60e5f352f890fc6d"
     }
   ],
-  "signature": "368e538f02e84f0dbf22694e79dcbd942ec1a97df9317be225b12723b2c76b82"
+  "signature": "1d9577726998a549360067b0774eeb1239846e9822b884809210a1e79f3f5caf"
 }

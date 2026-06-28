@@ -13,6 +13,7 @@ The download panel reads `website/release.json`. After building and verifying a 
 
 ```powershell
 npm run website:release
+npm run website:smoke
 ```
 
-This publishes sanitized release metadata for the static website, including version, download readiness, installer filename, and SHA256 checksum.
+This publishes sanitized release metadata for the static website, including version, download readiness, installer filename, and SHA256 checksum. `website:smoke` verifies the download panel wiring and public release metadata before deployment.
