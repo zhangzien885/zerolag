@@ -3,11 +3,11 @@ const path = require("path");
 
 const rootDir = path.join(__dirname, "..");
 const websiteDir = path.join(rootDir, "website");
-const releaseArtifactsPath = path.join(rootDir, "dist", "release-artifacts.json");
-const releaseReportPath = path.join(rootDir, "dist", "release-candidate-report.json");
-const updateManifestPath = path.join(rootDir, "assets", "update.json");
-const appConfigPath = path.join(rootDir, "assets", "app-config.json");
-const outputPath = path.join(websiteDir, "release.json");
+const releaseArtifactsPath = process.env.ZEROLAG_RELEASE_ARTIFACTS_PATH || path.join(rootDir, "dist", "release-artifacts.json");
+const releaseReportPath = process.env.ZEROLAG_RELEASE_REPORT_PATH || path.join(rootDir, "dist", "release-candidate-report.json");
+const updateManifestPath = process.env.ZEROLAG_UPDATE_MANIFEST_PATH || path.join(rootDir, "assets", "update.json");
+const appConfigPath = process.env.ZEROLAG_APP_CONFIG_PATH || path.join(rootDir, "assets", "app-config.json");
+const outputPath = process.env.ZEROLAG_WEBSITE_RELEASE_PATH || path.join(websiteDir, "release.json");
 
 function assertOk(condition, message) {
   if (!condition) {
@@ -74,6 +74,7 @@ function main() {
   };
 
   assertOk(websiteRelease.installer.sha256, "Installer checksum is missing from release artifacts.");
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, `${JSON.stringify(websiteRelease, null, 2)}\n`, "utf8");
   console.log("ZeroLag website release manifest published.");
   console.log(`Manifest: ${path.relative(rootDir, outputPath)}`);
