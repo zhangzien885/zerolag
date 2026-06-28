@@ -155,7 +155,9 @@ GitHub Actions runs on pushes and pull requests to `main`. The workflow installs
 ```powershell
 npm run icon:generate
 npm run pack:dir
+npm run package:smoke
+npm run package:verify
 npm run dist:win
 ```
 
-`icon:generate` creates the Windows icon from the ZeroLag visual style. `pack:dir` creates an unpacked desktop build for local verification. `dist:win` is the Windows NSIS installer entry point for release builds. Before a public installer, configure real production URLs, sign update metadata, and set up Windows code signing.
+`icon:generate` creates the Windows icon from the ZeroLag visual style. `pack:dir` creates an unpacked desktop build for local verification. `package:smoke` checks the current unpacked build output. `package:verify` rebuilds the unpacked app and runs that smoke test. `dist:win` is the Windows NSIS installer entry point for release builds. Before a public installer, configure real production URLs, sign update metadata, and set up Windows code signing.

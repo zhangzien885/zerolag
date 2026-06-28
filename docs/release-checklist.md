@@ -35,6 +35,7 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 - Verify the Windows installer packaging config in `package.json`.
 - Generate or replace the Windows icon at `build/icon.ico`.
 - Run `npm run pack:dir` for an unpacked local build.
+- Run `npm run package:smoke` to verify the unpacked build contains the executable, app archive, icon, and unpacked runtime watchdog.
 - Run `npm run dist:win` only after the strict release gates are satisfied.
 - Configure Windows code signing in the build environment.
 - Prefer CI secrets such as `WIN_CSC_LINK` and `WIN_CSC_KEY_PASSWORD` for electron-builder signing.
