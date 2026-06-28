@@ -18,6 +18,16 @@ const defaultMaintenanceIntervalMs = 6 * 60 * 60 * 1000;
 const defaultServerSecret = "zerolag-dev-server-secret-change-before-production";
 const defaultAdminSecret = "zerolag-dev-admin-secret-change-before-production";
 const defaultPaymentWebhookSecret = "zerolag-dev-payment-webhook-secret-change-before-production";
+const defaultPaymentProvider = "manual";
+const defaultPaymentAllowedProviders = [
+  "manual",
+  "manual-admin",
+  "manual-signed-webhook",
+  "signed-webhook",
+  "self-test"
+];
+const defaultPaymentUrlTemplate = "zerolag://pay/{orderId}";
+const defaultPaymentMessage = "Manual payment confirmation is required in the MVP.";
 const defaultRateLimitByRoute = {
   "website:events": 240,
   "orders:create": 30,
@@ -95,6 +105,54 @@ function paymentWebhookSecretFromOptions(options = {}) {
   return options.paymentWebhookSecret
     || process.env.ZEROLAG_PAYMENT_WEBHOOK_SECRET
     || defaultPaymentWebhookSecret;
+}
+
+function normalizePaymentProvider(value, fallback = defaultPaymentProvider) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "_")
+    .slice(0, 48);
+  return normalized || fallback;
+}
+
+function paymentProviderListFromValue(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizePaymentProvider(item, "")).filter(Boolean);
+  }
+
+  return String(value || "")
+    .split(",")
+    .map((item) => normalizePaymentProvider(item, ""))
+    .filter(Boolean);
+}
+
+function paymentConfigFromOptions(options = {}) {
+  const input = options.payment || {};
+  const provider = normalizePaymentProvider(input.provider || process.env.ZEROLAG_PAYMENT_PROVIDER || defaultPaymentProvider);
+  const configuredAllowed = paymentProviderListFromValue(
+    input.allowedProviders || process.env.ZEROLAG_PAYMENT_ALLOWED_PROVIDERS || defaultPaymentAllowedProviders
+  );
+  const allowedProviders = Array.from(new Set([provider, ...configuredAllowed]));
+
+  return {
+    provider,
+    allowedProviders,
+    urlTemplate: String(input.urlTemplate || process.env.ZEROLAG_PAYMENT_URL_TEMPLATE || defaultPaymentUrlTemplate),
+    message: String(input.message || process.env.ZEROLAG_PAYMENT_MESSAGE || defaultPaymentMessage)
+  };
+}
+
+function paymentProviderAllowed(provider, options = {}) {
+  return paymentConfigFromOptions(options).allowedProviders.includes(normalizePaymentProvider(provider, ""));
+}
+
+function paymentUrlFromTemplate(template, order) {
+  return String(template || defaultPaymentUrlTemplate)
+    .replace(/\{orderId\}/g, encodeURIComponent(order.orderId || ""))
+    .replace(/\{amountCents\}/g, encodeURIComponent(String(order.amountCents || "")))
+    .replace(/\{currency\}/g, encodeURIComponent(order.currency || ""))
+    .replace(/\{plan\}/g, encodeURIComponent(order.plan || ""));
 }
 
 function backupConfigFromOptions(options = {}) {
@@ -574,11 +632,13 @@ function serverReadiness(options = {}) {
   const state = loadState(options);
   const rateLimit = rateLimitConfigFromOptions(options, "admin");
   const maintenance = maintenanceConfigFromOptions(options);
+  const payment = paymentConfigFromOptions(options);
   const warnings = [];
 
   if (serverSecretFromOptions(options) === defaultServerSecret) warnings.push("SERVER_SECRET_DEFAULT");
   if (adminSecretFromOptions(options) === defaultAdminSecret) warnings.push("ADMIN_SECRET_DEFAULT");
   if (paymentWebhookSecretFromOptions(options) === defaultPaymentWebhookSecret) warnings.push("PAYMENT_WEBHOOK_SECRET_DEFAULT");
+  if (payment.provider === defaultPaymentProvider) warnings.push("PAYMENT_PROVIDER_MANUAL");
   if (!backup.enabled || backup.retention === 0) warnings.push("BACKUP_DISABLED");
 
   const updateManifest = updateManifestReadiness();
@@ -613,6 +673,11 @@ function serverReadiness(options = {}) {
     maintenance: {
       enabled: maintenance.enabled,
       intervalMs: maintenance.intervalMs
+    },
+    payment: {
+      provider: payment.provider,
+      allowedProviders: payment.allowedProviders,
+      paymentUrlConfigured: payment.urlTemplate !== defaultPaymentUrlTemplate
     },
     warnings
   };
@@ -1168,6 +1233,7 @@ async function createOrder(request, response, options = {}) {
   const amountCents = Number(body.amountCents || 3000);
   const orderId = randomId("ord");
   const deviceHash = validateDeviceHash(body.deviceHash) ? String(body.deviceHash).trim() : "";
+  const paymentConfig = paymentConfigFromOptions(options);
   const order = {
     orderId,
     status: "pending",
@@ -1181,7 +1247,7 @@ async function createOrder(request, response, options = {}) {
     createdAt: nowIso(),
     paidAt: "",
     refundedAt: "",
-    paymentProvider: "",
+    paymentProvider: paymentConfig.provider,
     providerTradeId: "",
     refundTradeId: "",
     activationCode: ""
@@ -1205,9 +1271,9 @@ async function createOrder(request, response, options = {}) {
     ok: true,
     order: safeOrderRecord(order),
     payment: {
-      provider: "manual",
-      paymentUrl: `zerolag://pay/${orderId}`,
-      message: "Manual payment confirmation is required in the MVP."
+      provider: paymentConfig.provider,
+      paymentUrl: paymentUrlFromTemplate(paymentConfig.urlTemplate, order),
+      message: paymentConfig.message
     }
   });
 }
@@ -1405,6 +1471,12 @@ async function paymentWebhook(request, response, options = {}) {
   }
 
   const body = parseJsonBody(rawBody);
+  const provider = normalizePaymentProvider(body.provider || "signed-webhook");
+  if (!paymentProviderAllowed(provider, options)) {
+    jsonResponse(response, 400, { ok: false, message: "Payment provider is not enabled." });
+    return;
+  }
+
   const eventId = String(body.eventId || body.providerTradeId || "").trim() || randomId("evt");
   const state = loadState(options);
   state.paymentEvents = state.paymentEvents || {};
@@ -1428,7 +1500,8 @@ async function paymentWebhook(request, response, options = {}) {
       targetType: "payment_event",
       targetId: eventId,
       metadata: {
-        type: eventType
+        type: eventType,
+        paymentProvider: provider
       }
     });
     saveState(state, options);
@@ -1438,12 +1511,12 @@ async function paymentWebhook(request, response, options = {}) {
 
   const order = eventType === "payment.refunded"
     ? refundOrderInState(state, body.orderId, {
-      paymentProvider: body.provider || "signed-webhook",
+      paymentProvider: provider,
       refundTradeId: body.refundTradeId || body.providerTradeId || eventId,
       reason: "payment_refunded"
     }, options)
     : completeOrderInState(state, body.orderId, {
-      paymentProvider: body.provider || "signed-webhook",
+      paymentProvider: provider,
       providerTradeId: body.providerTradeId || eventId
     }, options);
 

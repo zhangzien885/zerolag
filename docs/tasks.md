@@ -145,6 +145,7 @@
 - Added daily website analytics event breakdowns so private admin tools can review per-day download, purchase, and support-click trends.
 - Added a private local HTML analytics report for visual review of website conversion metrics and daily trends.
 - Added private operator summaries and CSV exports for paid orders, refunds, memberships, renewals, and upcoming expirations without exposing activation codes or tokens.
+- Added configurable payment-provider readiness with checkout URL templates and signed webhook provider allowlisting for future WeChat Pay / Alipay integration.
 
 ## Known Boundaries
 

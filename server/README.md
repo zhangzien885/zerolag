@@ -125,6 +125,17 @@ sha256=<hmac_sha256_of_raw_json_body>
 
 Set `ZEROLAG_PAYMENT_WEBHOOK_SECRET` to a strong value before connecting a real payment provider.
 
+Payment provider settings:
+
+```powershell
+$env:ZEROLAG_PAYMENT_PROVIDER="wechat_pay"
+$env:ZEROLAG_PAYMENT_ALLOWED_PROVIDERS="wechat_pay,alipay"
+$env:ZEROLAG_PAYMENT_URL_TEMPLATE="https://pay.example/checkout/{orderId}?amount={amountCents}&currency={currency}"
+$env:ZEROLAG_PAYMENT_MESSAGE="Open the secure checkout page to finish payment."
+```
+
+`ZEROLAG_PAYMENT_PROVIDER` controls the provider returned from order creation. `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS` controls which signed webhook providers can complete or refund orders. Keep `manual` for local testing only; production should remove test providers from the allowlist.
+
 ## Rate Limiting
 
 The server applies lightweight in-memory rate limits before sensitive handlers run. Defaults are tuned for the MVP:
@@ -190,12 +201,14 @@ The export contains sensitive operational state and should be stored privately.
 The server now supports a provider-neutral order flow:
 
 1. Client or website calls `POST /v1/orders/create`.
-2. Payment provider completes payment.
+2. The server returns the configured payment provider and payment URL.
 3. Payment provider calls `POST /v1/payments/webhook` with a verified `payment.succeeded` event.
 4. The paid order receives a one-time activation code.
 5. Desktop app activates membership with that code.
 6. If the device already has the same active plan, the new code extends the existing subscription.
 7. If the provider later sends `payment.refunded`, the related code and active membership are revoked.
+
+Signed payment webhooks from providers outside `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS` are rejected before they can change order state.
 
 The admin completion endpoint is kept for private testing and manual support fixes, but the signed webhook is the main production integration seam.
 
@@ -230,6 +243,7 @@ For a paid release:
 - Use a strong `ZEROLAG_SERVER_SECRET`.
 - Use a strong `ZEROLAG_ADMIN_SECRET`.
 - Use a strong `ZEROLAG_PAYMENT_WEBHOOK_SECRET`.
+- Configure `ZEROLAG_PAYMENT_PROVIDER`, `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS`, and `ZEROLAG_PAYMENT_URL_TEMPLATE` for the real payment provider.
 - Keep rate limiting enabled and add reverse-proxy protection for public traffic.
 - Keep server state backups enabled until JSON state is replaced by a real database.
 - Move state from JSON to a real database.

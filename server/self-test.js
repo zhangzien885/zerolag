@@ -193,6 +193,11 @@ async function main() {
     assert(readiness.body.state.summary.activationCodes.total >= 1, "Readiness should include state summary.");
     assert(readiness.body.secrets.adminSecret === "custom", "Readiness should report custom admin secret.");
     assert(readiness.body.maintenance.enabled === true, "Readiness should include maintenance status.");
+    assert(readiness.body.payment.provider === "manual", "Readiness should include payment provider status.");
+    assert(
+      readiness.body.warnings.includes("PAYMENT_PROVIDER_MANUAL"),
+      "Readiness should warn when payment provider is still manual."
+    );
 
     const websitePreflight = await requestOptions(port, "/v1/website/events", {
       Origin: "https://zerolag.app",
@@ -348,6 +353,62 @@ async function main() {
       "Website analytics should keep daily CTA event totals."
     );
 
+    const paymentTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-payment-config-test-"));
+    const paymentOptions = {
+      statePath: path.join(paymentTempDir, "server-state.json"),
+      serverSecret: "payment-config-secret",
+      adminSecret: "payment-config-admin",
+      paymentWebhookSecret: "payment-config-webhook",
+      payment: {
+        provider: "wechat_pay",
+        allowedProviders: ["wechat_pay"],
+        urlTemplate: "https://pay.example/checkout/{orderId}?amount={amountCents}&currency={currency}",
+        message: "Open the configured checkout provider."
+      }
+    };
+    const paymentServer = createAppServer(paymentOptions);
+    const paymentPort = await listen(paymentServer);
+    try {
+      const configuredOrder = await requestJson(paymentPort, "/v1/orders/create", {
+        plan: "ZeroLag Pro Monthly",
+        deviceHash,
+        channel: "payment-config"
+      });
+      assert(configuredOrder.statusCode === 201, "Configured payment order creation failed.");
+      assert(configuredOrder.body.payment.provider === "wechat_pay", "Configured payment provider should be returned.");
+      assert(configuredOrder.body.payment.paymentUrl.includes("https://pay.example/checkout/"), "Configured payment URL should use the template.");
+      assert(configuredOrder.body.payment.paymentUrl.includes("amount=3000"), "Configured payment URL should include amount.");
+
+      const blockedProviderBody = JSON.stringify({
+        type: "payment.succeeded",
+        eventId: "evt_payment_config_blocked",
+        orderId: configuredOrder.body.order.orderId,
+        provider: "self-test",
+        providerTradeId: "trade_payment_config_blocked"
+      });
+      const blockedProvider = await requestRaw(paymentPort, "/v1/payments/webhook", blockedProviderBody, {
+        "Content-Type": "application/json",
+        "X-ZeroLag-Signature": signPaymentWebhook("payment-config-webhook", blockedProviderBody)
+      });
+      assert(blockedProvider.statusCode === 400, "Configured payment server should reject providers outside the allowlist.");
+
+      const acceptedProviderBody = JSON.stringify({
+        type: "payment.succeeded",
+        eventId: "evt_payment_config_paid",
+        orderId: configuredOrder.body.order.orderId,
+        provider: "wechat_pay",
+        providerTradeId: "trade_payment_config_paid"
+      });
+      const acceptedProvider = await requestRaw(paymentPort, "/v1/payments/webhook", acceptedProviderBody, {
+        "Content-Type": "application/json",
+        "X-ZeroLag-Signature": signPaymentWebhook("payment-config-webhook", acceptedProviderBody)
+      });
+      assert(acceptedProvider.statusCode === 200 && acceptedProvider.body.order.status === "paid", "Configured payment provider webhook should complete orders.");
+    } finally {
+      paymentServer.close();
+      fs.rmSync(paymentTempDir, { recursive: true, force: true });
+    }
+
     const autoTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-auto-maintenance-test-"));
     const autoOptions = {
       statePath: path.join(autoTempDir, "server-state.json"),
@@ -451,6 +512,8 @@ async function main() {
       channel: "test"
     });
     assert(createdOrder.statusCode === 201 && createdOrder.body.order.status === "pending", "Order creation failed.");
+    assert(createdOrder.body.payment.provider === "manual", "Order creation should expose the configured payment provider.");
+    assert(createdOrder.body.payment.paymentUrl.includes(createdOrder.body.order.orderId), "Order payment URL should include the order id.");
 
     const orderStatusBefore = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`);
     assert(orderStatusBefore.statusCode === 200 && !orderStatusBefore.body.order.activationCode, "Pending order should not expose a code.");
@@ -472,6 +535,18 @@ async function main() {
       "X-ZeroLag-Signature": "sha256=bad"
     });
     assert(rejectedWebhook.statusCode === 401, "Payment webhook should reject invalid signatures.");
+    const disabledProviderWebhookBody = JSON.stringify({
+      type: "payment.succeeded",
+      eventId: "evt_disabled_provider",
+      orderId: createdOrder.body.order.orderId,
+      provider: "not_enabled",
+      providerTradeId: "trade_disabled_provider"
+    });
+    const rejectedProviderWebhook = await requestRaw(port, "/v1/payments/webhook", disabledProviderWebhookBody, {
+      "Content-Type": "application/json",
+      "X-ZeroLag-Signature": signPaymentWebhook("self-test-payment", disabledProviderWebhookBody)
+    });
+    assert(rejectedProviderWebhook.statusCode === 400, "Payment webhook should reject disabled providers.");
 
     const webhookBody = JSON.stringify({
       type: "payment.succeeded",

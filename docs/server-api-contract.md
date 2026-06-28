@@ -97,6 +97,10 @@ Minimum production server variables:
 - `ZEROLAG_SERVER_SECRET`: custom strong secret for hashing activation codes and tokens.
 - `ZEROLAG_ADMIN_SECRET`: custom strong secret for private admin endpoints.
 - `ZEROLAG_PAYMENT_WEBHOOK_SECRET`: custom strong secret for payment callbacks.
+- `ZEROLAG_PAYMENT_PROVIDER`: active checkout provider returned during order creation, for example `wechat_pay` or `alipay`.
+- `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS`: comma-separated signed webhook provider allowlist.
+- `ZEROLAG_PAYMENT_URL_TEMPLATE`: checkout URL template; supports `{orderId}`, `{amountCents}`, `{currency}`, and `{plan}`.
+- `ZEROLAG_PAYMENT_MESSAGE`: short client-facing payment instruction.
 - `ZEROLAG_SERVER_STATE_PATH`: durable server-state JSON location.
 - `ZEROLAG_SERVER_BACKUP_DIR`: durable backup directory.
 - `ZEROLAG_RATE_LIMIT_DISABLED`: must not be `1` in production.
@@ -279,7 +283,7 @@ Copy only the public key into production `assets/app-config.json` as `updatePubl
 
 ## POST `/v1/orders/create`
 
-Creates a pending payment order. The MVP returns a manual-payment placeholder; production can replace this with WeChat Pay, Alipay, Stripe, or another provider.
+Creates a pending payment order. The response uses the configured payment provider and checkout URL template. The MVP defaults to a manual-payment placeholder; production can replace this with WeChat Pay, Alipay, Stripe, or another provider.
 
 Request:
 
@@ -305,8 +309,9 @@ Response:
     "activationCode": ""
   },
   "payment": {
-    "provider": "manual",
-    "paymentUrl": "zerolag://pay/ord_123"
+    "provider": "wechat_pay",
+    "paymentUrl": "https://pay.example/checkout/ord_123?amount=3000&currency=CNY",
+    "message": "Open the secure checkout page to finish payment."
   }
 }
 ```
@@ -330,7 +335,7 @@ Response:
 
 ## POST `/v1/payments/webhook`
 
-Provider-neutral signed payment callback. Payment providers should call this endpoint after a payment succeeds. ZeroLag verifies the webhook signature, marks the matching order as paid, and issues a one-time activation code.
+Provider-neutral signed payment callback. Payment providers should call this endpoint after a payment succeeds. ZeroLag verifies the webhook signature, checks that `provider` is enabled by `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS`, marks the matching order as paid, and issues a one-time activation code.
 
 Headers:
 
@@ -365,6 +370,15 @@ Response:
 ```
 
 The endpoint is idempotent by `eventId`, so payment providers can safely retry the same event.
+
+If the signature is valid but `provider` is not enabled, the endpoint returns:
+
+```json
+{
+  "ok": false,
+  "message": "Payment provider is not enabled."
+}
+```
 
 Refund request:
 
