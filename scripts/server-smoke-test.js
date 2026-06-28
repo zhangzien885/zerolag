@@ -49,6 +49,7 @@ function requestJson(baseUrl, pathname, headers = {}, body = null) {
         try {
           resolve({
             statusCode: response.statusCode,
+            headers: response.headers,
             body: raw ? JSON.parse(raw) : null
           });
         } catch (error) {
@@ -152,7 +153,9 @@ async function main() {
     assertOk(health.body && health.body.ok === true, "Health check did not return ok=true.");
     assertOk(health.body.product === "ZeroLag", "Health check did not return the ZeroLag product marker.");
 
-    const websiteEvent = await requestJson(baseUrl, "/v1/website/events", {}, {
+    const websiteEvent = await requestJson(baseUrl, "/v1/website/events", {
+      Origin: "https://zerolag.app"
+    }, {
       product: "ZeroLag",
       event: "release_view",
       detail: {
@@ -164,6 +167,10 @@ async function main() {
 
     assertOk(websiteEvent.statusCode === 202, `Website analytics returned HTTP ${websiteEvent.statusCode}.`);
     assertOk(websiteEvent.body && websiteEvent.body.accepted === true, "Website analytics did not accept the event.");
+    assertOk(
+      websiteEvent.headers["access-control-allow-origin"] === "*",
+      "Website analytics did not include public CORS headers."
+    );
 
     const readiness = await requestJson(baseUrl, "/v1/admin/readiness", {
       "X-ZeroLag-Admin-Secret": adminSecret

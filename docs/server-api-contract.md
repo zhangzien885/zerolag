@@ -109,6 +109,8 @@ Accepts privacy-safe public website CTA events from `analyticsUrl`.
 
 The server stores aggregate counters only. Version, channel, and status counters are capped to 64 keys each, and daily counters keep the latest 90 days. It does not store client IPs, browser user agents, activation codes, tokens, order IDs, full URLs, or raw event payloads.
 
+This endpoint supports cross-origin public website requests with `Access-Control-Allow-Origin: *` and accepts `OPTIONS` preflight checks. Admin, order, payment, and license endpoints do not share this public CORS behavior.
+
 Allowed event names:
 
 - `release_view`

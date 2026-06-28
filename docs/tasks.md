@@ -139,6 +139,7 @@
 - Added a public server endpoint for privacy-safe website CTA analytics that stores aggregate counts only.
 - Added an admin CLI command for viewing aggregate website CTA analytics without exposing user-level data.
 - Added bounded website analytics aggregation so public event dimensions cannot grow the server state without limit.
+- Added CORS and preflight support for the public website analytics endpoint while keeping sensitive endpoints private.
 
 ## Known Boundaries
 

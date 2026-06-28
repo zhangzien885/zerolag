@@ -30,6 +30,7 @@ function requestJson(port, pathname, body, headers = {}) {
         try {
           resolve({
             statusCode: response.statusCode,
+            headers: response.headers,
             body: raw ? JSON.parse(raw) : null
           });
         } catch (error) {
@@ -65,6 +66,7 @@ function requestRaw(port, pathname, payload, headers = {}) {
         try {
           resolve({
             statusCode: response.statusCode,
+            headers: response.headers,
             body: raw ? JSON.parse(raw) : null
           });
         } catch (error) {
@@ -75,6 +77,29 @@ function requestRaw(port, pathname, payload, headers = {}) {
 
     request.on("error", reject);
     request.write(payload);
+    request.end();
+  });
+}
+
+function requestOptions(port, pathname, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const request = require("http").request({
+      hostname: "127.0.0.1",
+      port,
+      path: pathname,
+      method: "OPTIONS",
+      headers
+    }, (response) => {
+      response.resume();
+      response.on("end", () => {
+        resolve({
+          statusCode: response.statusCode,
+          headers: response.headers
+        });
+      });
+    });
+
+    request.on("error", reject);
     request.end();
   });
 }
@@ -164,6 +189,22 @@ async function main() {
     assert(readiness.body.secrets.adminSecret === "custom", "Readiness should report custom admin secret.");
     assert(readiness.body.maintenance.enabled === true, "Readiness should include maintenance status.");
 
+    const websitePreflight = await requestOptions(port, "/v1/website/events", {
+      Origin: "https://zerolag.app",
+      "Access-Control-Request-Method": "POST",
+      "Access-Control-Request-Headers": "content-type"
+    });
+    assert(websitePreflight.statusCode === 204, "Website analytics preflight should be accepted.");
+    assert(websitePreflight.headers["access-control-allow-origin"] === "*", "Website analytics preflight should allow public website origins.");
+    assert(
+      String(websitePreflight.headers["access-control-allow-methods"] || "").includes("POST"),
+      "Website analytics preflight should allow POST."
+    );
+    assert(
+      String(websitePreflight.headers["access-control-allow-headers"] || "").includes("content-type"),
+      "Website analytics preflight should allow content-type."
+    );
+
     const websiteDownloadEvent = await requestJson(port, "/v1/website/events", {
       product: "ZeroLag",
       event: "download_click",
@@ -175,6 +216,7 @@ async function main() {
       }
     });
     assert(websiteDownloadEvent.statusCode === 202 && websiteDownloadEvent.body.accepted, "Website download event should be accepted.");
+    assert(websiteDownloadEvent.headers["access-control-allow-origin"] === "*", "Website analytics POST should include CORS headers.");
 
     const websitePurchaseEvent = await requestJson(port, "/v1/website/events", {
       product: "ZeroLag",

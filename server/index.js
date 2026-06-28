@@ -675,6 +675,21 @@ function jsonResponse(response, statusCode, body) {
   response.end(payload);
 }
 
+function emptyResponse(response, statusCode) {
+  response.writeHead(statusCode, {
+    "Content-Length": 0,
+    "Cache-Control": "no-store"
+  });
+  response.end();
+}
+
+function setWebsiteEventCorsHeaders(response) {
+  response.setHeader("Access-Control-Allow-Origin", "*");
+  response.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  response.setHeader("Access-Control-Allow-Headers", "content-type");
+  response.setHeader("Access-Control-Max-Age", "86400");
+}
+
 function readRawRequestBody(request) {
   return new Promise((resolve, reject) => {
     let raw = "";
@@ -1570,9 +1585,19 @@ async function routeRequest(request, response, options = {}) {
       return;
     }
 
-    if (request.method === "POST" && url.pathname === "/v1/website/events") {
-      if (!applyRateLimit(request, response, "website:events", options)) return;
-      await recordWebsiteEvent(request, response, options);
+    if (url.pathname === "/v1/website/events") {
+      setWebsiteEventCorsHeaders(response);
+      if (request.method === "OPTIONS") {
+        emptyResponse(response, 204);
+        return;
+      }
+      if (request.method === "POST") {
+        if (!applyRateLimit(request, response, "website:events", options)) return;
+        await recordWebsiteEvent(request, response, options);
+        return;
+      }
+
+      jsonResponse(response, 405, { message: "Method not allowed." });
       return;
     }
 
