@@ -143,6 +143,7 @@
 - Added a private admin CSV export for aggregate website CTA analytics.
 - Added a private admin funnel summary for website view, download, and purchase conversion rates.
 - Added daily website analytics event breakdowns so private admin tools can review per-day download, purchase, and support-click trends.
+- Added a private local HTML analytics report for visual review of website conversion metrics and daily trends.
 
 ## Known Boundaries
 

@@ -312,6 +312,15 @@ async function main() {
     assert(analyticsCsv.includes("event,purchase_click,1,"), "Admin analytics CSV should include purchase clicks.");
     assert(analyticsCsv.includes("day_event,"), "Admin analytics CSV should include daily event rows.");
     assert(analyticsCsv.includes(":download_click,1,"), "Admin analytics CSV should include daily download clicks.");
+    const analyticsReportPath = path.join(tempDir, "website-analytics.html");
+    const adminAnalyticsReport = await runAdminClient(port, ["analytics-report", analyticsReportPath]);
+    assert(adminAnalyticsReport.status === 0, `Admin analytics report command failed: ${adminAnalyticsReport.stderr || adminAnalyticsReport.stdout}`);
+    assert(fs.existsSync(analyticsReportPath), "Admin analytics report command should write an HTML file.");
+    const analyticsReport = fs.readFileSync(analyticsReportPath, "utf8");
+    assert(analyticsReport.includes("ZeroLag Website Analytics Report"), "Admin analytics report should include a stable title.");
+    assert(analyticsReport.includes("Daily trend"), "Admin analytics report should include daily trend output.");
+    assert(analyticsReport.includes("Download clicks"), "Admin analytics report should include download clicks.");
+    assert(!analyticsReport.includes("downloadPrimary"), "Admin analytics report must not expose raw CTA targets.");
 
     for (let index = 0; index < 80; index += 1) {
       const noisyWebsiteEvent = await requestJson(port, "/v1/website/events", {

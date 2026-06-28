@@ -150,9 +150,11 @@ Admins can inspect aggregate counts with:
 npm run server:admin -- analytics
 npm run server:admin -- analytics-funnel
 npm run server:admin -- analytics-csv .\website-analytics.csv
+npm run server:admin -- analytics-report .\website-analytics.html
 ```
 
 The private analytics output includes `dailyEvents`, and CSV exports include `day_event` rows in the form `YYYY-MM-DD:event_name` so operators can compare daily download, purchase, and support-click trends without collecting user-level data.
+The HTML report command generates a local private dashboard for visual review; it uses the same aggregate admin summary and does not create a public analytics page.
 
 ## POST `/v1/licenses/activate`
 

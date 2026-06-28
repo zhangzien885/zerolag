@@ -154,9 +154,11 @@ To view aggregate website CTA counts:
 npm run server:admin -- analytics
 npm run server:admin -- analytics-funnel
 npm run server:admin -- analytics-csv .\website-analytics.csv
+npm run server:admin -- analytics-report .\website-analytics.html
 ```
 
 The funnel command includes overall conversion plus the latest day's event breakdown. The CSV export includes `day_event` rows such as `2026-06-28:download_click` for private trend review.
+The HTML report is a local private dashboard for quick visual review and should not be uploaded to the public website.
 
 ## State Safety
 
