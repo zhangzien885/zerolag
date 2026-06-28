@@ -17,6 +17,7 @@ const defaultServerSecret = "zerolag-dev-server-secret-change-before-production"
 const defaultAdminSecret = "zerolag-dev-admin-secret-change-before-production";
 const defaultPaymentWebhookSecret = "zerolag-dev-payment-webhook-secret-change-before-production";
 const defaultRateLimitByRoute = {
+  "website:events": 240,
   "orders:create": 30,
   "orders:status": 240,
   "payments:webhook": 120,
@@ -63,7 +64,15 @@ function createEmptyState() {
     orders: {},
     paymentEvents: {},
     subscriptions: {},
-    tokens: {}
+    tokens: {},
+    websiteEvents: {
+      total: 0,
+      events: {},
+      versions: {},
+      channels: {},
+      statuses: {},
+      daily: {}
+    }
   };
 }
 
@@ -359,6 +368,28 @@ function appendAuditEvent(state, type, input = {}) {
   }
 }
 
+function safeCountMap(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return {};
+
+  return Object.fromEntries(
+    Object.entries(input)
+      .filter(([key, value]) => typeof key === "string" && Number.isFinite(Number(value)))
+      .map(([key, value]) => [key, Math.max(0, Math.floor(Number(value)))])
+  );
+}
+
+function websiteEventsSummary(input = {}) {
+  return {
+    total: Math.max(0, Math.floor(Number(input.total || 0))),
+    updatedAt: String(input.updatedAt || ""),
+    events: safeCountMap(input.events),
+    versions: safeCountMap(input.versions),
+    channels: safeCountMap(input.channels),
+    statuses: safeCountMap(input.statuses),
+    daily: safeCountMap(input.daily)
+  };
+}
+
 function stateSummary(state) {
   const activationCodes = Object.values(state.activationCodes || {});
   const orders = Object.values(state.orders || {});
@@ -378,6 +409,7 @@ function stateSummary(state) {
     paymentEvents: {
       total: Object.keys(state.paymentEvents || {}).length
     },
+    websiteEvents: websiteEventsSummary(state.websiteEvents),
     auditEvents: {
       total: Array.isArray(state.auditEvents) ? state.auditEvents.length : 0
     },
@@ -673,6 +705,66 @@ async function readRequestBody(request) {
   return parseJsonBody(await readRawRequestBody(request));
 }
 
+const allowedWebsiteEvents = new Set([
+  "release_view",
+  "download_click",
+  "purchase_click",
+  "support_click",
+  "checksum_copy",
+  "checksum_info_click",
+  "cta_click"
+]);
+
+function normalizeWebsiteEventName(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "")
+    .slice(0, 64);
+  return allowedWebsiteEvents.has(normalized) ? normalized : "";
+}
+
+function normalizeWebsiteMetricKey(value, fallback = "unknown") {
+  const normalized = String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .slice(0, 48);
+  return normalized || fallback;
+}
+
+function bumpCount(map, key) {
+  map[key] = Math.max(0, Math.floor(Number(map[key] || 0))) + 1;
+}
+
+function recordWebsiteEventInState(state, body = {}) {
+  const eventName = normalizeWebsiteEventName(body.event);
+  if (!eventName) return null;
+
+  const detail = body.detail && typeof body.detail === "object" && !Array.isArray(body.detail)
+    ? body.detail
+    : {};
+  const now = nowIso();
+  const metrics = state.websiteEvents && typeof state.websiteEvents === "object" && !Array.isArray(state.websiteEvents)
+    ? state.websiteEvents
+    : {};
+  metrics.total = Math.max(0, Math.floor(Number(metrics.total || 0))) + 1;
+  metrics.updatedAt = now;
+  metrics.events = metrics.events && typeof metrics.events === "object" && !Array.isArray(metrics.events) ? metrics.events : {};
+  metrics.versions = metrics.versions && typeof metrics.versions === "object" && !Array.isArray(metrics.versions) ? metrics.versions : {};
+  metrics.channels = metrics.channels && typeof metrics.channels === "object" && !Array.isArray(metrics.channels) ? metrics.channels : {};
+  metrics.statuses = metrics.statuses && typeof metrics.statuses === "object" && !Array.isArray(metrics.statuses) ? metrics.statuses : {};
+  metrics.daily = metrics.daily && typeof metrics.daily === "object" && !Array.isArray(metrics.daily) ? metrics.daily : {};
+
+  bumpCount(metrics.events, eventName);
+  bumpCount(metrics.versions, normalizeWebsiteMetricKey(detail.version));
+  bumpCount(metrics.channels, normalizeWebsiteMetricKey(detail.channel));
+  bumpCount(metrics.statuses, normalizeWebsiteMetricKey(detail.status));
+  bumpCount(metrics.daily, now.slice(0, 10));
+
+  state.websiteEvents = metrics;
+  return websiteEventsSummary(metrics);
+}
+
 function activeSubscription(subscription) {
   return Boolean(subscription)
     && subscription.status === "active"
@@ -963,6 +1055,28 @@ async function updateManifest(_request, response) {
   } catch {
     jsonResponse(response, 500, { message: "Update manifest is invalid." });
   }
+}
+
+async function recordWebsiteEvent(request, response, options = {}) {
+  const body = await readRequestBody(request);
+
+  if (body.product && body.product !== "ZeroLag") {
+    jsonResponse(response, 400, { accepted: false, message: "Invalid product." });
+    return;
+  }
+
+  const state = loadState(options);
+  const websiteEvents = recordWebsiteEventInState(state, body);
+  if (!websiteEvents) {
+    jsonResponse(response, 400, { accepted: false, message: "Invalid website event." });
+    return;
+  }
+
+  saveState(state, options);
+  jsonResponse(response, 202, {
+    accepted: true,
+    total: websiteEvents.total
+  });
 }
 
 async function createOrder(request, response, options = {}) {
@@ -1424,6 +1538,12 @@ async function routeRequest(request, response, options = {}) {
   try {
     if (request.method === "GET" && (url.pathname === "/health" || url.pathname === "/v1/health")) {
       jsonResponse(response, 200, { ok: true, product: "ZeroLag", time: nowIso() });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/website/events") {
+      if (!applyRateLimit(request, response, "website:events", options)) return;
+      await recordWebsiteEvent(request, response, options);
       return;
     }
 

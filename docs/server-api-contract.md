@@ -103,6 +103,45 @@ Minimum production server variables:
 - `ZEROLAG_SERVER_BACKUP_DISABLED`: must not be `1` in production.
 - `ZEROLAG_MAINTENANCE_DISABLED`: must not be `1` unless another scheduler owns cleanup.
 
+## POST `/v1/website/events`
+
+Accepts privacy-safe public website CTA events from `analyticsUrl`.
+
+The server stores aggregate counters only. It does not store client IPs, browser user agents, activation codes, tokens, order IDs, full URLs, or raw event payloads.
+
+Allowed event names:
+
+- `release_view`
+- `download_click`
+- `purchase_click`
+- `support_click`
+- `checksum_copy`
+- `checksum_info_click`
+- `cta_click`
+
+Request:
+
+```json
+{
+  "product": "ZeroLag",
+  "event": "download_click",
+  "detail": {
+    "version": "1.0.0",
+    "channel": "stable",
+    "status": "available"
+  }
+}
+```
+
+Success response:
+
+```json
+{
+  "accepted": true,
+  "total": 42
+}
+```
+
 ## POST `/v1/licenses/activate`
 
 Exchanges a member code or payment-issued activation code for a server-backed device license.

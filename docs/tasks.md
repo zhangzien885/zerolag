@@ -136,6 +136,7 @@
 - Added a website download-panel support CTA that opens the configured production support URL when available.
 - Added a configurable website purchase CTA sourced from production `purchaseUrl`, with publish and smoke-test coverage.
 - Added privacy-safe website CTA analytics sourced from production `analyticsUrl`, with publish and smoke-test coverage.
+- Added a public server endpoint for privacy-safe website CTA analytics that stores aggregate counts only.
 
 ## Known Boundaries
 

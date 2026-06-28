@@ -137,6 +137,53 @@ async function main() {
     assert(readiness.body.secrets.adminSecret === "custom", "Readiness should report custom admin secret.");
     assert(readiness.body.maintenance.enabled === true, "Readiness should include maintenance status.");
 
+    const websiteDownloadEvent = await requestJson(port, "/v1/website/events", {
+      product: "ZeroLag",
+      event: "download_click",
+      detail: {
+        version: "0.1.0",
+        channel: "alpha",
+        status: "available",
+        target: "downloadPrimary"
+      }
+    });
+    assert(websiteDownloadEvent.statusCode === 202 && websiteDownloadEvent.body.accepted, "Website download event should be accepted.");
+
+    const websitePurchaseEvent = await requestJson(port, "/v1/website/events", {
+      product: "ZeroLag",
+      event: "purchase_click",
+      detail: {
+        version: "0.1.0",
+        channel: "alpha",
+        status: "available",
+        target: "pricingPurchase"
+      }
+    });
+    assert(websitePurchaseEvent.statusCode === 202 && websitePurchaseEvent.body.total === 2, "Website purchase event should update aggregate total.");
+
+    const rejectedWebsiteEvent = await requestJson(port, "/v1/website/events", {
+      product: "ZeroLag",
+      event: "not_allowed",
+      detail: {
+        version: "0.1.0"
+      }
+    });
+    assert(rejectedWebsiteEvent.statusCode === 400, "Unknown website events should be rejected.");
+
+    const websiteSummary = await requestJson(port, "/v1/admin/summary", null, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(websiteSummary.statusCode === 200, "Admin summary with website events failed.");
+    assert(websiteSummary.body.summary.websiteEvents.total === 2, "Admin summary should expose website event total.");
+    assert(websiteSummary.body.summary.websiteEvents.events.download_click === 1, "Admin summary should aggregate download clicks.");
+    assert(websiteSummary.body.summary.websiteEvents.events.purchase_click === 1, "Admin summary should aggregate purchase clicks.");
+    assert(websiteSummary.body.summary.websiteEvents.versions["0.1.0"] === 2, "Admin summary should aggregate website event versions.");
+    assert(websiteSummary.body.summary.websiteEvents.statuses.available === 2, "Admin summary should aggregate website event release status.");
+    assert(
+      !JSON.stringify(loadState(options).websiteEvents).includes("downloadPrimary"),
+      "Website analytics state must not store raw CTA targets."
+    );
+
     const autoTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-auto-maintenance-test-"));
     const autoOptions = {
       statePath: path.join(autoTempDir, "server-state.json"),

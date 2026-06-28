@@ -25,12 +25,19 @@ function assertOk(condition, message) {
   }
 }
 
-function requestJson(baseUrl, pathname, headers = {}) {
+function requestJson(baseUrl, pathname, headers = {}, body = null) {
   return new Promise((resolve, reject) => {
     const target = new URL(pathname, baseUrl);
+    const payload = body ? JSON.stringify(body) : "";
     const request = http.request(target, {
-      method: "GET",
-      headers,
+      method: payload ? "POST" : "GET",
+      headers: {
+        ...headers,
+        ...(payload ? {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(payload)
+        } : {})
+      },
       timeout: timeoutMs
     }, (response) => {
       let raw = "";
@@ -54,6 +61,7 @@ function requestJson(baseUrl, pathname, headers = {}) {
       request.destroy(new Error(`Timed out after ${timeoutMs}ms: ${pathname}`));
     });
     request.on("error", reject);
+    if (payload) request.write(payload);
     request.end();
   });
 }
@@ -144,6 +152,19 @@ async function main() {
     assertOk(health.body && health.body.ok === true, "Health check did not return ok=true.");
     assertOk(health.body.product === "ZeroLag", "Health check did not return the ZeroLag product marker.");
 
+    const websiteEvent = await requestJson(baseUrl, "/v1/website/events", {}, {
+      product: "ZeroLag",
+      event: "release_view",
+      detail: {
+        version: "0.1.0",
+        channel: "smoke",
+        status: "preparing"
+      }
+    });
+
+    assertOk(websiteEvent.statusCode === 202, `Website analytics returned HTTP ${websiteEvent.statusCode}.`);
+    assertOk(websiteEvent.body && websiteEvent.body.accepted === true, "Website analytics did not accept the event.");
+
     const readiness = await requestJson(baseUrl, "/v1/admin/readiness", {
       "X-ZeroLag-Admin-Secret": adminSecret
     });
@@ -151,6 +172,10 @@ async function main() {
     assertOk(readiness.statusCode === 200, `Admin readiness returned HTTP ${readiness.statusCode}.`);
     assertOk(readiness.body && readiness.body.ok === true, "Admin readiness did not return ok=true.");
     assertOk(readiness.body.product === "ZeroLag", "Admin readiness did not return the ZeroLag product marker.");
+    assertOk(
+      readiness.body.state.summary.websiteEvents.total === 1,
+      "Admin readiness did not include website analytics aggregate counts."
+    );
 
     console.log("ZeroLag server smoke test passed.");
     console.log(`Mode: ${useLiveState ? "live-state" : "isolated-state"}`);

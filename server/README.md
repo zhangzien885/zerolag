@@ -9,6 +9,7 @@ It provides:
 - `POST /v1/orders/create`
 - `GET /v1/orders/:orderId`
 - `POST /v1/payments/webhook`
+- `POST /v1/website/events`
 - `POST /v1/admin/activation-codes`
 - `POST /v1/admin/orders/complete`
 - `POST /v1/admin/orders/refund`
@@ -121,6 +122,7 @@ Set `ZEROLAG_PAYMENT_WEBHOOK_SECRET` to a strong value before connecting a real 
 The server applies lightweight in-memory rate limits before sensitive handlers run. Defaults are tuned for the MVP:
 
 - `POST /v1/orders/create`: 30 requests per minute per client IP
+- `POST /v1/website/events`: 240 requests per minute per client IP
 - `POST /v1/licenses/activate`: 20 requests per minute per client IP
 - `POST /v1/licenses/validate`: 240 requests per minute per client IP
 - `POST /v1/payments/webhook`: 120 requests per minute per client IP
@@ -136,6 +138,12 @@ $env:ZEROLAG_TRUST_PROXY="0"
 ```
 
 Keep rate limiting enabled in production, and add edge protection through the hosting provider or reverse proxy before public release. Set `ZEROLAG_TRUST_PROXY=1` only when your reverse proxy overwrites client IP headers safely.
+
+## Website Analytics
+
+Set the public website `analyticsUrl` to `https://your-api.example/v1/website/events` after deploying this server behind HTTPS.
+
+The endpoint accepts only known website CTA event names and stores aggregate counters by event, version, channel, status, and day. It does not store client IPs, browser user agents, activation codes, tokens, order IDs, or raw event payloads.
 
 ## State Safety
 
