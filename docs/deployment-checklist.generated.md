@@ -68,6 +68,14 @@ npm run ci
 npm run release:build
 ```
 
+## 6. Emergency SQLite Restore
+
+Only run this during private recovery after stopping the production server:
+
+```powershell
+npm run server:restore-sqlite -- --input <sqlite-backup> --output <sqlite-state> --force
+```
+
 ## Notes
 
 - Keep `.secrets/server.env` private and out of Git.

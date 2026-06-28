@@ -204,6 +204,12 @@ To export and verify a private SQLite state backup:
 npm run server:backup-sqlite -- --input D:\zerolag-data\server-state.sqlite --output D:\zerolag-backups\server-state-backup.sqlite
 ```
 
+To restore a private SQLite backup after stopping the server:
+
+```powershell
+npm run server:restore-sqlite -- --input D:\zerolag-backups\server-state-backup.sqlite --output D:\zerolag-data\server-state.sqlite --force
+```
+
 Optional environment variables:
 
 ```powershell

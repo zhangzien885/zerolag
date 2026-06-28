@@ -61,6 +61,16 @@ npm run server:backup-sqlite -- --input D:\zerolag-data\server-state.sqlite --ou
 
 When `--output` is omitted, the command writes a timestamped SQLite backup under `ZEROLAG_SQLITE_BACKUP_DIR`, `ZEROLAG_SERVER_BACKUP_DIR`, or `server/data/backups`. It refuses to update an existing backup unless `--force` is provided, then compares a SHA256 digest after writing.
 
+## SQLite Restore
+
+Private recovery can restore a verified backup into a new or existing SQLite state file:
+
+```powershell
+npm run server:restore-sqlite -- --input D:\zerolag-backups\server-state-backup.sqlite --output D:\zerolag-data\server-state.sqlite --force
+```
+
+The restore command requires `--input`, refuses to restore into the same file, and refuses to update an existing output unless `--force` is provided. It should be run only after the production server has been stopped.
+
 ## Safety Rules
 
 - `loadState()` should return plain JSON data only.
