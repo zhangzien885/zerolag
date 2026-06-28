@@ -141,6 +141,7 @@
 - Added bounded website analytics aggregation so public event dimensions cannot grow the server state without limit.
 - Added CORS and preflight support for the public website analytics endpoint while keeping sensitive endpoints private.
 - Added a private admin CSV export for aggregate website CTA analytics.
+- Added a private admin funnel summary for website view, download, and purchase conversion rates.
 
 ## Known Boundaries
 

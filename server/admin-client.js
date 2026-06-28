@@ -25,6 +25,7 @@ function usage() {
   console.log("  node server/admin-client.js revoke-subscription [subscriptionId] [reason]");
   console.log("  node server/admin-client.js audit-events [limit] [type]");
   console.log("  node server/admin-client.js analytics");
+  console.log("  node server/admin-client.js analytics-funnel");
   console.log("  node server/admin-client.js analytics-csv [outputFile]");
   console.log("  node server/admin-client.js cleanup");
   console.log("  node server/admin-client.js export-state [outputFile]");
@@ -116,6 +117,42 @@ function analyticsPayloadFromSummary(summary) {
       channels: websiteEvents.channels || {},
       statuses: websiteEvents.statuses || {},
       daily: websiteEvents.daily || {}
+    }
+  };
+}
+
+function percent(numerator, denominator) {
+  const top = Number(numerator || 0);
+  const bottom = Number(denominator || 0);
+  if (!Number.isFinite(top) || !Number.isFinite(bottom) || bottom <= 0) return 0;
+  return Number(((top / bottom) * 100).toFixed(2));
+}
+
+function analyticsFunnelFromSummary(summary) {
+  const analytics = analyticsPayloadFromSummary(summary).websiteEvents;
+  const events = analytics.events || {};
+  const releaseViews = Number(events.release_view || 0);
+  const downloads = Number(events.download_click || 0);
+  const purchases = Number(events.purchase_click || 0);
+  const supportClicks = Number(events.support_click || 0);
+  const checksumCopies = Number(events.checksum_copy || 0);
+  const checksumInfoClicks = Number(events.checksum_info_click || 0);
+
+  return {
+    ok: true,
+    updatedAt: analytics.updatedAt,
+    funnel: {
+      releaseViews,
+      downloads,
+      purchases,
+      downloadRatePct: percent(downloads, releaseViews),
+      purchaseRatePct: percent(purchases, releaseViews),
+      purchasePerDownloadPct: percent(purchases, downloads)
+    },
+    assistance: {
+      supportClicks,
+      checksumCopies,
+      checksumInfoClicks
     }
   };
 }
@@ -310,6 +347,18 @@ async function main() {
     }
 
     console.log(JSON.stringify(analyticsPayloadFromSummary(response.body.summary), null, 2));
+    return;
+  }
+
+  if (command === "analytics-funnel") {
+    const response = await requestJson("/v1/admin/summary");
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      console.log(JSON.stringify(response.body, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+
+    console.log(JSON.stringify(analyticsFunnelFromSummary(response.body.summary), null, 2));
     return;
   }
 

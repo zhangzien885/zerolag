@@ -104,6 +104,7 @@ npm run server:admin -- revoke-subscription sub_xxx support_revoke
 npm run server:admin -- audit-events 50
 npm run server:admin -- audit-events 50 payment.succeeded
 npm run server:admin -- analytics
+npm run server:admin -- analytics-funnel
 npm run server:admin -- analytics-csv .\website-analytics.csv
 npm run server:admin -- export-state .\server-state-export.json
 npm run server:admin -- summary
@@ -151,6 +152,7 @@ To view aggregate website CTA counts:
 
 ```powershell
 npm run server:admin -- analytics
+npm run server:admin -- analytics-funnel
 npm run server:admin -- analytics-csv .\website-analytics.csv
 ```
 

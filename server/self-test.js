@@ -205,6 +205,17 @@ async function main() {
       "Website analytics preflight should allow content-type."
     );
 
+    const websiteReleaseView = await requestJson(port, "/v1/website/events", {
+      product: "ZeroLag",
+      event: "release_view",
+      detail: {
+        version: "0.1.0",
+        channel: "alpha",
+        status: "available"
+      }
+    });
+    assert(websiteReleaseView.statusCode === 202 && websiteReleaseView.body.accepted, "Website release view event should be accepted.");
+
     const websiteDownloadEvent = await requestJson(port, "/v1/website/events", {
       product: "ZeroLag",
       event: "download_click",
@@ -228,7 +239,7 @@ async function main() {
         target: "pricingPurchase"
       }
     });
-    assert(websitePurchaseEvent.statusCode === 202 && websitePurchaseEvent.body.total === 2, "Website purchase event should update aggregate total.");
+    assert(websitePurchaseEvent.statusCode === 202 && websitePurchaseEvent.body.total === 3, "Website purchase event should update aggregate total.");
 
     const rejectedWebsiteEvent = await requestJson(port, "/v1/website/events", {
       product: "ZeroLag",
@@ -243,11 +254,12 @@ async function main() {
       "X-ZeroLag-Admin-Secret": "self-test-admin"
     });
     assert(websiteSummary.statusCode === 200, "Admin summary with website events failed.");
-    assert(websiteSummary.body.summary.websiteEvents.total === 2, "Admin summary should expose website event total.");
+    assert(websiteSummary.body.summary.websiteEvents.total === 3, "Admin summary should expose website event total.");
+    assert(websiteSummary.body.summary.websiteEvents.events.release_view === 1, "Admin summary should aggregate release views.");
     assert(websiteSummary.body.summary.websiteEvents.events.download_click === 1, "Admin summary should aggregate download clicks.");
     assert(websiteSummary.body.summary.websiteEvents.events.purchase_click === 1, "Admin summary should aggregate purchase clicks.");
-    assert(websiteSummary.body.summary.websiteEvents.versions["0.1.0"] === 2, "Admin summary should aggregate website event versions.");
-    assert(websiteSummary.body.summary.websiteEvents.statuses.available === 2, "Admin summary should aggregate website event release status.");
+    assert(websiteSummary.body.summary.websiteEvents.versions["0.1.0"] === 3, "Admin summary should aggregate website event versions.");
+    assert(websiteSummary.body.summary.websiteEvents.statuses.available === 3, "Admin summary should aggregate website event release status.");
     assert(
       !JSON.stringify(loadState(options).websiteEvents).includes("downloadPrimary"),
       "Website analytics state must not store raw CTA targets."
@@ -255,9 +267,18 @@ async function main() {
     const adminAnalytics = await runAdminClient(port, ["analytics"]);
     assert(adminAnalytics.status === 0, `Admin analytics command failed: ${adminAnalytics.stderr || adminAnalytics.stdout}`);
     const adminAnalyticsBody = JSON.parse(adminAnalytics.stdout);
-    assert(adminAnalyticsBody.websiteEvents.total === 2, "Admin analytics command should expose website event total.");
+    assert(adminAnalyticsBody.websiteEvents.total === 3, "Admin analytics command should expose website event total.");
+    assert(adminAnalyticsBody.websiteEvents.events.release_view === 1, "Admin analytics command should expose release views.");
     assert(adminAnalyticsBody.websiteEvents.events.download_click === 1, "Admin analytics command should expose download clicks.");
     assert(adminAnalyticsBody.websiteEvents.events.purchase_click === 1, "Admin analytics command should expose purchase clicks.");
+    const adminAnalyticsFunnel = await runAdminClient(port, ["analytics-funnel"]);
+    assert(adminAnalyticsFunnel.status === 0, `Admin analytics funnel command failed: ${adminAnalyticsFunnel.stderr || adminAnalyticsFunnel.stdout}`);
+    const adminAnalyticsFunnelBody = JSON.parse(adminAnalyticsFunnel.stdout);
+    assert(adminAnalyticsFunnelBody.funnel.releaseViews === 1, "Admin analytics funnel should expose release views.");
+    assert(adminAnalyticsFunnelBody.funnel.downloads === 1, "Admin analytics funnel should expose downloads.");
+    assert(adminAnalyticsFunnelBody.funnel.purchases === 1, "Admin analytics funnel should expose purchases.");
+    assert(adminAnalyticsFunnelBody.funnel.downloadRatePct === 100, "Admin analytics funnel should calculate download rate.");
+    assert(adminAnalyticsFunnelBody.funnel.purchasePerDownloadPct === 100, "Admin analytics funnel should calculate purchase per download rate.");
     const analyticsCsvPath = path.join(tempDir, "website-analytics.csv");
     const adminAnalyticsCsv = await runAdminClient(port, ["analytics-csv", analyticsCsvPath]);
     assert(adminAnalyticsCsv.status === 0, `Admin analytics CSV command failed: ${adminAnalyticsCsv.stderr || adminAnalyticsCsv.stdout}`);
@@ -283,7 +304,7 @@ async function main() {
     const cappedWebsiteSummary = await requestJson(port, "/v1/admin/summary", null, {
       "X-ZeroLag-Admin-Secret": "self-test-admin"
     });
-    assert(cappedWebsiteSummary.body.summary.websiteEvents.total === 82, "Website analytics should keep total event count.");
+    assert(cappedWebsiteSummary.body.summary.websiteEvents.total === 83, "Website analytics should keep total event count.");
     assert(Object.keys(cappedWebsiteSummary.body.summary.websiteEvents.versions).length <= 64, "Website analytics versions must stay capped.");
     assert(Object.keys(cappedWebsiteSummary.body.summary.websiteEvents.channels).length <= 64, "Website analytics channels must stay capped.");
     assert(Object.keys(cappedWebsiteSummary.body.summary.websiteEvents.statuses).length <= 64, "Website analytics statuses must stay capped.");

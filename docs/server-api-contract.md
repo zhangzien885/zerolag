@@ -148,6 +148,7 @@ Admins can inspect aggregate counts with:
 
 ```powershell
 npm run server:admin -- analytics
+npm run server:admin -- analytics-funnel
 npm run server:admin -- analytics-csv .\website-analytics.csv
 ```
 
