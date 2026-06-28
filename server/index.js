@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { loadServerEnvFile } = require("./env");
+const { createConfiguredStateStore } = require("./state-store");
 
 const rootDir = path.join(__dirname, "..");
 const defaultDataDir = path.join(__dirname, "data");
@@ -251,7 +252,7 @@ function normalizeStateRecord(input) {
 }
 
 function stateStoreFromOptions(options = {}) {
-  const store = options.stateStore;
+  const store = options.stateStore || createConfiguredStateStore(options);
   if (!store || typeof store !== "object") return null;
   if (typeof store.loadState !== "function" || typeof store.saveState !== "function") {
     throw new Error("stateStore must provide loadState() and saveState(state).");

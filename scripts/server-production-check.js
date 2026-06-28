@@ -55,6 +55,8 @@ function main() {
   const backupDir = env("ZEROLAG_SERVER_BACKUP_DIR", path.join(path.dirname(statePath), "backups"));
   const host = env("ZEROLAG_SERVER_HOST", "127.0.0.1");
   const port = env("ZEROLAG_SERVER_PORT", "8787");
+  const stateStore = normalizePaymentProvider(env("ZEROLAG_STATE_STORE", "json"));
+  const sqliteStatePath = env("ZEROLAG_SQLITE_STATE_PATH", path.join(rootDir, "server", "data", "server-state.sqlite"));
   const paymentProvider = normalizePaymentProvider(env("ZEROLAG_PAYMENT_PROVIDER", defaultPaymentProvider));
   const paymentAllowedProviders = paymentProviderList(env(
     "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS",
@@ -66,6 +68,7 @@ function main() {
   addIssue(issues, isStrongSecret(env("ZEROLAG_ADMIN_SECRET", defaultAdminSecret), defaultAdminSecret), "ZEROLAG_ADMIN_SECRET must be a custom strong secret.");
   addIssue(issues, isStrongSecret(env("ZEROLAG_PAYMENT_WEBHOOK_SECRET", defaultPaymentWebhookSecret), defaultPaymentWebhookSecret), "ZEROLAG_PAYMENT_WEBHOOK_SECRET must be a custom strong secret.");
   addIssue(issues, isPositiveNumber(port), "ZEROLAG_SERVER_PORT must be a positive number.");
+  addIssue(issues, ["json", "json_file", "file", "sqlite"].includes(stateStore), "ZEROLAG_STATE_STORE must be json or sqlite.");
   addIssue(issues, paymentAllowedProviders.includes(paymentProvider), "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS must include ZEROLAG_PAYMENT_PROVIDER.");
   addIssue(
     issues,
@@ -81,6 +84,10 @@ function main() {
   }
 
   addIssue(warnings, host !== "127.0.0.1" && host !== "localhost", "Server host is local-only; use a reverse proxy or public bind intentionally for production.");
+  addIssue(warnings, stateStore === "sqlite", "State store is still JSON file storage; SQLite is recommended before wider paid testing.");
+  if (stateStore === "sqlite") {
+    addIssue(warnings, Boolean(sqliteStatePath), "ZEROLAG_SQLITE_STATE_PATH is not configured.");
+  }
   addIssue(warnings, paymentProvider !== defaultPaymentProvider, "Payment provider is still manual; configure ZEROLAG_PAYMENT_PROVIDER before paid release.");
   addIssue(
     warnings,
@@ -93,7 +100,9 @@ function main() {
   console.log("ZeroLag server production readiness");
   console.log(`Host: ${host}`);
   console.log(`Port: ${port}`);
+  console.log(`State store: ${stateStore}`);
   console.log(`State: ${statePath}`);
+  if (stateStore === "sqlite") console.log(`SQLite state: ${sqliteStatePath}`);
   console.log(`Backup: ${backupDir}`);
   console.log(`Payment provider: ${paymentProvider}`);
 

@@ -4,6 +4,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { spawn } = require("child_process");
 const { addActivationCode, createAppServer, loadState, saveState, signPaymentWebhook } = require("./index");
+const { createSqliteStateStore } = require("./state-store");
 
 function requestJson(port, pathname, body, headers = {}) {
   return new Promise((resolve, reject) => {
@@ -253,6 +254,44 @@ async function main() {
       await new Promise((resolve) => {
         memoryServer.close(resolve);
       });
+    }
+
+    const sqliteTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-sqlite-store-test-"));
+    const sqliteStore = createSqliteStateStore(path.join(sqliteTempDir, "server-state.sqlite"));
+    const sqliteCode = "ZL-PRO-SQLITE-TEST";
+    const sqliteOptions = {
+      stateStore: sqliteStore,
+      serverSecret: "sqlite-store-secret",
+      adminSecret: "sqlite-store-admin",
+      paymentWebhookSecret: "sqlite-store-payment"
+    };
+    try {
+      addActivationCode(sqliteCode, { durationDays: 30, maxUses: 1 }, sqliteOptions);
+      const sqliteState = loadState(sqliteOptions);
+      assert(Object.keys(sqliteState.activationCodes).length === 1, "SQLite state store should load saved state.");
+      const sqliteServer = createAppServer(sqliteOptions);
+      const sqlitePort = await listen(sqliteServer);
+      try {
+        const sqliteReadiness = await requestJson(sqlitePort, "/v1/admin/readiness", null, {
+          "X-ZeroLag-Admin-Secret": "sqlite-store-admin"
+        });
+        assert(sqliteReadiness.statusCode === 200, "SQLite state store readiness failed.");
+        assert(sqliteReadiness.body.storage.kind === "sqlite", "Readiness should report SQLite state store kind.");
+        const sqliteActivated = await requestJson(sqlitePort, "/v1/licenses/activate", {
+          activationCode: sqliteCode,
+          deviceHash,
+          appVersion: "0.1.0",
+          channel: "sqlite-store"
+        });
+        assert(sqliteActivated.statusCode === 200 && sqliteActivated.body.active, "SQLite state store activation failed.");
+      } finally {
+        await new Promise((resolve) => {
+          sqliteServer.close(resolve);
+        });
+      }
+    } finally {
+      sqliteStore.close();
+      fs.rmSync(sqliteTempDir, { recursive: true, force: true });
     }
 
     const websitePreflight = await requestOptions(port, "/v1/website/events", {

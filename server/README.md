@@ -182,6 +182,16 @@ The JSON-state MVP now writes state through a temporary file and atomic rename. 
 
 The server also accepts a custom synchronous `stateStore` option for future database migration work. See `docs/state-storage-contract.md` for the current contract.
 
+Optional SQLite prototype storage:
+
+```powershell
+$env:ZEROLAG_STATE_STORE="sqlite"
+$env:ZEROLAG_SQLITE_STATE_PATH="D:\zerolag-data\server-state.sqlite"
+npm run server:start
+```
+
+SQLite mode is intended for wider paid testing before a full PostgreSQL-style async storage migration. The JSON file store remains the default.
+
 Optional environment variables:
 
 ```powershell

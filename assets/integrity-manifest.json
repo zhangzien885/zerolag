@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T10:11:38.721Z",
+  "generatedAt": "2026-06-28T10:28:14.353Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "25d4a5ad469a3f43da0e337033a5c4e95402cb4c40ac2ee47362ebf8798613ad"
+      "sha256": "d3a7c3d88e7c8a6f4c3305413b1648b66af1ebb2a5a8de20df4bea8e5fee61bb"
     },
     {
       "path": "main.js",
@@ -80,7 +80,7 @@
     },
     {
       "path": "scripts/server-production-check.js",
-      "sha256": "05f5a2065bfa071b03f3a43029e2ddcb924ed66720387a09b816926e46d11699"
+      "sha256": "c22daae8a5677b8adda5d1d85cac101fc6728e8f4e37b7ee4458e7407ba2df99"
     },
     {
       "path": "scripts/server-smoke-test.js",
@@ -88,7 +88,7 @@
     },
     {
       "path": "scripts/generate-deployment-checklist.js",
-      "sha256": "7008baf9df4f6f09099987e3bd1828b5acff30615b60e4894e848a1a77c948ae"
+      "sha256": "c3bcbb1630390b59e4340268fea954ad10f922bbf1cc6a874283144c5ae8bc3e"
     },
     {
       "path": "scripts/generate-server-secrets.js",
@@ -115,5 +115,5 @@
       "sha256": "03088e08120ee7508d175a61b3b6f66ee31a657ec592adfd60e5f352f890fc6d"
     }
   ],
-  "signature": "5c5f36b01b0099760ab86b52375ca36f9f0864661b727c0c18c7cac4d288a3fe"
+  "signature": "8958bbd2792250bda3f92e6abb5b59211c4484a1d1ed0eba9402a8e6fcde99e4"
 }

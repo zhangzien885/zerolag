@@ -27,6 +27,20 @@ A custom store must provide:
 
 This is a synchronous compatibility seam. It prepares the codebase for SQLite or another local database first. A fully remote PostgreSQL store should move the server routes to async storage methods in a later step.
 
+## Built-In SQLite Prototype
+
+The server includes an optional SQLite document store backed by Node's built-in `node:sqlite` module. It stores the full server state as one JSON document inside a SQLite table. This keeps the current route code stable while proving that storage can move away from loose JSON files.
+
+Enable it with:
+
+```powershell
+$env:ZEROLAG_STATE_STORE="sqlite"
+$env:ZEROLAG_SQLITE_STATE_PATH="D:\zerolag-data\server-state.sqlite"
+npm run server:start
+```
+
+The default remains JSON file storage unless `ZEROLAG_STATE_STORE=sqlite` is set.
+
 ## Safety Rules
 
 - `loadState()` should return plain JSON data only.

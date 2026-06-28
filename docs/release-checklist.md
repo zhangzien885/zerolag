@@ -19,6 +19,7 @@ npm run deploy:checklist
 
 - Generate private server secrets with `npm run server:secrets -- --write`.
 - Keep `.secrets/server.env` private and outside Git.
+- For wider paid testing, set `ZEROLAG_STATE_STORE=sqlite` and configure `ZEROLAG_SQLITE_STATE_PATH` on durable storage.
 - Configure `ZEROLAG_PAYMENT_PROVIDER`, `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS`, `ZEROLAG_PAYMENT_URL_TEMPLATE`, and `ZEROLAG_PAYMENT_MESSAGE` for the real payment provider.
 - Run `npm run server:check:strict`.
 - Run `npm run server:smoke`.
