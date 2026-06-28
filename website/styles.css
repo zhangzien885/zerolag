@@ -795,6 +795,23 @@ details p,
   white-space: nowrap;
 }
 
+.checksum-copy-button {
+  margin-top: 10px;
+  border: 1px solid rgba(167, 255, 90, 0.24);
+  background: rgba(167, 255, 90, 0.08);
+  color: var(--green);
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.checksum-copy-button:hover {
+  border-color: rgba(167, 255, 90, 0.48);
+  background: rgba(167, 255, 90, 0.12);
+}
+
 .release-notes {
   display: grid;
   gap: 8px;

@@ -7,9 +7,11 @@ const downloadIntro = document.querySelector("#downloadIntro");
 const releaseStatus = document.querySelector("#releaseStatus");
 const releaseDescription = document.querySelector("#releaseDescription");
 const releaseChecksum = document.querySelector("#releaseChecksum");
+const copyChecksumButton = document.querySelector("#copyChecksumButton");
 const releaseNotes = document.querySelector("#releaseNotes");
 const downloadPrimary = document.querySelector("#downloadPrimary");
 const downloadSecondary = document.querySelector("#downloadSecondary");
+let fullReleaseChecksum = "";
 
 if (memoryTicker) {
   let tick = 0;
@@ -63,6 +65,34 @@ function setExternalLink(anchor, url) {
   anchor.rel = "noopener";
 }
 
+async function copyReleaseChecksum() {
+  if (!fullReleaseChecksum || !copyChecksumButton) return;
+
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(fullReleaseChecksum);
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = fullReleaseChecksum;
+      textArea.setAttribute("readonly", "");
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+    }
+
+    const previousText = copyChecksumButton.textContent;
+    copyChecksumButton.textContent = "已复制";
+    window.setTimeout(() => {
+      copyChecksumButton.textContent = previousText || "复制校验码";
+    }, 1400);
+  } catch (_error) {
+    copyChecksumButton.textContent = "复制失败";
+  }
+}
+
 function renderReleaseNotes(notes) {
   if (!releaseNotes || !Array.isArray(notes) || notes.length === 0) return;
 
@@ -94,9 +124,11 @@ function renderRelease(release) {
     : "Windows 安装包已准备好。";
 
   if (checksum) {
+    fullReleaseChecksum = checksum;
     releaseChecksum.hidden = false;
     releaseChecksum.textContent = `SHA256 ${shortHash(checksum)}`;
     releaseChecksum.title = checksum;
+    copyChecksumButton.hidden = false;
   }
 
   if (release.downloadUrl) {
@@ -114,3 +146,7 @@ fetch("./release.json", { cache: "no-store" })
   .then((response) => (response.ok ? response.json() : null))
   .then(renderRelease)
   .catch(() => {});
+
+if (copyChecksumButton) {
+  copyChecksumButton.addEventListener("click", copyReleaseChecksum);
+}

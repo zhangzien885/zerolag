@@ -104,6 +104,7 @@ function main() {
     "releaseStatus",
     "releaseDescription",
     "releaseChecksum",
+    "copyChecksumButton",
     "releaseNotes",
     "downloadPrimary",
     "downloadSecondary"
@@ -115,8 +116,11 @@ function main() {
   assertHas(scriptJs, "renderRelease", "website release renderer");
   assertHas(scriptJs, "renderReleaseNotes", "website release notes renderer");
   assertHas(scriptJs, "formatBytes", "website installer size formatter");
+  assertHas(scriptJs, "copyReleaseChecksum", "website checksum copy handler");
+  assertHas(scriptJs, "clipboard.writeText", "website checksum clipboard path");
   assertHas(scriptJs, "rel = \"noopener\"", "external download link safety");
   assertHas(stylesCss, ".release-checksum", "website release checksum style");
+  assertHas(stylesCss, ".checksum-copy-button", "website checksum copy button style");
   assertHas(stylesCss, ".release-notes", "website release notes style");
 
   assertNoForbiddenCopy("website/index.html", indexHtml);
