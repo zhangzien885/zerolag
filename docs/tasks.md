@@ -127,6 +127,7 @@
 - Added release artifact generation for installer checksums and download metadata after the Windows installer is built.
 - Added one-command release verification and release build chains for installer validation plus public artifact metadata generation.
 - Added release candidate report generation with version, Git state, installer checksum status, readiness checks, and final release commands.
+- Added website release metadata publishing so the static download page can display release status, installer link, and SHA256 checksum from verified release artifacts.
 
 ## Known Boundaries
 

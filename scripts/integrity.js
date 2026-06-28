@@ -20,6 +20,7 @@ const protectedFiles = [
   "scripts/installer-smoke-test.js",
   "scripts/generate-release-artifacts.js",
   "scripts/generate-release-report.js",
+  "scripts/publish-website-release.js",
   "scripts/production-check.js",
   "scripts/release-preflight.js",
   "scripts/server-production-check.js",

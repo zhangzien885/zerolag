@@ -1,0 +1,25 @@
+{
+  "productName": "ZeroLag",
+  "version": "0.1.0",
+  "channel": "alpha",
+  "status": "preparing",
+  "downloadReady": false,
+  "downloadUrl": "",
+  "supportUrl": "",
+  "generatedAt": "",
+  "releaseNotes": [],
+  "installer": {
+    "file": "",
+    "size": 0,
+    "sha256": ""
+  },
+  "updateMetadata": {
+    "file": "",
+    "sha256": "",
+    "releaseDate": ""
+  },
+  "readiness": {
+    "ok": 0,
+    "total": 0
+  }
+}

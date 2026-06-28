@@ -234,17 +234,18 @@
 
       <section id="download" class="download-section">
         <div class="download-panel">
-          <p class="eyebrow">BETA BUILD</p>
+          <p id="downloadKicker" class="eyebrow">BETA BUILD</p>
           <h2>先体验，再决定</h2>
-          <p>ZeroLag 正在打磨首个公开版本。你可以先关注首批体验，开放后第一时间上手完整流程。</p>
+          <p id="downloadIntro">ZeroLag 正在打磨首个公开版本。你可以先关注首批体验，开放后第一时间上手完整流程。</p>
           <div class="release-card">
             <span>当前状态</span>
-            <strong>首批体验准备中</strong>
-            <p>正式开放后，这里会提供安装包、更新说明和购买入口。</p>
+            <strong id="releaseStatus">首批体验准备中</strong>
+            <p id="releaseDescription">正式开放后，这里会提供安装包、更新说明和购买入口。</p>
+            <code id="releaseChecksum" class="release-checksum" hidden></code>
           </div>
           <div class="download-actions">
-            <a class="primary-button" href="../README.md">查看体验说明</a>
-            <a class="secondary-button" href="#faq">阅读常见问题</a>
+            <a id="downloadPrimary" class="primary-button" href="../README.md">查看体验说明</a>
+            <a id="downloadSecondary" class="secondary-button" href="#faq">阅读常见问题</a>
           </div>
         </div>
       </section>
