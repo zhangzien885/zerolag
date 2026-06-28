@@ -29,6 +29,10 @@ const els = {
   networkDetail: document.querySelector("#networkDetail"),
   networkCheckButton: document.querySelector("#networkCheckButton"),
   flushDnsButton: document.querySelector("#flushDnsButton"),
+  versionState: document.querySelector("#versionState"),
+  versionDetail: document.querySelector("#versionDetail"),
+  versionCheckButton: document.querySelector("#versionCheckButton"),
+  versionInstallButton: document.querySelector("#versionInstallButton"),
   supportState: document.querySelector("#supportState"),
   supportDetail: document.querySelector("#supportDetail"),
   supportBundleButton: document.querySelector("#supportBundleButton"),
@@ -395,11 +399,62 @@ function showUpdateDialog(update) {
   els.boostButton.disabled = forceUpdateRequired;
 }
 
-async function checkForUpdates() {
+function renderVersionCenter(update, config = {}) {
+  const current = update && update.current ? update.current : "未知";
+  const channel = config.releaseChannel || "alpha";
+  const base = `当前 ${current} / ${channel}`;
+
+  if (!update) {
+    setText(els.versionState, "待检查");
+    setText(els.versionDetail, `${base}。点击检查更新获取最新状态。`);
+    els.versionInstallButton.disabled = true;
+    return;
+  }
+
+  if (update.error) {
+    setText(els.versionState, "检查受限");
+    setText(els.versionDetail, `${base}。更新服务暂时不可用，请稍后再试。`);
+    els.versionInstallButton.disabled = true;
+    return;
+  }
+
+  if (update.updateAvailable) {
+    setText(els.versionState, update.force ? "必须更新" : "发现新版");
+    setText(els.versionDetail, `${base}，最新 ${update.latest || "未知"}。${update.message || "建议更新到最新版本。"}`);
+    els.versionInstallButton.disabled = !update.downloadUrl;
+    return;
+  }
+
+  setText(els.versionState, "已是最新");
+  setText(els.versionDetail, `${base}。当前已经是最新版本。`);
+  els.versionInstallButton.disabled = true;
+}
+
+async function checkForUpdates(options = {}) {
+  const manual = Boolean(options.manual);
+  if (manual) {
+    els.versionCheckButton.disabled = true;
+    setText(els.toolState, "检查更新");
+    setText(els.versionState, "检查中");
+    setText(els.versionDetail, "正在连接 ZeroLag 更新通道，请稍等。");
+  }
+
   try {
-    const update = await window.zeroLag.getUpdateStatus();
+    const [update, config] = await Promise.all([
+      window.zeroLag.getUpdateStatus(),
+      window.zeroLag.getAppConfig()
+    ]);
+    renderVersionCenter(update, config);
+
     if (!update || !update.updateAvailable) {
+      pendingUpdate = null;
+      pendingUpdateUrl = "";
+      forceUpdateRequired = false;
       els.updateBadge.hidden = true;
+      if (manual) {
+        setText(els.toolState, "已是最新");
+        addLog("当前已经是最新版本。", "good");
+      }
       return;
     }
 
@@ -409,11 +464,22 @@ async function checkForUpdates() {
     setText(els.updateBadge, update.force ? "必须更新" : "发现新版");
     els.updateBadge.hidden = false;
 
-    if (update.force) {
+    if (update.force || manual) {
       showUpdateDialog(update);
     }
+
+    if (manual) {
+      setText(els.toolState, "发现新版");
+      addLog(update.force ? "发现必须更新版本。" : "发现可用新版本。", update.force ? "warn" : "good");
+    }
   } catch {
+    renderVersionCenter(null, {});
+    setText(els.versionState, "检查失败");
+    setText(els.versionDetail, "更新服务暂时不可用，请稍后再试。");
+    if (manual) setText(els.toolState, "检查失败");
     addLog("更新检测暂时不可用。", "warn");
+  } finally {
+    if (manual) els.versionCheckButton.disabled = false;
   }
 }
 
@@ -740,6 +806,20 @@ els.flushDnsButton.addEventListener("click", async () => {
     setText(els.toolState, "刷新失败");
     addLog("DNS 刷新失败。", "warn");
   }
+});
+
+els.versionCheckButton.addEventListener("click", async () => {
+  await checkForUpdates({ manual: true });
+});
+
+els.versionInstallButton.addEventListener("click", async () => {
+  if (!pendingUpdateUrl) {
+    addLog("更新地址暂未配置。", "warn");
+    return;
+  }
+
+  await window.zeroLag.openUpdateUrl(pendingUpdateUrl);
+  addLog("已打开更新下载页面。", "good");
 });
 
 els.supportBundleButton.addEventListener("click", async () => {

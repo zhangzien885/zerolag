@@ -992,6 +992,7 @@ body.ready-mid .metric-rail {
 }
 
 .network-block p,
+.version-block p,
 .support-block p {
   min-height: 38px;
   margin: 0;

@@ -23,6 +23,7 @@
 - Safe background load reduction after Boost using an internal non-critical process allowlist.
 - One-click Boost memory optimization using a PCL-style system memory list purge plus aggressive working-set trim across accessible processes before gaming, without killing user processes.
 - Startup update check with normal and forced update dialog states.
+- Game toolbox version center for manual update checks, current version/channel display, and download handoff.
 - Official website button that opens the future ZeroLag website.
 - Background tray mode: closing the desktop window hides ZeroLag to the Windows tray, while tray exit performs real cleanup.
 - Manual recovery control: topbar "restore daily mode" button stops the active Boost session and refreshes status without closing the app.
@@ -109,6 +110,7 @@
 - Added redacted support-event logging so exported diagnostics include recent user-facing operation history without sensitive codes or implementation details.
 - Added a configurable official support/contact link in the desktop toolbox and production readiness checks for `supportUrl`.
 - Added membership expiry and renewal guidance so users see remaining Pro time before access runs out.
+- Added a desktop toolbox version center for manual update checks and user-visible version/channel status.
 
 ## Known Boundaries
 

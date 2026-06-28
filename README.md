@@ -19,6 +19,7 @@ ZeroLag is a Windows gaming performance optimizer prototype.
 - Performs safe background load reduction after Boost using an internal non-critical process allowlist.
 - Runs a Boost memory optimization pass that clears system memory lists and trims accessible process working sets before gaming without killing user processes.
 - Checks for available updates on startup and supports normal / forced update prompts.
+- Provides a game-toolbox version center for manual update checks and download handoff.
 - Keeps running in the Windows tray when the main window is closed; use the tray menu to reopen or fully exit.
 - Provides manual rescan and restore-daily-mode controls from the topbar.
 - Includes a game toolbox button that opens local game library, one-click game launch, network latency check, DNS refresh, and Boost session timer tools.
