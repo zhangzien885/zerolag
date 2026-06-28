@@ -11,6 +11,9 @@ const maxAuditEvents = 2000;
 const defaultBackupRetention = 25;
 const defaultRateLimitWindowMs = 60 * 1000;
 const defaultRateLimitMax = 120;
+const defaultServerSecret = "zerolag-dev-server-secret-change-before-production";
+const defaultAdminSecret = "zerolag-dev-admin-secret-change-before-production";
+const defaultPaymentWebhookSecret = "zerolag-dev-payment-webhook-secret-change-before-production";
 const defaultRateLimitByRoute = {
   "orders:create": 30,
   "orders:status": 240,
@@ -67,17 +70,17 @@ function statePathFromOptions(options = {}) {
 }
 
 function serverSecretFromOptions(options = {}) {
-  return options.serverSecret || process.env.ZEROLAG_SERVER_SECRET || "zerolag-dev-server-secret-change-before-production";
+  return options.serverSecret || process.env.ZEROLAG_SERVER_SECRET || defaultServerSecret;
 }
 
 function adminSecretFromOptions(options = {}) {
-  return options.adminSecret || process.env.ZEROLAG_ADMIN_SECRET || "zerolag-dev-admin-secret-change-before-production";
+  return options.adminSecret || process.env.ZEROLAG_ADMIN_SECRET || defaultAdminSecret;
 }
 
 function paymentWebhookSecretFromOptions(options = {}) {
   return options.paymentWebhookSecret
     || process.env.ZEROLAG_PAYMENT_WEBHOOK_SECRET
-    || "zerolag-dev-payment-webhook-secret-change-before-production";
+    || defaultPaymentWebhookSecret;
 }
 
 function backupConfigFromOptions(options = {}) {
@@ -389,6 +392,111 @@ function stateExportPayload(state) {
     stateSha256: sha256(serializedState),
     summary: stateSummary(state),
     state
+  };
+}
+
+function fileSnapshot(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) {
+      return {
+        exists: false,
+        sizeBytes: 0,
+        updatedAt: ""
+      };
+    }
+
+    const stats = fs.statSync(filePath);
+    return {
+      exists: true,
+      sizeBytes: stats.size,
+      updatedAt: stats.mtime.toISOString()
+    };
+  } catch {
+    return {
+      exists: false,
+      sizeBytes: 0,
+      updatedAt: "",
+      error: "FILE_UNREADABLE"
+    };
+  }
+}
+
+function updateManifestReadiness() {
+  const file = fileSnapshot(updateManifestPath);
+  if (!file.exists) {
+    return {
+      ...file,
+      valid: false,
+      latest: "",
+      minSupported: "",
+      signed: false
+    };
+  }
+
+  try {
+    const manifest = JSON.parse(fs.readFileSync(updateManifestPath, "utf8"));
+    return {
+      ...file,
+      valid: true,
+      latest: manifest.latest || "",
+      minSupported: manifest.minSupported || "",
+      signed: Boolean(manifest.signature)
+    };
+  } catch {
+    return {
+      ...file,
+      valid: false,
+      latest: "",
+      minSupported: "",
+      signed: false,
+      error: "UPDATE_MANIFEST_INVALID"
+    };
+  }
+}
+
+function serverReadiness(options = {}) {
+  const statePath = statePathFromOptions(options);
+  const backup = backupConfigFromOptions(options);
+  const backupFiles = listBackupFiles(options);
+  const state = loadState(options);
+  const rateLimit = rateLimitConfigFromOptions(options, "admin");
+  const warnings = [];
+
+  if (serverSecretFromOptions(options) === defaultServerSecret) warnings.push("SERVER_SECRET_DEFAULT");
+  if (adminSecretFromOptions(options) === defaultAdminSecret) warnings.push("ADMIN_SECRET_DEFAULT");
+  if (paymentWebhookSecretFromOptions(options) === defaultPaymentWebhookSecret) warnings.push("PAYMENT_WEBHOOK_SECRET_DEFAULT");
+  if (!backup.enabled || backup.retention === 0) warnings.push("BACKUP_DISABLED");
+
+  const updateManifest = updateManifestReadiness();
+  if (updateManifest.exists && !updateManifest.valid) warnings.push("UPDATE_MANIFEST_INVALID");
+
+  return {
+    ok: true,
+    product: "ZeroLag",
+    checkedAt: nowIso(),
+    state: {
+      path: statePath,
+      file: fileSnapshot(statePath),
+      summary: stateSummary(state)
+    },
+    backups: {
+      enabled: backup.enabled,
+      retention: backup.retention,
+      count: backupFiles.length,
+      latestAt: backupFiles[0] ? backupFiles[0].createdAt : ""
+    },
+    updateManifest,
+    secrets: {
+      serverSecret: serverSecretFromOptions(options) === defaultServerSecret ? "default" : "custom",
+      adminSecret: adminSecretFromOptions(options) === defaultAdminSecret ? "default" : "custom",
+      paymentWebhookSecret: paymentWebhookSecretFromOptions(options) === defaultPaymentWebhookSecret ? "default" : "custom"
+    },
+    rateLimit: {
+      enabled: rateLimit.enabled,
+      trustProxy: rateLimit.trustProxy,
+      windowMs: rateLimit.windowMs
+    },
+    warnings
   };
 }
 
@@ -1215,6 +1323,12 @@ async function adminSummary(request, response, options = {}) {
   });
 }
 
+async function adminReadiness(request, response, options = {}) {
+  if (!requireAdmin(request, response, options)) return;
+
+  jsonResponse(response, 200, serverReadiness(options));
+}
+
 async function exportStateAdmin(request, response, options = {}) {
   if (!requireAdmin(request, response, options)) return;
 
@@ -1226,7 +1340,7 @@ async function routeRequest(request, response, options = {}) {
   const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
 
   try {
-    if (request.method === "GET" && url.pathname === "/health") {
+    if (request.method === "GET" && (url.pathname === "/health" || url.pathname === "/v1/health")) {
       jsonResponse(response, 200, { ok: true, product: "ZeroLag", time: nowIso() });
       return;
     }
@@ -1302,6 +1416,12 @@ async function routeRequest(request, response, options = {}) {
     if (request.method === "GET" && url.pathname === "/v1/admin/summary") {
       if (!applyRateLimit(request, response, "admin", options)) return;
       await adminSummary(request, response, options);
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/v1/admin/readiness") {
+      if (!applyRateLimit(request, response, "admin", options)) return;
+      await adminReadiness(request, response, options);
       return;
     }
 

@@ -115,6 +115,19 @@ async function main() {
     const health = await requestJson(port, "/health");
     assert(health.statusCode === 200 && health.body.ok, "Health check failed.");
 
+    const versionedHealth = await requestJson(port, "/v1/health");
+    assert(versionedHealth.statusCode === 200 && versionedHealth.body.ok, "Versioned health check failed.");
+
+    const deniedReadiness = await requestJson(port, "/v1/admin/readiness");
+    assert(deniedReadiness.statusCode === 401, "Readiness endpoint should require admin secret.");
+
+    const readiness = await requestJson(port, "/v1/admin/readiness", null, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(readiness.statusCode === 200 && readiness.body.ok, "Readiness endpoint failed.");
+    assert(readiness.body.state.summary.activationCodes.total >= 1, "Readiness should include state summary.");
+    assert(readiness.body.secrets.adminSecret === "custom", "Readiness should report custom admin secret.");
+
     const rateTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-rate-limit-test-"));
     const rateServer = createAppServer({
       statePath: path.join(rateTempDir, "server-state.json"),

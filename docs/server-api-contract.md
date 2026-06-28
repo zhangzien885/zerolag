@@ -25,6 +25,33 @@ Only enable trusted proxy IP headers when the reverse proxy overwrites them safe
 
 The JSON-state MVP uses atomic writes and rolling local backups before each overwrite. Admins can export current state for migration or private backup, but the export should be treated as sensitive operational data.
 
+## Health And Readiness
+
+Public service liveness:
+
+```http
+GET /v1/health
+```
+
+Returns only whether the service is responding:
+
+```json
+{
+  "ok": true,
+  "product": "ZeroLag",
+  "time": "2026-06-28T00:00:00.000Z"
+}
+```
+
+Admin readiness:
+
+```http
+GET /v1/admin/readiness
+X-ZeroLag-Admin-Secret: ADMIN_SECRET
+```
+
+Returns a non-secret operational summary for private checks, including state-file status, backup status, update-manifest status, rate-limit status, data counts, and whether deployment secrets are still using development defaults.
+
 ## Configuration
 
 The desktop client reads production endpoints from `assets/app-config.json`.

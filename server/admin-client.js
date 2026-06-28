@@ -21,6 +21,7 @@ function usage() {
   console.log("  node server/admin-client.js revoke-subscription [subscriptionId] [reason]");
   console.log("  node server/admin-client.js audit-events [limit] [type]");
   console.log("  node server/admin-client.js export-state [outputFile]");
+  console.log("  node server/admin-client.js readiness");
   console.log("  node server/admin-client.js summary");
 }
 
@@ -274,6 +275,13 @@ async function main() {
 
   if (command === "summary") {
     const response = await requestJson("/v1/admin/summary");
+    console.log(JSON.stringify(response.body, null, 2));
+    process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
+  if (command === "readiness") {
+    const response = await requestJson("/v1/admin/readiness");
     console.log(JSON.stringify(response.body, null, 2));
     process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
     return;
