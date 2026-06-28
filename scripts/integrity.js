@@ -28,6 +28,7 @@ const protectedFiles = [
   "scripts/server-production-check.js",
   "scripts/server-smoke-test.js",
   "scripts/generate-deployment-checklist.js",
+  "scripts/generate-server-deployment-report.js",
   "scripts/migrate-state-to-sqlite.js",
   "scripts/backup-sqlite-state.js",
   "scripts/restore-sqlite-state.js",

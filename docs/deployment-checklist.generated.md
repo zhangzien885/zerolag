@@ -59,6 +59,7 @@ Run these in order before a paid public release:
 
 ```powershell
 npm run deploy:checklist
+npm run server:deployment-report
 npm run server:secrets -- --profile sqlite --write
 npm run server:env-check -- --profile sqlite
 npm run server:migrate-sqlite -- --input <json-state> --output <sqlite-state>

@@ -79,6 +79,16 @@ $env:ZEROLAG_ENV_FILE="D:\zerolag-private\server.env"
 npm run server:check:strict
 ```
 
+## Private Deployment Report
+
+Generate a private server deployment summary before paid testing or release:
+
+```powershell
+npm run server:deployment-report
+```
+
+The report writes `docs/server-deployment-report.generated.md` by default and summarizes env validation, storage, backup, payment, update, and public endpoint readiness. It does not print secret values, activation codes, subscription tokens, or full external paths.
+
 ## Create A Test Code
 
 ```powershell

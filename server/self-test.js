@@ -346,6 +346,22 @@ async function main() {
     assert(sqliteEnvCheckBody.ok === true, "SQLite server env check should return ok.");
     assert(sqliteEnvCheckBody.summary.stateStore === "sqlite", "SQLite server env check should report sqlite storage.");
     assert(!sqliteEnvCheck.stdout.includes("zl_server_"), "Server env check must not print generated secret values.");
+    const deploymentReportPath = path.join(tempDir, "server-deployment-report.md");
+    const deploymentReport = await runNodeScript("scripts/generate-server-deployment-report.js", [
+      "--output",
+      deploymentReportPath
+    ], {
+      env: {
+        ZEROLAG_ENV_FILE: sqliteEnvPath
+      }
+    });
+    assert(deploymentReport.status === 0, `Server deployment report command failed: ${deploymentReport.stderr || deploymentReport.stdout}`);
+    assert(fs.existsSync(deploymentReportPath), "Server deployment report should write a Markdown file.");
+    const deploymentReportBody = fs.readFileSync(deploymentReportPath, "utf8");
+    assert(deploymentReportBody.includes("ZeroLag Server Deployment Report"), "Server deployment report should include its title.");
+    assert(deploymentReportBody.includes("State store from env: `sqlite`"), "Server deployment report should summarize env storage.");
+    assert(deploymentReportBody.includes("Payment provider from env:"), "Server deployment report should summarize payment readiness.");
+    assert(!deploymentReportBody.includes("zl_server_"), "Server deployment report must not expose generated secret values.");
     const refusedEnvOverwrite = await runNodeScript("scripts/generate-server-secrets.js", [
       "--write",
       sqliteEnvPath
