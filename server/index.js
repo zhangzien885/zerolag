@@ -395,6 +395,53 @@ function stateExportPayload(state) {
   };
 }
 
+function cleanupExpiredServerState(state, input = {}) {
+  const before = stateSummary(state);
+  const now = Date.now();
+  let expiredSubscriptions = 0;
+  let removedTokens = 0;
+
+  Object.values(state.subscriptions || {}).forEach((subscription) => {
+    const expiresAt = new Date(subscription.expiresAt || "").getTime();
+    if (subscription.status === "active" && Number.isFinite(expiresAt) && expiresAt <= now) {
+      subscription.status = "expired";
+      subscription.expiredAt = subscription.expiredAt || nowIso();
+      expiredSubscriptions += 1;
+    }
+  });
+
+  Object.entries(state.tokens || {}).forEach(([hash, token]) => {
+    const subscription = state.subscriptions && state.subscriptions[token.subscriptionId];
+    const tokenExpiresAt = new Date(token.expiresAt || "").getTime();
+    const tokenExpired = Number.isFinite(tokenExpiresAt) && tokenExpiresAt <= now;
+    if (!subscription || !activeSubscription(subscription) || tokenExpired) {
+      delete state.tokens[hash];
+      removedTokens += 1;
+    }
+  });
+
+  const changed = expiredSubscriptions > 0 || removedTokens > 0;
+  if (changed) {
+    appendAuditEvent(state, "maintenance.cleanup", {
+      actor: input.actor || "admin",
+      targetType: "server_state",
+      targetId: "cleanup",
+      metadata: {
+        expiredSubscriptions,
+        removedTokens
+      }
+    });
+  }
+
+  return {
+    changed,
+    expiredSubscriptions,
+    removedTokens,
+    before,
+    after: stateSummary(state)
+  };
+}
+
 function fileSnapshot(filePath) {
   try {
     if (!fs.existsSync(filePath)) {
@@ -1329,6 +1376,24 @@ async function adminReadiness(request, response, options = {}) {
   jsonResponse(response, 200, serverReadiness(options));
 }
 
+async function maintenanceCleanupAdmin(request, response, options = {}) {
+  if (!requireAdmin(request, response, options)) return;
+
+  const state = loadState(options);
+  const cleanup = cleanupExpiredServerState(state, {
+    actor: adminActor(request)
+  });
+
+  if (cleanup.changed) {
+    saveState(state, options);
+  }
+
+  jsonResponse(response, 200, {
+    ok: true,
+    cleanup
+  });
+}
+
 async function exportStateAdmin(request, response, options = {}) {
   if (!requireAdmin(request, response, options)) return;
 
@@ -1422,6 +1487,12 @@ async function routeRequest(request, response, options = {}) {
     if (request.method === "GET" && url.pathname === "/v1/admin/readiness") {
       if (!applyRateLimit(request, response, "admin", options)) return;
       await adminReadiness(request, response, options);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/admin/maintenance/cleanup") {
+      if (!applyRateLimit(request, response, "admin", options)) return;
+      await maintenanceCleanupAdmin(request, response, options);
       return;
     }
 

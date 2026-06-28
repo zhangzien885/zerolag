@@ -103,9 +103,11 @@ async function main() {
   const code = "ZL-PRO-SELF-TEST";
   const adminCode = "ZL-PRO-ADMIN-TEST";
   const revokeCode = "ZL-PRO-REVOKE-TEST";
+  const cleanupCode = "ZL-PRO-CLEANUP-TEST";
   const deviceHash = crypto.createHash("sha256").update("device-a").digest("hex");
   const otherDeviceHash = crypto.createHash("sha256").update("device-b").digest("hex");
   const revokeDeviceHash = crypto.createHash("sha256").update("device-c").digest("hex");
+  const cleanupDeviceHash = crypto.createHash("sha256").update("device-d").digest("hex");
 
   addActivationCode(code, { durationDays: 30, maxUses: 1 }, options);
   const server = createAppServer(options);
@@ -396,6 +398,43 @@ async function main() {
     });
     assert(manuallyRevokedValidation.statusCode === 403 && manuallyRevokedValidation.body.active === false, "Admin revoke should invalidate token.");
 
+    const createdCleanupCode = await requestJson(port, "/v1/admin/activation-codes", {
+      code: cleanupCode,
+      durationDays: 30,
+      maxUses: 1
+    }, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(createdCleanupCode.statusCode === 201 && createdCleanupCode.body.code === cleanupCode, "Admin cleanup-test code creation failed.");
+
+    const cleanupTarget = await requestJson(port, "/v1/licenses/activate", {
+      activationCode: cleanupCode,
+      deviceHash: cleanupDeviceHash,
+      appVersion: "0.1.0",
+      channel: "test-cleanup"
+    });
+    assert(cleanupTarget.statusCode === 200 && cleanupTarget.body.active, "Cleanup-test activation failed.");
+
+    const staleState = loadState(options);
+    staleState.subscriptions[cleanupTarget.body.subscriptionId].status = "active";
+    staleState.subscriptions[cleanupTarget.body.subscriptionId].expiresAt = new Date(Date.now() - 60 * 1000).toISOString();
+    fs.writeFileSync(options.statePath, `${JSON.stringify(staleState, null, 2)}\n`, "utf8");
+
+    const cleanup = await requestJson(port, "/v1/admin/maintenance/cleanup", {}, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin",
+      "X-ZeroLag-Admin-Actor": "self-test"
+    });
+    assert(cleanup.statusCode === 200 && cleanup.body.ok, "Maintenance cleanup failed.");
+    assert(cleanup.body.cleanup.expiredSubscriptions >= 1, "Cleanup should expire stale subscriptions.");
+    assert(cleanup.body.cleanup.removedTokens >= 1, "Cleanup should remove stale tokens.");
+
+    const cleanedState = loadState(options);
+    assert(cleanedState.subscriptions[cleanupTarget.body.subscriptionId].status === "expired", "Cleanup should mark subscription expired.");
+    assert(
+      !Object.values(cleanedState.tokens || {}).some((token) => token.subscriptionId === cleanupTarget.body.subscriptionId),
+      "Cleanup should remove tokens for expired subscription."
+    );
+
     const auditEvents = await requestJson(port, "/v1/admin/audit-events?limit=200", null, {
       "X-ZeroLag-Admin-Secret": "self-test-admin"
     });
@@ -408,6 +447,7 @@ async function main() {
     assert(auditTypes.has("license.renewed"), "Audit log should include license renewal.");
     assert(auditTypes.has("payment.refunded"), "Audit log should include refund.");
     assert(auditTypes.has("subscription.revoked"), "Audit log should include manual subscription revoke.");
+    assert(auditTypes.has("maintenance.cleanup"), "Audit log should include maintenance cleanup.");
     assert(
       !JSON.stringify(auditEvents.body.events).includes(completedOrder.body.order.activationCode),
       "Audit log should not expose activation codes."

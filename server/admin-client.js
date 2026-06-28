@@ -20,6 +20,7 @@ function usage() {
   console.log("  node server/admin-client.js subscription [subscriptionId]");
   console.log("  node server/admin-client.js revoke-subscription [subscriptionId] [reason]");
   console.log("  node server/admin-client.js audit-events [limit] [type]");
+  console.log("  node server/admin-client.js cleanup");
   console.log("  node server/admin-client.js export-state [outputFile]");
   console.log("  node server/admin-client.js readiness");
   console.log("  node server/admin-client.js summary");
@@ -247,6 +248,13 @@ async function main() {
     if (process.argv[4]) params.set("type", process.argv[4]);
     const query = params.toString() ? `?${params.toString()}` : "";
     const response = await requestJson(`/v1/admin/audit-events${query}`);
+    console.log(JSON.stringify(response.body, null, 2));
+    process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
+  if (command === "cleanup") {
+    const response = await requestJson("/v1/admin/maintenance/cleanup", {});
     console.log(JSON.stringify(response.body, null, 2));
     process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
     return;

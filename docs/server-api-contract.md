@@ -52,6 +52,15 @@ X-ZeroLag-Admin-Secret: ADMIN_SECRET
 
 Returns a non-secret operational summary for private checks, including state-file status, backup status, update-manifest status, rate-limit status, data counts, and whether deployment secrets are still using development defaults.
 
+Admin maintenance cleanup:
+
+```http
+POST /v1/admin/maintenance/cleanup
+X-ZeroLag-Admin-Secret: ADMIN_SECRET
+```
+
+Marks expired active subscriptions as `expired`, removes tokens that can no longer authorize a valid subscription, and writes a compact `maintenance.cleanup` audit event with the changed counts.
+
 ## Configuration
 
 The desktop client reads production endpoints from `assets/app-config.json`.
