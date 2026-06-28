@@ -12,6 +12,8 @@ const maxAuditEvents = 2000;
 const defaultBackupRetention = 25;
 const defaultRateLimitWindowMs = 60 * 1000;
 const defaultRateLimitMax = 120;
+const websiteMetricKeyLimit = 64;
+const websiteDailyRetentionDays = 90;
 const defaultMaintenanceIntervalMs = 6 * 60 * 60 * 1000;
 const defaultServerSecret = "zerolag-dev-server-secret-change-before-production";
 const defaultAdminSecret = "zerolag-dev-admin-secret-change-before-production";
@@ -736,6 +738,32 @@ function bumpCount(map, key) {
   map[key] = Math.max(0, Math.floor(Number(map[key] || 0))) + 1;
 }
 
+function pruneCountMap(map, limit, options = {}) {
+  const entries = Object.entries(map || {})
+    .filter(([key, value]) => typeof key === "string" && Number.isFinite(Number(value)))
+    .map(([key, value]) => [key, Math.max(0, Math.floor(Number(value)))]);
+  const selected = entries
+    .sort((left, right) => {
+      if (options.sortByKeyDesc) return right[0].localeCompare(left[0]);
+      return right[1] - left[1] || left[0].localeCompare(right[0]);
+    })
+    .slice(0, limit);
+
+  for (const key of Object.keys(map || {})) {
+    delete map[key];
+  }
+  for (const [key, value] of selected) {
+    map[key] = value;
+  }
+}
+
+function pruneWebsiteEventMetrics(metrics) {
+  pruneCountMap(metrics.versions, websiteMetricKeyLimit);
+  pruneCountMap(metrics.channels, websiteMetricKeyLimit);
+  pruneCountMap(metrics.statuses, websiteMetricKeyLimit);
+  pruneCountMap(metrics.daily, websiteDailyRetentionDays, { sortByKeyDesc: true });
+}
+
 function recordWebsiteEventInState(state, body = {}) {
   const eventName = normalizeWebsiteEventName(body.event);
   if (!eventName) return null;
@@ -760,6 +788,7 @@ function recordWebsiteEventInState(state, body = {}) {
   bumpCount(metrics.channels, normalizeWebsiteMetricKey(detail.channel));
   bumpCount(metrics.statuses, normalizeWebsiteMetricKey(detail.status));
   bumpCount(metrics.daily, now.slice(0, 10));
+  pruneWebsiteEventMetrics(metrics);
 
   state.websiteEvents = metrics;
   return websiteEventsSummary(metrics);

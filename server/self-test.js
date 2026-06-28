@@ -217,6 +217,27 @@ async function main() {
     assert(adminAnalyticsBody.websiteEvents.events.download_click === 1, "Admin analytics command should expose download clicks.");
     assert(adminAnalyticsBody.websiteEvents.events.purchase_click === 1, "Admin analytics command should expose purchase clicks.");
 
+    for (let index = 0; index < 80; index += 1) {
+      const noisyWebsiteEvent = await requestJson(port, "/v1/website/events", {
+        product: "ZeroLag",
+        event: "cta_click",
+        detail: {
+          version: `noise-version-${index}`,
+          channel: `noise-channel-${index}`,
+          status: `noise-status-${index}`
+        }
+      });
+      assert(noisyWebsiteEvent.statusCode === 202, "Noisy website event should still be accepted.");
+    }
+
+    const cappedWebsiteSummary = await requestJson(port, "/v1/admin/summary", null, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(cappedWebsiteSummary.body.summary.websiteEvents.total === 82, "Website analytics should keep total event count.");
+    assert(Object.keys(cappedWebsiteSummary.body.summary.websiteEvents.versions).length <= 64, "Website analytics versions must stay capped.");
+    assert(Object.keys(cappedWebsiteSummary.body.summary.websiteEvents.channels).length <= 64, "Website analytics channels must stay capped.");
+    assert(Object.keys(cappedWebsiteSummary.body.summary.websiteEvents.statuses).length <= 64, "Website analytics statuses must stay capped.");
+
     const autoTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-auto-maintenance-test-"));
     const autoOptions = {
       statePath: path.join(autoTempDir, "server-state.json"),

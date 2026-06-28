@@ -107,7 +107,7 @@ Minimum production server variables:
 
 Accepts privacy-safe public website CTA events from `analyticsUrl`.
 
-The server stores aggregate counters only. It does not store client IPs, browser user agents, activation codes, tokens, order IDs, full URLs, or raw event payloads.
+The server stores aggregate counters only. Version, channel, and status counters are capped to 64 keys each, and daily counters keep the latest 90 days. It does not store client IPs, browser user agents, activation codes, tokens, order IDs, full URLs, or raw event payloads.
 
 Allowed event names:
 
