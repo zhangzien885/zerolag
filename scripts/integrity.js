@@ -16,6 +16,8 @@ const protectedFiles = [
   "scripts/runtime-guard-core.js",
   "scripts/runtime-guard-service.js",
   "scripts/runtime-guard-service-smoke-test.js",
+  "scripts/generate-runtime-session-keys.js",
+  "scripts/runtime-session-keygen-smoke-test.js",
   "scripts/runtime-watchdog.js",
   "scripts/local-integration.js",
   "scripts/generate-icon.js",

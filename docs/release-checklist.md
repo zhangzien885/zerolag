@@ -17,13 +17,15 @@ npm run server:deployment-report:strict
 - Set `assets/app-config.json` `releaseMode` to `production`.
 - Set real HTTPS values for `websiteUrl`, `purchaseUrl`, `analyticsUrl`, `supportUrl`, `apiBaseUrl`, and `updateManifestUrl`.
 - Set `allowLocalDemoLicense` to `false`.
+- Generate the runtime-session RSA keypair with `npm run runtime:keys -- --output-dir .secrets\runtime-session --key-version runtime-session-v1`.
 - Add the production update public key to `updatePublicKeyPem`.
-- Add the runtime-session public key to `runtimeSessionPublicKeyPem`; never ship the matching private key.
+- Copy only the generated app config snippet public key to `runtimeSessionPublicKeyPem`; never ship the matching private key.
 
 ## 2. Server Readiness
 
 - Generate private server secrets with `npm run server:secrets -- --write`.
 - For SQLite paid testing, generate the private env template with `npm run server:secrets -- --profile sqlite --write`.
+- Copy the generated `runtime-session-v1.server.env` values into the private server env file; keep the generated private PEM and env file outside Git.
 - Run `npm run server:env-check -- --profile sqlite`; `npm run server:check:strict` also repeats this redacted env-file validation.
 - Confirm `ZEROLAG_RUNTIME_SESSION_KEY_VERSION` is present in the private env file and matches the runtime-session signing strategy for this release.
 - Confirm `ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM=RSA-SHA256` before paid public release, with `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64` or `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_PEM` stored only on the server and matching `runtimeSessionPublicKeyPem` in the desktop config.

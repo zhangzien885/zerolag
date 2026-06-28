@@ -95,6 +95,14 @@ Server-side commands automatically load `.secrets/server.env` when it exists. Ex
 
 Runtime session proofs default to `HMAC-SHA256` so local development remains simple. Before a paid public release, switch `ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM` to `RSA-SHA256`, keep the private key only on the license server, and ship the matching public key in desktop `runtimeSessionPublicKeyPem`. Desktop clients and support reports should only receive the proof string, non-secret key-version label, and public key.
 
+Generate the RSA material with:
+
+```powershell
+npm run runtime:keys -- --output-dir .\.secrets\runtime-session --key-version runtime-session-v1
+```
+
+The generated `.server.env` output is for the private license-server environment. The generated app-config snippet contains only the public key that belongs in `runtimeSessionPublicKeyPem`.
+
 Minimum production server variables:
 
 - `ZEROLAG_SERVER_SECRET`: custom strong secret for hashing activation codes and tokens.

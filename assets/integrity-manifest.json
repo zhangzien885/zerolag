@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T17:13:57.246Z",
+  "generatedAt": "2026-06-28T18:17:44.365Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "e13a268778ff1012d1ba82637353a936cc2ef810baadb889d367bb7bf8137f3e"
+      "sha256": "22adbddba519e37b1455a95ecb6e4cc4790a2c499b4c80f9376b50a538651e41"
     },
     {
       "path": "main.js",
@@ -41,6 +41,14 @@
     {
       "path": "scripts/runtime-guard-service-smoke-test.js",
       "sha256": "13ff2aab49b825681d77d31f4afb3c1c781b87b48ff3665db1c0b80b1e9ae7e4"
+    },
+    {
+      "path": "scripts/generate-runtime-session-keys.js",
+      "sha256": "14217a3a5faf9665607da701d5ddcca7340850abd8667f77c6b38e7e073cdaf2"
+    },
+    {
+      "path": "scripts/runtime-session-keygen-smoke-test.js",
+      "sha256": "d7cde7fe97ee9714b4075722a0d3a41db137ef456acfee1f1f095ca7220bae6a"
     },
     {
       "path": "scripts/runtime-watchdog.js",
@@ -120,7 +128,7 @@
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "1a28c523a59681e4ce48293857b17231da71314e7b93f0068d2ab60e55656736"
+      "sha256": "427d616c992ee2f04248d6ec7ee2a602647bd93ed3e354f8eb3ceb6a2fe4e7de"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -211,5 +219,5 @@
       "sha256": "4c2f2e026519154d9549d810f6ecbd0cc2028d2aeb09ff35c37c03869cb70a67"
     }
   ],
-  "signature": "5f24a41ef4923eb16867a0d387be43107a59b5563c10d7b7096831158bf5e91a"
+  "signature": "6786ac708b550d6698df915a9423f834d66a226e5684ed99668923075527921e"
 }

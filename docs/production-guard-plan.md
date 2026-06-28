@@ -81,6 +81,7 @@ Implemented in prototype:
 - Runtime-session expiry cleanup.
 - Server-issued runtime session IDs, key-version labels, and HMAC/RSA proofs, written into the signed desktop runtime session when server membership is active.
 - Runtime guard RSA proof verification using the shipped runtime-session public key when RSA proofs are present.
+- Runtime-session RSA key generation tooling that produces server-private env values plus a desktop public-key config snippet without printing private key material.
 - Temporary Task Scheduler fallback while Boost is active.
 - Encrypted tuning package instead of a plain JSON template.
 - Integrity verification for protected files.

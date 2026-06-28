@@ -63,6 +63,14 @@ Generate strong local secrets for private testing or deployment preparation:
 npm run server:secrets -- --write
 ```
 
+Generate the paid-release runtime-session RSA keypair separately:
+
+```powershell
+npm run runtime:keys -- --output-dir .\.secrets\runtime-session --key-version runtime-session-v1
+```
+
+Copy the generated `.server.env` values into the private server env file, and copy only the generated app-config public-key snippet into `assets/app-config.json` `runtimeSessionPublicKeyPem`. The private PEM and private env output must stay server-only and outside Git.
+
 For wider paid testing after migrating to SQLite, generate the private env file with the SQLite profile:
 
 ```powershell
@@ -200,7 +208,7 @@ Keep rate limiting enabled in production, and add edge protection through the ho
 
 `ZEROLAG_RUNTIME_SESSION_KEY_VERSION` is a safe deployment label returned with server-issued runtime sessions. Increase it when rotating the runtime-session signing strategy so desktop clients and support reports can identify which version authorized a Boost session.
 
-`ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM` defaults to `HMAC-SHA256` for local development. Before a paid public release, set it to `RSA-SHA256` and provide the private key only on the server through `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64` or `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_PEM`. Do not ship, log, or commit the RSA private key.
+`ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM` defaults to `HMAC-SHA256` for local development. Before a paid public release, run `npm run runtime:keys -- --output-dir .\.secrets\runtime-session --key-version runtime-session-v1`, set the server env to `RSA-SHA256`, and provide the generated private key only on the server through `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64` or `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_PEM`. Do not ship, log, or commit the RSA private key.
 
 Successful activation and validation responses also include a `runtimeSessionProof` bound to the current subscription, device, expiry, session ID, key version, and revision. The desktop client stores it inside the signed runtime-session file for the guard layer; admin summaries and subscription lists intentionally do not expose the raw proof.
 
