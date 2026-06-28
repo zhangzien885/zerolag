@@ -34,6 +34,11 @@ function isPositiveNumber(value) {
   return Number.isFinite(number) && number > 0;
 }
 
+function positiveNumber(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : fallback;
+}
+
 function normalizePaymentProvider(value) {
   return String(value || "")
     .trim()
@@ -126,6 +131,53 @@ function inspectSqliteState(sqliteStatePath) {
   }
 }
 
+function sqliteBackupMetadata(filePath) {
+  const stats = fs.statSync(filePath);
+  return {
+    fileName: path.basename(filePath),
+    filePath,
+    modifiedAt: stats.mtime.toISOString(),
+    sizeBytes: stats.size,
+    ageHours: Number(((Date.now() - stats.mtime.getTime()) / (60 * 60 * 1000)).toFixed(2))
+  };
+}
+
+function inspectLatestSqliteBackup(backupDir) {
+  if (!fs.existsSync(backupDir)) {
+    return {
+      dirExists: false,
+      isDirectory: false,
+      totalBackups: 0,
+      latest: null,
+      state: null
+    };
+  }
+
+  if (!fs.statSync(backupDir).isDirectory()) {
+    return {
+      dirExists: true,
+      isDirectory: false,
+      totalBackups: 0,
+      latest: null,
+      state: null
+    };
+  }
+
+  const backups = fs.readdirSync(backupDir)
+    .filter((fileName) => fileName.toLowerCase().endsWith(".sqlite"))
+    .map((fileName) => sqliteBackupMetadata(path.join(backupDir, fileName)))
+    .sort((left, right) => new Date(right.modifiedAt).getTime() - new Date(left.modifiedAt).getTime());
+  const latest = backups[0] || null;
+
+  return {
+    dirExists: true,
+    isDirectory: true,
+    totalBackups: backups.length,
+    latest,
+    state: latest ? inspectSqliteState(latest.filePath) : null
+  };
+}
+
 function formatStateSummary(summary) {
   if (!summary) return "unavailable";
   return [
@@ -148,6 +200,7 @@ function main() {
   const stateStore = normalizePaymentProvider(env("ZEROLAG_STATE_STORE", "json"));
   const sqliteStatePath = env("ZEROLAG_SQLITE_STATE_PATH", path.join(rootDir, "server", "data", "server-state.sqlite"));
   const sqliteBackupDir = env("ZEROLAG_SQLITE_BACKUP_DIR", backupDir);
+  const sqliteBackupMaxAgeHours = positiveNumber(env("ZEROLAG_SQLITE_BACKUP_MAX_AGE_HOURS"), 24);
   const paymentProvider = normalizePaymentProvider(env("ZEROLAG_PAYMENT_PROVIDER", defaultPaymentProvider));
   const paymentAllowedProviders = paymentProviderList(env(
     "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS",
@@ -155,6 +208,7 @@ function main() {
   ));
   const paymentUrlTemplate = env("ZEROLAG_PAYMENT_URL_TEMPLATE", defaultPaymentUrlTemplate);
   const sqliteInspection = stateStore === "sqlite" && sqliteStatePath ? inspectSqliteState(sqliteStatePath) : null;
+  const sqliteBackupInspection = stateStore === "sqlite" ? inspectLatestSqliteBackup(sqliteBackupDir) : null;
 
   addIssue(issues, isStrongSecret(env("ZEROLAG_SERVER_SECRET", defaultServerSecret), defaultServerSecret), "ZEROLAG_SERVER_SECRET must be a custom strong secret.");
   addIssue(issues, isStrongSecret(env("ZEROLAG_ADMIN_SECRET", defaultAdminSecret), defaultAdminSecret), "ZEROLAG_ADMIN_SECRET must be a custom strong secret.");
@@ -199,7 +253,29 @@ function main() {
       !sqliteReadable || !sqliteHasTable || Boolean(sqliteInspection && sqliteInspection.hasState),
       "SQLite state file does not contain a server state document; run the JSON migration or restore a verified backup."
     );
-    addIssue(warnings, fs.existsSync(sqliteBackupDir), `SQLite backup directory does not exist yet: ${sqliteBackupDir}`);
+    addIssue(warnings, sqliteBackupInspection && sqliteBackupInspection.dirExists, `SQLite backup directory does not exist yet: ${sqliteBackupDir}`);
+    addIssue(warnings, !sqliteBackupInspection || !sqliteBackupInspection.dirExists || sqliteBackupInspection.isDirectory, `SQLite backup path is not a directory: ${sqliteBackupDir}`);
+    addIssue(warnings, !sqliteBackupInspection || !sqliteBackupInspection.isDirectory || sqliteBackupInspection.totalBackups > 0, `SQLite backup directory has no .sqlite backup files: ${sqliteBackupDir}`);
+    addIssue(
+      warnings,
+      !sqliteBackupInspection || !sqliteBackupInspection.latest || sqliteBackupInspection.latest.ageHours <= sqliteBackupMaxAgeHours,
+      `Latest SQLite backup is older than ${sqliteBackupMaxAgeHours} hour(s).`
+    );
+    addIssue(
+      warnings,
+      !sqliteBackupInspection || !sqliteBackupInspection.state || sqliteBackupInspection.state.readable,
+      `Latest SQLite backup could not be read${sqliteBackupInspection && sqliteBackupInspection.state && sqliteBackupInspection.state.error ? `: ${sqliteBackupInspection.state.error}` : "."}`
+    );
+    addIssue(
+      warnings,
+      !sqliteBackupInspection || !sqliteBackupInspection.state || !sqliteBackupInspection.state.readable || sqliteBackupInspection.state.hasTable,
+      "Latest SQLite backup is missing the state_documents table."
+    );
+    addIssue(
+      warnings,
+      !sqliteBackupInspection || !sqliteBackupInspection.state || !sqliteBackupInspection.state.readable || !sqliteBackupInspection.state.hasTable || sqliteBackupInspection.state.hasState,
+      "Latest SQLite backup does not contain a server state document."
+    );
   }
   addIssue(warnings, paymentProvider !== defaultPaymentProvider, "Payment provider is still manual; configure ZEROLAG_PAYMENT_PROVIDER before paid release.");
   addIssue(
@@ -219,6 +295,11 @@ function main() {
   if (stateStore === "sqlite") console.log(`SQLite summary: ${formatStateSummary(sqliteInspection && sqliteInspection.summary)}`);
   console.log(`Backup: ${backupDir}`);
   if (stateStore === "sqlite") console.log(`SQLite backup: ${sqliteBackupDir}`);
+  if (stateStore === "sqlite") {
+    console.log(`SQLite latest backup: ${sqliteBackupInspection && sqliteBackupInspection.latest ? sqliteBackupInspection.latest.fileName : "unavailable"}`);
+    console.log(`SQLite latest backup age: ${sqliteBackupInspection && sqliteBackupInspection.latest ? `${sqliteBackupInspection.latest.ageHours}h` : "unavailable"}`);
+    console.log(`SQLite latest backup summary: ${formatStateSummary(sqliteBackupInspection && sqliteBackupInspection.state && sqliteBackupInspection.state.summary)}`);
+  }
   console.log(`Payment provider: ${paymentProvider}`);
 
   if (warnings.length) {

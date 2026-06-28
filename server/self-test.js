@@ -395,6 +395,7 @@ async function main() {
       ]);
       assert(corruptBackupCheck.status === 1, "SQLite backup check should fail when any checked backup is corrupt.");
       assert(corruptBackupCheck.stdout.includes("corrupt-state.sqlite"), "SQLite backup check should identify the corrupt backup file.");
+      fs.unlinkSync(corruptBackupPath);
       const restoredSqlitePath = path.join(migrationTempDir, "restored-state.sqlite");
       const restore = await runNodeScript("scripts/restore-sqlite-state.js", [
         "--input",
@@ -429,7 +430,8 @@ async function main() {
         ZEROLAG_SERVER_BACKUP_DIR: migrationTempDir,
         ZEROLAG_STATE_STORE: "sqlite",
         ZEROLAG_SQLITE_STATE_PATH: restoredSqlitePath,
-        ZEROLAG_SQLITE_BACKUP_DIR: migrationTempDir,
+        ZEROLAG_SQLITE_BACKUP_DIR: migrationBackupDir,
+        ZEROLAG_SQLITE_BACKUP_MAX_AGE_HOURS: "1",
         ZEROLAG_PAYMENT_PROVIDER: "wechat_pay",
         ZEROLAG_PAYMENT_ALLOWED_PROVIDERS: "wechat_pay",
         ZEROLAG_PAYMENT_URL_TEMPLATE: "https://pay.zerolag.test/checkout/{orderId}"
@@ -439,6 +441,17 @@ async function main() {
       });
       assert(sqliteProductionCheck.status === 0, `SQLite production check should pass: ${sqliteProductionCheck.stderr || sqliteProductionCheck.stdout}`);
       assert(sqliteProductionCheck.stdout.includes("SQLite summary: activationCodes="), "SQLite production check should print a safe state summary.");
+      assert(sqliteProductionCheck.stdout.includes("SQLite latest backup: backup-state.sqlite"), "SQLite production check should include the latest backup file.");
+      assert(sqliteProductionCheck.stdout.includes("SQLite latest backup summary: activationCodes="), "SQLite production check should print a safe latest-backup summary.");
+      const missingSqliteBackupDir = path.join(migrationTempDir, "missing-sqlite-backups");
+      const missingSqliteBackupCheck = await runNodeScript("scripts/server-production-check.js", ["--strict"], {
+        env: {
+          ...sqliteCheckEnv,
+          ZEROLAG_SQLITE_BACKUP_DIR: missingSqliteBackupDir
+        }
+      });
+      assert(missingSqliteBackupCheck.status === 1, "SQLite production check should fail when the SQLite backup directory is missing.");
+      assert(missingSqliteBackupCheck.stdout.includes("SQLite backup directory does not exist"), "Missing SQLite backup check should explain the blocking warning.");
       const missingSqlitePath = path.join(migrationTempDir, "missing-state.sqlite");
       const missingSqliteProductionCheck = await runNodeScript("scripts/server-production-check.js", ["--strict"], {
         env: {
