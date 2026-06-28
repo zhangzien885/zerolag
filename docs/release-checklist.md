@@ -39,6 +39,7 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 - Run `npm run dist:win` only after the strict release gates are satisfied.
 - Run `npm run installer:smoke` to verify the installer executable, blockmap, update metadata, and Windows installer settings.
 - Run `npm run release:artifacts` to generate public checksum and artifact metadata files for the download page.
+- Run `npm run release:verify` when validating an existing installer output, or `npm run release:build` to build and verify it in one chain.
 - Configure Windows code signing in the build environment.
 - Prefer CI secrets such as `WIN_CSC_LINK` and `WIN_CSC_KEY_PASSWORD` for electron-builder signing.
 - Keep signing certificates and passwords outside Git.
