@@ -52,7 +52,9 @@ function main() {
     ...legacySession,
     version: 2,
     licenseSessionId: "rsess_server_authorized",
-    runtimeSessionKeyVersion: "runtime-session-v1"
+    runtimeSessionKeyVersion: "runtime-session-v1",
+    runtimeSessionProofAlgorithm: "HMAC-SHA256",
+    runtimeSessionProof: `sha256=${"b".repeat(64)}`
   };
   const signedServerSession = {
     ...serverSession,
@@ -63,6 +65,10 @@ function main() {
     ...signedServerSession,
     runtimeSessionKeyVersion: "runtime-session-v2"
   }), "Runtime guard should reject tampered runtime session key versions.");
+  assertOk(!verifyRuntimeSessionPayload({
+    ...signedServerSession,
+    runtimeSessionProof: `sha256=${"c".repeat(64)}`
+  }), "Runtime guard should reject tampered runtime session proofs.");
 
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-runtime-guard-service-smoke-"));
 

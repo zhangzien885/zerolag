@@ -1,215 +1,215 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T15:57:01.514Z",
+  "generatedAt": "2026-06-28T16:31:14.375Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "bc31b3afd1dcfa9330e1a1413ca997f657786f1ab160dde9a7314d5b28588367"
+      "sha256": "e13a268778ff1012d1ba82637353a936cc2ef810baadb889d367bb7bf8137f3e"
     },
     {
       "path": "main.js",
-      "sha256": "47ecc1c24d95a69db8eec0bee0a8acc43b89bbb656af8c84631037e95b90a819"
+      "sha256": "3de49c9d2a610f725764d0c33635845ffd7764785788a6dbaf81002d73820ab1"
     },
     {
       "path": "preload.js",
-      "sha256": "c57945a7c35b26a582408c18c979dd4749588c97427924b26cd3e6871b5307e0"
+      "sha256": "0f50778e901a338d409a29d5bc9ffffab8a200054e19564ab935f6ed32ab0ba4"
     },
     {
       "path": "src/index.html",
-      "sha256": "0bf9bbad3e095ccae9f0181e5b17f5e0ab6d1068023bdc925f628b148a1068a2"
+      "sha256": "25d0c3abe474bad76034368b6bf03571823ca474528cbe64fc49d2f505207c08"
     },
     {
       "path": "src/splash.html",
-      "sha256": "0f7c333e82dc8128879c31af9cfaf07a594cdfcc3977b8d81f7280c801f18de1"
+      "sha256": "7f7ca4c65077cb9ae4518f21ba4fff2bbc8e23250866b5b506843b6674ea9918"
     },
     {
       "path": "src/renderer.js",
-      "sha256": "30bfde53512fb209aa69ecf285472ff98822d004bfc90598e6ce64176fbaf7b5"
+      "sha256": "92b8b13fac6ec569c7231f751381718ee8897358784d8bf4edffa80a69ed0b34"
     },
     {
       "path": "src/styles.css",
-      "sha256": "2b36a573743b351ddd34666c66bd211e6a0435bc46b4cd56ab158fe7a1cef465"
+      "sha256": "7bc92361a05f500cf76df7b0ae118ce3af7f89d64d363bae633d2cd603efce0a"
     },
     {
       "path": "scripts/runtime-guard-core.js",
-      "sha256": "4faf9995d3a40b8c811b0048526ba2550bf9c9d9399b2c7cfa45328c1fe8b5bd"
+      "sha256": "1da219261368b82572c22958c10918d44aa55efa1d5bb5e7d5fdde6794608ba3"
     },
     {
       "path": "scripts/runtime-guard-service.js",
-      "sha256": "4c0d54b4f1d1db4bf91c1abfb128ffa788b7891cc85f3957d5b4395d1b070c61"
+      "sha256": "326e85369291c09f463e808b305b90df7e8aa77540d9d4767e316fe197c2257e"
     },
     {
       "path": "scripts/runtime-guard-service-smoke-test.js",
-      "sha256": "4940f7c1283694e63e4ff01cd492122daebbf1da3bb510c2dd57a2adde01bb74"
+      "sha256": "0001b65998854d95a0b3226c24ebfdf733acd30fd070caa050e735365b408bed"
     },
     {
       "path": "scripts/runtime-watchdog.js",
-      "sha256": "c3c6b12c0f97943a9bce7b6c2530607ae86dc900b28de1d373ffdd3bf460f160"
+      "sha256": "279302aa78994865a7be7a734577419f16f16523ba0d0c947fb451c998f00d67"
     },
     {
       "path": "scripts/local-integration.js",
-      "sha256": "99b5ffa2a11bd9ef70485cfd9105058e92390aae7bf03f70c9adab1d0c24b30c"
+      "sha256": "1d77501547a5b063eeeb3b91c555e1c6b08d04531dce68f3477c80ced0fb0d36"
     },
     {
       "path": "scripts/generate-icon.js",
-      "sha256": "6258e0ffa6932e07340840b59feae23f369e4aae473c26d3061b1f4668ba7030"
+      "sha256": "10a15e7bf7dac5bba994cab6988416e453aa6d68744712507510a3aaba38c34a"
     },
     {
       "path": "scripts/package-smoke-test.js",
-      "sha256": "423b2400172324aa980f5a123e03924da70cbaa4f9e2fdf6ebb5c2a1ac72786a"
+      "sha256": "3012efa9bd9c0c0ba33a0efd1ab626bb77ba41fc3527cc915bc32b47ae3c226c"
     },
     {
       "path": "scripts/installer-smoke-test.js",
-      "sha256": "b7cad40e5170170a456cd7b5959f7f106c7aeeb407e20cb89db11c34f4532ff9"
+      "sha256": "43ee47c15c1104ba78aaa8d30d02096de37f57d8d2042d57a83a289f1029f7f7"
     },
     {
       "path": "scripts/installer-guard-hook-smoke-test.js",
-      "sha256": "dcb39a6e17879ba518d10a4b45428615aac546c7e41b1595518a86f32651b5b9"
+      "sha256": "a58a0a8adab357b3555e5a644c05bb87aac95f11a9da65d52a4f6aefaffa61e8"
     },
     {
       "path": "scripts/service-guard-smoke-test.js",
-      "sha256": "6c3c94450c4dc4337b4f4ed8d133c964501b961a6a1c928097253bc262a83e7c"
+      "sha256": "2b5d33d94b9c143c216609bdee36b700896ee7a18a793508155a617c192ac812"
     },
     {
       "path": "scripts/service-install-script-smoke-test.js",
-      "sha256": "9ceef9ece1b47a69bb8386b2b0b733e7c9f92b8763bdf9946acfdf1b85073e4d"
+      "sha256": "a7b30027ee935472be466ab6285af4dbddbb81765562f253117c7d7fe6dfcada"
     },
     {
       "path": "scripts/task-fallback-smoke-test.js",
-      "sha256": "3715a7740c3bd5c2aedf9a7d21de56de886ce9b996d4ac69aede78aaaad9aa5e"
+      "sha256": "4a0edb974770b2c2a6deaaa6b82b4aad493afe3864d8b53ff6bc428a14faa46c"
     },
     {
       "path": "scripts/generate-release-artifacts.js",
-      "sha256": "2f35c51cc8e3c49276494b3d9508d7a77ce56f3cc63e5e032b39141532c768ca"
+      "sha256": "68378caefa10ab6726c35467a0cc90ed472900d20affd425e1c7338a04e0a9f8"
     },
     {
       "path": "scripts/generate-release-report.js",
-      "sha256": "3a5e9e6293a684cb50d273c52401f8512a690ec8af6f64f35a3918c605c90723"
+      "sha256": "ecdf7ccd619729adf05e7b32c5584ce7a62ab09d6feb2be5b7e337c13959ecb4"
     },
     {
       "path": "scripts/release-report-smoke-test.js",
-      "sha256": "e74e1c554500ff86277ddabd28a3adf9444230e0b47033c61bc1d301827991f4"
+      "sha256": "59d0ff97a0043b4f1deaa6a817c328236c4c62e6ba1eadac5a95629c0d04862b"
     },
     {
       "path": "scripts/ci-report-artifact-smoke-test.js",
-      "sha256": "cabfa099b8581d4710b3a20c2bf2440b47a11f0517a4abde720b96b8af87c786"
+      "sha256": "e2d4151347dc78cf2fe533ba796109fa66c57ef5fb3ad7a5d239c1235dade0df"
     },
     {
       "path": "scripts/check-release-gate.js",
-      "sha256": "8ee00ac20579ddae95b302494c92912abb4494884c3ce2bf1fd92cd797c39918"
+      "sha256": "be0b557f9fa4f4ba5dd84f6f84e524e3a74f9c06f075a8882fab24bf6a0d80ae"
     },
     {
       "path": "scripts/release-gate-smoke-test.js",
-      "sha256": "cecc59092721edbb41a1e4731ce8ead5f26ac22f9700edfabf5bf5f182b26c9d"
+      "sha256": "a1a15730ba9389a402d5501a58f04abba5866c735b6d3cee8085b3ab3e0d97c7"
     },
     {
       "path": "scripts/publish-website-release.js",
-      "sha256": "8b3a52e87e44c1736dc0fcdcd018360e86a86847bf6b3db13752dab7cbfd6981"
+      "sha256": "d2ec7835ee4a4c819d659360298eb254979bbf840dfbb2fcdf325227f4012c50"
     },
     {
       "path": "scripts/website-smoke-test.js",
-      "sha256": "691d053782fbb3fc0b5639def70df35b3a01389ad674c38942f1d42403ac1dcb"
+      "sha256": "c4271da86021c1b56ce3a7b70ff2969a1f569409c2a7d21f8b2d3910edc3470a"
     },
     {
       "path": "scripts/website-release-publish-smoke-test.js",
-      "sha256": "aeb6c00dee99bea1491405c6636c2fa766327164b7c51d6074a023060a5dbc3b"
+      "sha256": "4cadc444caed1d2da58a9eb2dd6d5e4dd505251be057bd6c1720b39a63fa8449"
     },
     {
       "path": "scripts/production-check.js",
-      "sha256": "6f06980eb31c687261e0cfaf162558704ac9ea30398a1b828716177691720817"
+      "sha256": "660e223e19264e3c9bb8d0c3af22a7511ba674fd08340da67d0b4978d623946a"
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "a55398a1fd0da84560ccc101faf22c7837e60593c0aa4d0bbd75ec22650f4a53"
+      "sha256": "b8a519bab6d54a3acb5d281fa18174ddbe112442dd5548334aa9723af0e00989"
     },
     {
       "path": "scripts/server-production-check.js",
-      "sha256": "d49c507f639ee28c25992f83124f766205cbdb95c65784c402e9934b60e3501e"
+      "sha256": "423aeb10a7b68908e9426249a9a33c79d377da606e4855a1299fc37ff70d0774"
     },
     {
       "path": "scripts/server-smoke-test.js",
-      "sha256": "2d3d46cbe9b098e50d4143874134facc81d854bdc6f5fb44f651075839510a18"
+      "sha256": "8876f555dfc83198ed696de0eda335c505cb496d7b4b5caf29f03ac586d3d138"
     },
     {
       "path": "scripts/generate-deployment-checklist.js",
-      "sha256": "38f521f1ff1563bd4f1d87dd5ee94e6602a326de2281184f94b861865af0bc23"
+      "sha256": "3d0bf5686e7947e552c3f8961288e39cc2be77ea74129534907bbd9e51568fd2"
     },
     {
       "path": "scripts/generate-server-deployment-report.js",
-      "sha256": "92feb18a5108609a6e7851a63bf056038cded5048fb2cd61e2a574ad1ef86821"
+      "sha256": "92c7ba404e750d863741e2381d7b543a3af58fe26e887dcbd11b46e6523f8263"
     },
     {
       "path": "scripts/server-deployment-report-smoke-test.js",
-      "sha256": "7e6b0d47f98c32cdfe2195c132a8dee7ce05d6f8b3e58e721384fbadfdd99cee"
+      "sha256": "f04e70508ae0a3ee75920035997a08fa4987eb26c6232cd5a5cbe3c4bcc305e5"
     },
     {
       "path": "scripts/migrate-state-to-sqlite.js",
-      "sha256": "8293521dc2d244ea57d7824bb35e9fab9c7fb15df008bd981e17a1bd6b44cd9c"
+      "sha256": "96b126e2533f827cfd9b0d6de91582c4d896258052deae54ec89a4ee46bac603"
     },
     {
       "path": "scripts/backup-sqlite-state.js",
-      "sha256": "cc6002a40788d7ccdfe124bdea1af382ceb2cf5b4eb42d57aaa9afa12c1e34e5"
+      "sha256": "4ebe08b0288f293fe41a34c2510457f3049e086148b4926c36929bf9dc7e7ab4"
     },
     {
       "path": "scripts/restore-sqlite-state.js",
-      "sha256": "2c6da589b1e73f9ecd1803a01bdf769b9f9033518a1f52143d179b7eecb2c9e7"
+      "sha256": "7302996002fd4b3ee420e92e8b27c542ec90a07932daa6cc11477e9de5491981"
     },
     {
       "path": "scripts/check-sqlite-backups.js",
-      "sha256": "73a85ba388718f1c717b81a4c8c2578de2491d441d08e45193eaf4a0f2abf993"
+      "sha256": "617e13cfa880d5fb6c3cfb1251a2d97e7801902afe45ab66638946d2fb1e24b3"
     },
     {
       "path": "scripts/check-server-env.js",
-      "sha256": "5e67634d70c091f4c1cbfd7824719b703b04225defd2198871a6c70fea9c6299"
+      "sha256": "d2c8611ca2acc44a31f4a2db5b3562ecd281f6362d062ebb8d1b8f848d5835b8"
     },
     {
       "path": "scripts/generate-server-secrets.js",
-      "sha256": "ba157647e166ca48de34d3c107d9467d1da9265e7d54f329052b2319bc619010"
+      "sha256": "9e7d2af1934c639e17899c394973cc566f563d138d70e00b8e9ec0dd9a179e68"
     },
     {
       "path": "scripts/update-signing-smoke-test.js",
-      "sha256": "e8a550f139e6294160e5bb9a7d274530be2ddbbfd285cf17167aac04a31d2b63"
+      "sha256": "2375ac8be355c685d0610cce644c9b91665319b3b20f47d46176589512038f38"
     },
     {
       "path": "server/env.js",
-      "sha256": "61535f5ccd0b839f1f87159d428c2769c4d430035e71f8bc31144753ac76cb2c"
+      "sha256": "f9124feb42d486e72992d3d9d4d5a3e10d145d723a129a0e71c62acb47e613c2"
     },
     {
       "path": "assets/zerolag-logo.svg",
-      "sha256": "03892f57191aa27235c5d6a50852ebfe3dfe65c66fa874f5a89bd20522f7a0ee"
+      "sha256": "21dc5068e3c481eb13099193a6976721586cc9975431d16eae9f32f80d26b895"
     },
     {
       "path": "assets/app-config.json",
-      "sha256": "b89354896645871c6a059a3b82c66873e963a63a8748fbbd8e6003c6f0948f32"
+      "sha256": "87df83cd68cb794d17ce613a6149e43718c5e3d7fe5e566bde38e3d5f83f110e"
     },
     {
       "path": "assets/zerolag-power-plan-template.protected.json",
-      "sha256": "03088e08120ee7508d175a61b3b6f66ee31a657ec592adfd60e5f352f890fc6d"
+      "sha256": "852c487d995b0492fcfb2b6861eeff4703af3bd935f2afbdb2c5c1ba76610aac"
     },
     {
       "path": "build/service-guard.json",
-      "sha256": "f48adfc98435558b5d830eeab178f578d89a2c63bf19f7ae6c5f370bb530d9e1"
+      "sha256": "d312b6ea30897576758aa458b7aac448296f055c8d208c5fecef0f192fb02849"
     },
     {
       "path": "build/install-runtime-guard-service.ps1",
-      "sha256": "8a03af0d1d0cb01d6e24d63fccc792f6435d932dc2f554831dd65e4cbbda06f1"
+      "sha256": "b5b9392fdde3a93e7f2f364c59691ef9279bb1328a72d18ec33f706235710b96"
     },
     {
       "path": "build/uninstall-runtime-guard-service.ps1",
-      "sha256": "0d37619a7230f9b929a9f7de2d0c71991f9cba6ef7810885cae91dc31e422e56"
+      "sha256": "aec6ce74fd18a728fb9c4539c13afb8ea3e928a2c3207a575850cf6bb5e00324"
     },
     {
       "path": "build/install-runtime-guard-task.ps1",
-      "sha256": "75547ba125a31484d41317c373d31d1597bfd49d494827819c2983d1d292853a"
+      "sha256": "e0b6e4f0d6ba93f0bf116ad09e20a7ee58fabf34fc2d2c2aea95195f25f32757"
     },
     {
       "path": "build/uninstall-runtime-guard-task.ps1",
-      "sha256": "ffac0d451b4b9392015d5bc35a9ff72996ff14c2589ae77a57043061fbcc0471"
+      "sha256": "9615c34d07d96e30c1ec3933e90bdb80bd6969161859d113b67e11604604f22d"
     },
     {
       "path": "build/installer-guard.nsh",
-      "sha256": "1f3bc6e7f93652dd64332e6c1a8056e0b8e046f28e40a8f3292885bdde15685f"
+      "sha256": "4c2f2e026519154d9549d810f6ecbd0cc2028d2aeb09ff35c37c03869cb70a67"
     }
   ],
-  "signature": "8e51e5f79e70b735508d42eedd6ddf1680f79b8d1ed4735b08a6539da4426a76"
+  "signature": "e985218156b658f29676e83f56ffc578bf76f5b6992ec78edba54731ccfa4fb6"
 }

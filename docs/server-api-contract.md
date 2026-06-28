@@ -198,7 +198,9 @@ Success response:
   "subscriptionId": "sub_123",
   "sessionId": "rsess_123",
   "runtimeSessionKeyVersion": "runtime-session-v1",
-  "runtimeSessionRevision": 1
+  "runtimeSessionRevision": 1,
+  "runtimeSessionProofAlgorithm": "HMAC-SHA256",
+  "runtimeSessionProof": "sha256=<server_runtime_session_proof>"
 }
 ```
 
@@ -215,7 +217,7 @@ Failure response:
 
 Checks whether the current device and subscription can continue using Boost.
 
-Successful validation rotates both the opaque license token and the server-issued runtime session ID. The desktop client stores the returned `sessionId` in the signed runtime session file as `licenseSessionId`; it is not a user-facing membership code.
+Successful validation rotates both the opaque license token and the server-issued runtime session ID. The desktop client stores the returned `sessionId` in the signed runtime session file as `licenseSessionId`, alongside `runtimeSessionProof`; neither value is a user-facing membership code.
 
 Request:
 
@@ -240,7 +242,9 @@ Success response:
   "subscriptionId": "sub_123",
   "sessionId": "rsess_456",
   "runtimeSessionKeyVersion": "runtime-session-v1",
-  "runtimeSessionRevision": 2
+  "runtimeSessionRevision": 2,
+  "runtimeSessionProofAlgorithm": "HMAC-SHA256",
+  "runtimeSessionProof": "sha256=<rotated_server_runtime_session_proof>"
 }
 ```
 

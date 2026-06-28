@@ -272,6 +272,8 @@ function runtimeSessionSigningBody(session) {
 
   if (Number(session.version || 1) >= 2 || session.runtimeSessionKeyVersion) {
     body.runtimeSessionKeyVersion = session.runtimeSessionKeyVersion || "";
+    body.runtimeSessionProofAlgorithm = session.runtimeSessionProofAlgorithm || "";
+    body.runtimeSessionProof = session.runtimeSessionProof || "";
   }
 
   return JSON.stringify(body);
@@ -655,6 +657,8 @@ function normalizeServerLicensePayload(data, machineHash) {
     serverSessionId: data.sessionId || data.licenseSessionId || data.serverSessionId || "",
     runtimeSessionKeyVersion: data.runtimeSessionKeyVersion || data.sessionKeyVersion || "",
     runtimeSessionRevision: Number(data.runtimeSessionRevision || data.sessionRevision || 0),
+    runtimeSessionProofAlgorithm: data.runtimeSessionProofAlgorithm || "",
+    runtimeSessionProof: data.runtimeSessionProof || "",
     lastValidatedAt: new Date().toISOString()
   };
 
@@ -690,6 +694,8 @@ function licenseStatusFromServerRecord(record, active, reason) {
     serverSessionId: record.serverSessionId || "",
     runtimeSessionKeyVersion: record.runtimeSessionKeyVersion || "",
     runtimeSessionRevision: Number(record.runtimeSessionRevision || 0),
+    runtimeSessionProofAlgorithm: record.runtimeSessionProofAlgorithm || "",
+    runtimeSessionProof: record.runtimeSessionProof || "",
     serverBacked: true
   };
 }
@@ -1281,6 +1287,8 @@ async function writeRuntimeSession(plan) {
     machineHash,
     licenseSessionId: serverSessionId || sha256([machineHash, license.plan || "", expiresAt].join("|")),
     runtimeSessionKeyVersion: license.runtimeSessionKeyVersion || "",
+    runtimeSessionProofAlgorithm: license.runtimeSessionProofAlgorithm || "",
+    runtimeSessionProof: license.runtimeSessionProof || "",
     createdAt,
     expiresAt
   };

@@ -199,6 +199,8 @@ Keep rate limiting enabled in production, and add edge protection through the ho
 
 `ZEROLAG_RUNTIME_SESSION_KEY_VERSION` is a safe deployment label returned with server-issued runtime sessions. Increase it when rotating the runtime-session signing strategy so desktop clients and support reports can identify which version authorized a Boost session.
 
+Successful activation and validation responses also include a `runtimeSessionProof` bound to the current subscription, device, expiry, session ID, key version, and revision. The desktop client stores it inside the signed runtime-session file for the guard layer; admin summaries and subscription lists intentionally do not expose the raw proof.
+
 ## Website Analytics
 
 Set the public website `analyticsUrl` to `https://your-api.example/v1/website/events` after deploying this server behind HTTPS. The endpoint supports cross-origin website POSTs and `OPTIONS` preflight responses.

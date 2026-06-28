@@ -979,6 +979,8 @@ async function main() {
     assert(/^rsess_/.test(activated.body.sessionId || ""), "Activation should return a server-issued runtime session id.");
     assert(activated.body.runtimeSessionKeyVersion === "runtime-session-v1", "Activation should return the runtime session key version.");
     assert(activated.body.runtimeSessionRevision === 1, "Activation should start runtime session revision tracking.");
+    assert(/^sha256=[a-f0-9]{64}$/i.test(activated.body.runtimeSessionProof || ""), "Activation should return a server-issued runtime session proof.");
+    assert(activated.body.runtimeSessionProofAlgorithm === "HMAC-SHA256", "Activation should return the runtime session proof algorithm.");
     const firstExpiresAt = new Date(activated.body.expiresAt).getTime();
 
     const validated = await requestJson(port, "/v1/licenses/validate", {
@@ -994,6 +996,7 @@ async function main() {
     assert(validated.body.sessionId !== activated.body.sessionId, "Validation should rotate the runtime session id.");
     assert(validated.body.runtimeSessionRevision === activated.body.runtimeSessionRevision + 1, "Validation should increment runtime session revision.");
     assert(validated.body.runtimeSessionKeyVersion === activated.body.runtimeSessionKeyVersion, "Validation should keep the configured runtime session key version.");
+    assert(validated.body.runtimeSessionProof !== activated.body.runtimeSessionProof, "Validation should rotate the runtime session proof.");
 
     const renewalOrder = await requestJson(port, "/v1/orders/create", {
       plan: "ZeroLag Pro Monthly",
@@ -1025,6 +1028,7 @@ async function main() {
     assert(renewed.body.subscriptionId === activated.body.subscriptionId, "Renewal should extend the existing subscription.");
     assert(renewed.body.sessionId !== validated.body.sessionId, "Renewal should rotate the runtime session id.");
     assert(renewed.body.runtimeSessionRevision > validated.body.runtimeSessionRevision, "Renewal should advance runtime session revision.");
+    assert(renewed.body.runtimeSessionProof !== validated.body.runtimeSessionProof, "Renewal should rotate the runtime session proof.");
     assert(
       new Date(renewed.body.expiresAt).getTime() >= firstExpiresAt + 29 * 24 * 60 * 60 * 1000,
       "Renewal should extend the subscription expiry."
@@ -1040,6 +1044,7 @@ async function main() {
     assert(adminSubscriptions.body.subscriptions[0].runtimeSessionRevision === renewed.body.runtimeSessionRevision, "Admin subscription list should show runtime session revision.");
     assert(adminSubscriptions.body.subscriptions[0].runtimeSessionKeyVersion === "runtime-session-v1", "Admin subscription list should show runtime key version.");
     assert(!JSON.stringify(adminSubscriptions.body.subscriptions[0]).includes(renewed.body.sessionId), "Admin subscription list must not expose raw runtime session ids.");
+    assert(!JSON.stringify(adminSubscriptions.body.subscriptions[0]).includes(renewed.body.runtimeSessionProof), "Admin subscription list must not expose runtime session proofs.");
 
     const adminSubscriptionDetail = await requestJson(port, `/v1/admin/subscriptions/${activated.body.subscriptionId}`, null, {
       "X-ZeroLag-Admin-Secret": "self-test-admin"

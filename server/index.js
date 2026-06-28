@@ -567,6 +567,7 @@ function cleanupExpiredServerState(state, input = {}) {
       subscription.status = "expired";
       subscription.expiredAt = subscription.expiredAt || nowIso();
       subscription.runtimeSessionId = "";
+      subscription.runtimeSessionProof = "";
       subscription.runtimeSessionExpiredAt = subscription.expiredAt;
       expiredSubscriptions += 1;
     }
@@ -1030,12 +1031,30 @@ function rotateSubscriptionRuntimeSession(subscription, input = {}, options = {}
   subscription.runtimeSessionRotateReason = String(input.reason || "validation").slice(0, 64);
   subscription.runtimeSessionKeyVersion = runtimeSessionKeyVersionFromOptions(options);
   subscription.runtimeSessionRevision = Number(subscription.runtimeSessionRevision || 0) + 1;
+  subscription.runtimeSessionProofAlgorithm = "HMAC-SHA256";
+  subscription.runtimeSessionProof = signRuntimeSessionProof(subscription, options);
 
   return {
     sessionId: subscription.runtimeSessionId,
     keyVersion: subscription.runtimeSessionKeyVersion,
-    revision: subscription.runtimeSessionRevision
+    revision: subscription.runtimeSessionRevision,
+    proof: subscription.runtimeSessionProof
   };
+}
+
+function runtimeSessionProofBody(subscription) {
+  return JSON.stringify({
+    subscriptionId: subscription.subscriptionId || "",
+    deviceHash: subscription.deviceHash || "",
+    expiresAt: subscription.expiresAt || "",
+    sessionId: subscription.runtimeSessionId || "",
+    keyVersion: subscription.runtimeSessionKeyVersion || defaultRuntimeSessionKeyVersion,
+    revision: Number(subscription.runtimeSessionRevision || 0)
+  });
+}
+
+function signRuntimeSessionProof(subscription, options = {}) {
+  return `sha256=${hmac(serverSecretFromOptions(options), runtimeSessionProofBody(subscription))}`;
 }
 
 function invalidateSubscriptionTokens(state, subscriptionId) {
@@ -1054,6 +1073,7 @@ function revokeSubscriptionInState(state, subscriptionId, input = {}) {
   subscription.revokedAt = subscription.revokedAt || nowIso();
   subscription.revokeReason = input.reason || "manual_revoke";
   subscription.runtimeSessionId = "";
+  subscription.runtimeSessionProof = "";
   subscription.runtimeSessionRevokedAt = nowIso();
 
   if (input.disableActivationCodes !== false) {
@@ -1079,7 +1099,9 @@ function successLicensePayload(subscription, token) {
     subscriptionId: subscription.subscriptionId,
     sessionId: subscription.runtimeSessionId || "",
     runtimeSessionKeyVersion: subscription.runtimeSessionKeyVersion || defaultRuntimeSessionKeyVersion,
-    runtimeSessionRevision: Number(subscription.runtimeSessionRevision || 0)
+    runtimeSessionRevision: Number(subscription.runtimeSessionRevision || 0),
+    runtimeSessionProofAlgorithm: subscription.runtimeSessionProofAlgorithm || "HMAC-SHA256",
+    runtimeSessionProof: subscription.runtimeSessionProof || ""
   };
 }
 
@@ -1263,6 +1285,7 @@ async function validateLicense(request, response, options = {}) {
     if (subscription.status !== "revoked") {
       subscription.status = "expired";
       subscription.runtimeSessionId = "";
+      subscription.runtimeSessionProof = "";
       subscription.runtimeSessionExpiredAt = nowIso();
     }
     saveState(state, options);

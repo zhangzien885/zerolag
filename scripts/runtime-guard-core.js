@@ -38,6 +38,8 @@ function runtimeSessionSigningBody(session) {
 
   if (Number(session.version || 1) >= 2 || session.runtimeSessionKeyVersion) {
     body.runtimeSessionKeyVersion = session.runtimeSessionKeyVersion || "";
+    body.runtimeSessionProofAlgorithm = session.runtimeSessionProofAlgorithm || "";
+    body.runtimeSessionProof = session.runtimeSessionProof || "";
   }
 
   return JSON.stringify(body);
