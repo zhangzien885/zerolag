@@ -6,7 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "electron .",
-    "check": "node --check main.js && node --check preload.js && node --check src/renderer.js && node --check scripts/integrity.js && node --check scripts/protect-template.js && node --check scripts/runtime-watchdog.js && node --check scripts/production-check.js && node --check scripts/server-production-check.js && node --check scripts/local-integration.js && node --check scripts/sign-update-manifest.js && node --check server/index.js && node --check server/admin-client.js && node --check server/create-activation-code.js && node --check server/self-test.js",
+    "check": "node --check main.js && node --check preload.js && node --check src/renderer.js && node --check scripts/integrity.js && node --check scripts/protect-template.js && node --check scripts/runtime-watchdog.js && node --check scripts/production-check.js && node --check scripts/server-production-check.js && node --check scripts/generate-server-secrets.js && node --check scripts/local-integration.js && node --check scripts/sign-update-manifest.js && node --check server/index.js && node --check server/admin-client.js && node --check server/create-activation-code.js && node --check server/self-test.js",
     "protect-template": "node scripts/protect-template.js",
     "integrity": "node scripts/integrity.js",
     "integrity:verify": "node scripts/integrity.js --verify",
@@ -14,6 +14,7 @@
     "production:check:strict": "node scripts/production-check.js --strict",
     "server:check": "node scripts/server-production-check.js",
     "server:check:strict": "node scripts/server-production-check.js --strict",
+    "server:secrets": "node scripts/generate-server-secrets.js",
     "update:sign": "node scripts/sign-update-manifest.js",
     "server:start": "node server/index.js",
     "server:create-code": "node server/create-activation-code.js",

@@ -78,9 +78,13 @@ The desktop client reads production endpoints from `assets/app-config.json`.
 The license server reads deployment settings from environment variables. Before public release, run:
 
 ```powershell
+npm run server:secrets
+npm run server:secrets -- --write
 npm run server:check
 npm run server:check:strict
 ```
+
+`server:secrets` generates strong private values for the three required server secrets. `--write` saves them to `.secrets/server.env`, which is ignored by Git.
 
 Minimum production server variables:
 

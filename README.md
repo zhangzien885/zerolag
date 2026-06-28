@@ -51,9 +51,11 @@ npm run production:check
 npm run production:check:strict
 npm run server:check
 npm run server:check:strict
+npm run server:secrets
 ```
 
 `production:check` validates desktop release config. `server:check` validates server deployment environment variables. Use the `:strict` variants before a real paid release.
+`server:secrets` prints strong private server secrets; use `npm run server:secrets -- --write` to save them under `.secrets/server.env`.
 
 ## Signed updates
 

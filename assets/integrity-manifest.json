@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T02:55:32.259Z",
+  "generatedAt": "2026-06-28T03:01:32.560Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "55f79be7f5420afe310fc487cd77ec38340e63447e9a0c1b85fe01b851d24674"
+      "sha256": "0072aeab0739291df50aaa23e4baa09093d95a84286ac4f847cc5bc7e27746f5"
     },
     {
       "path": "main.js",
@@ -47,6 +47,10 @@
       "sha256": "89246dd3dbd5c18fde5ffc9e057d1058c3258af0bcbbab645bca0b3860a51c08"
     },
     {
+      "path": "scripts/generate-server-secrets.js",
+      "sha256": "76c5b2a6ab9b12702c99afdd2bfc6b70c269d7b90b296253dc9baaa500099c5c"
+    },
+    {
       "path": "assets/zerolag-logo.svg",
       "sha256": "03892f57191aa27235c5d6a50852ebfe3dfe65c66fa874f5a89bd20522f7a0ee"
     },
@@ -59,5 +63,5 @@
       "sha256": "03088e08120ee7508d175a61b3b6f66ee31a657ec592adfd60e5f352f890fc6d"
     }
   ],
-  "signature": "bcdbfb1f463f11c478ef06a850067a7ca27c6aac5ba096a82f724a1b7a5442ec"
+  "signature": "1aa2a3ba35ca294df6cf94da66d11a7327cd6f244d8b99ad62b306620ebac877"
 }
