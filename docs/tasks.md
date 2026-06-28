@@ -148,6 +148,7 @@
 - Added configurable payment-provider readiness with checkout URL templates and signed webhook provider allowlisting for future WeChat Pay / Alipay integration.
 - Added a generated deployment checklist command that consolidates desktop config, server secrets, payment provider, update metadata, signing, and final release gates.
 - Added a private server deployment report command that summarizes env, storage, backup, payment, update, and endpoint readiness without exposing secret values.
+- Added a redacted JSON server deployment report for CI, deployment scripts, and private operations dashboards.
 - Added a strict private server deployment report gate that fails until env, SQLite backup readiness, payment provider, production URLs, and runtime guards are ready.
 - Expanded private server env generation with JSON and SQLite profiles, payment placeholders, SQLite backup freshness settings, and overwrite protection.
 - Added a redacted private server env checker for missing keys, weak secrets, unsafe switches, storage profile mismatches, and payment placeholder warnings.

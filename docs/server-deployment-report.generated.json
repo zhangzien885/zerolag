@@ -1,0 +1,118 @@
+{
+  "generatedAt": "2026-06-28T12:29:56.166Z",
+  "ready": false,
+  "strictFailureSummary": "Private env file passes validation, SQLite storage and backup paths are configured, Payment provider is no longer local manual mode, Payment provider allowlist excludes test webhook providers, Checkout URL template is configured, Public website, purchase, API, update, and support URLs are production HTTPS",
+  "snapshot": {
+    "appVersion": "0.1.0",
+    "appMode": "development",
+    "releaseChannel": "alpha",
+    "updateManifestLatest": "0.1.1",
+    "privateEnvFile": {
+      "path": ".secrets/server.env",
+      "loaded": false,
+      "profile": "json",
+      "keyCount": 0
+    }
+  },
+  "gates": [
+    {
+      "label": "Private env file passes validation",
+      "ok": false,
+      "detail": "1 issue(s), 0 warning(s)"
+    },
+    {
+      "label": "SQLite storage and backup paths are configured",
+      "ok": false,
+      "detail": "stateStore=json"
+    },
+    {
+      "label": "Payment provider is no longer local manual mode",
+      "ok": false,
+      "detail": "provider=manual"
+    },
+    {
+      "label": "Payment provider allowlist excludes test webhook providers",
+      "ok": false,
+      "detail": "5 provider(s)"
+    },
+    {
+      "label": "Checkout URL template is configured",
+      "ok": false,
+      "detail": "placeholder or missing"
+    },
+    {
+      "label": "Public website, purchase, API, update, and support URLs are production HTTPS",
+      "ok": false,
+      "detail": "one or more URLs are missing/placeholders"
+    },
+    {
+      "label": "Rate limit, backup, and maintenance guards are enabled",
+      "ok": true,
+      "detail": "enabled"
+    }
+  ],
+  "envCheck": {
+    "ok": false,
+    "issueCount": 1,
+    "warningCount": 0,
+    "issues": [
+      "Env file does not exist: .secrets/server.env"
+    ],
+    "warnings": [],
+    "summary": {
+      "stateStore": "json",
+      "sqliteConfigured": false,
+      "paymentProvider": "manual",
+      "paymentAllowedProviderCount": 5,
+      "rateLimitEnabled": false,
+      "backupsEnabled": false,
+      "maintenanceEnabled": false
+    }
+  },
+  "storage": {
+    "stateStore": "json",
+    "sqliteStatePathConfigured": false,
+    "sqliteBackupDirConfigured": false,
+    "sqliteBackupMaxAgeHours": 24
+  },
+  "payment": {
+    "provider": "manual",
+    "allowedProviderCount": 5,
+    "selectedProviderAllowlisted": true,
+    "testWebhookProvidersRemoved": false,
+    "checkoutUrlTemplateConfigured": false,
+    "messageConfigured": false
+  },
+  "runtimeGuards": {
+    "rateLimitEnabled": true,
+    "backupsEnabled": true,
+    "maintenanceEnabled": true
+  },
+  "publicEndpoints": [
+    {
+      "label": "website",
+      "url": "https://example.com/zerolag",
+      "ready": false
+    },
+    {
+      "label": "purchase",
+      "url": "",
+      "ready": false
+    },
+    {
+      "label": "apiBase",
+      "url": "",
+      "ready": false
+    },
+    {
+      "label": "updateManifest",
+      "url": "",
+      "ready": false
+    },
+    {
+      "label": "support",
+      "url": "",
+      "ready": false
+    }
+  ]
+}

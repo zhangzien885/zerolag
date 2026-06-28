@@ -5,13 +5,14 @@ const { checkServerEnvFile } = require("./check-server-env");
 
 const rootDir = path.join(__dirname, "..");
 const defaultOutputPath = path.join(rootDir, "docs", "server-deployment-report.generated.md");
+const defaultJsonOutputPath = path.join(rootDir, "docs", "server-deployment-report.generated.json");
 const defaultPaymentProvider = "manual";
 const defaultPaymentUrlTemplate = "zerolag://pay/{orderId}";
 const testPaymentProviders = new Set(["self-test", "manual-signed-webhook", "signed-webhook"]);
 
 function usage() {
   console.log("Usage:");
-  console.log("  node scripts/generate-server-deployment-report.js [--output path] [--stdout] [--strict]");
+  console.log("  node scripts/generate-server-deployment-report.js [--output path] [--stdout] [--strict] [--json]");
 }
 
 function argValue(name) {
@@ -96,6 +97,14 @@ function urlLine(label, value) {
   return `- ${label}: ${code(value || "missing")} (${status(isProductionUrl(value), "production URL", "not production-ready")})`;
 }
 
+function urlStatus(label, value) {
+  return {
+    label,
+    url: value || "",
+    ready: isProductionUrl(value)
+  };
+}
+
 function gateLine(label, ok, detail) {
   return `- ${ok ? "[x]" : "[ ]"} ${label}${detail ? ` - ${detail}` : ""}`;
 }
@@ -142,6 +151,13 @@ function buildReport() {
     appConfig.supportUrl
   ].every(isProductionUrl);
   const runtimeGuardsReady = rateLimitEnabled && backupsEnabled && maintenanceEnabled;
+  const publicEndpoints = [
+    urlStatus("website", appConfig.websiteUrl),
+    urlStatus("purchase", appConfig.purchaseUrl),
+    urlStatus("apiBase", appConfig.apiBaseUrl),
+    urlStatus("updateManifest", appConfig.updateManifestUrl),
+    urlStatus("support", appConfig.supportUrl)
+  ];
   const gates = [
     {
       label: "Private env file passes validation",
@@ -180,6 +196,65 @@ function buildReport() {
     }
   ];
   const reportReady = gates.every((gate) => gate.ok);
+  const generatedAt = new Date().toISOString();
+  const data = {
+    generatedAt,
+    ready: reportReady,
+    strictFailureSummary: strictFailureSummary(gates),
+    snapshot: {
+      appVersion: packageJson.version,
+      appMode: appConfig.releaseMode || "",
+      releaseChannel: appConfig.releaseChannel || "",
+      updateManifestLatest: updateManifest.latest || "",
+      privateEnvFile: {
+        path: pathLabel(envFileLoad.path),
+        loaded: envFileLoad.loaded,
+        profile: envProfile,
+        keyCount: envCheck.keyCount
+      }
+    },
+    gates: gates.map((gate) => ({
+      label: gate.label,
+      ok: gate.ok,
+      detail: gate.detail
+    })),
+    envCheck: {
+      ok: envCheck.issues.length === 0,
+      issueCount: envCheck.issues.length,
+      warningCount: envCheck.warnings.length,
+      issues: envCheck.issues.map((message) => sanitizeMessage(message, envFileLoad.path)),
+      warnings: envCheck.warnings.map((message) => sanitizeMessage(message, envFileLoad.path)),
+      summary: {
+        stateStore: envCheck.summary.stateStore || stateStore,
+        sqliteConfigured: Boolean(envCheck.summary.sqliteConfigured),
+        paymentProvider: envCheck.summary.paymentProvider || paymentProvider,
+        paymentAllowedProviderCount: envCheck.summary.paymentAllowedProviderCount || paymentAllowedProviders.length,
+        rateLimitEnabled: Boolean(envCheck.summary.rateLimitEnabled),
+        backupsEnabled: Boolean(envCheck.summary.backupsEnabled),
+        maintenanceEnabled: Boolean(envCheck.summary.maintenanceEnabled)
+      }
+    },
+    storage: {
+      stateStore,
+      sqliteStatePathConfigured: Boolean(sqliteStatePath),
+      sqliteBackupDirConfigured: Boolean(sqliteBackupDir),
+      sqliteBackupMaxAgeHours: Number(backupMaxAgeHours) || 0
+    },
+    payment: {
+      provider: paymentProvider,
+      allowedProviderCount: paymentAllowedProviders.length,
+      selectedProviderAllowlisted: paymentAllowedProviders.includes(paymentProvider),
+      testWebhookProvidersRemoved: !paymentAllowedProviders.some((provider) => testPaymentProviders.has(provider)),
+      checkoutUrlTemplateConfigured: checkoutReady,
+      messageConfigured: Boolean(paymentMessage)
+    },
+    runtimeGuards: {
+      rateLimitEnabled,
+      backupsEnabled,
+      maintenanceEnabled
+    },
+    publicEndpoints
+  };
 
   const content = `# ZeroLag Server Deployment Report
 
@@ -188,7 +263,8 @@ This report is designed for private deployment review and never prints secret va
 
 ## Snapshot
 
-- Generated at: ${code(new Date().toISOString())}
+- Generated at: ${code(generatedAt)}
+- Report JSON: ${code("npm run server:deployment-report:json")}
 - App version: ${code(packageJson.version)}
 - App mode: ${code(appConfig.releaseMode || "missing")}
 - Release channel: ${code(appConfig.releaseChannel || "missing")}
@@ -265,6 +341,7 @@ npm run ci
 
   return {
     content,
+    data,
     gates,
     ready: reportReady
   };
@@ -277,16 +354,18 @@ function main() {
   }
 
   const outputArg = argValue("--output");
-  const outputPath = outputArg ? path.resolve(outputArg) : defaultOutputPath;
+  const json = process.argv.includes("--json");
+  const outputPath = outputArg ? path.resolve(outputArg) : (json ? defaultJsonOutputPath : defaultOutputPath);
   const strict = process.argv.includes("--strict");
   const report = buildReport();
+  const outputContent = json ? `${JSON.stringify(report.data, null, 2)}\n` : report.content;
 
   if (process.argv.includes("--stdout")) {
-    process.stdout.write(report.content);
+    process.stdout.write(outputContent);
   } else {
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-    fs.writeFileSync(outputPath, report.content, "utf8");
-    console.log(`Server deployment report written: ${outputPath}`);
+    fs.writeFileSync(outputPath, outputContent, "utf8");
+    console.log(`${json ? "Server deployment JSON report" : "Server deployment report"} written: ${outputPath}`);
   }
 
   if (strict && !report.ready) {

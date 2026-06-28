@@ -89,6 +89,14 @@ npm run server:deployment-report
 
 The report writes `docs/server-deployment-report.generated.md` by default and summarizes env validation, storage, backup, payment, update, and public endpoint readiness. It does not print secret values, activation codes, subscription tokens, or full external paths.
 
+Generate the same deployment state as redacted JSON for CI, deployment scripts, or a private ops dashboard:
+
+```powershell
+npm run server:deployment-report:json
+```
+
+The JSON report writes `docs/server-deployment-report.generated.json` and uses the same gates as the Markdown report.
+
 Use strict mode as a release gate after the real private env file, payment provider, and production URLs are configured:
 
 ```powershell

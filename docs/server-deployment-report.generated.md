@@ -5,7 +5,8 @@ This report is designed for private deployment review and never prints secret va
 
 ## Snapshot
 
-- Generated at: `2026-06-28T12:20:36.342Z`
+- Generated at: `2026-06-28T12:29:56.416Z`
+- Report JSON: `npm run server:deployment-report:json`
 - App version: `0.1.0`
 - App mode: `development`
 - Release channel: `alpha`

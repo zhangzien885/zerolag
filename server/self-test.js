@@ -362,6 +362,21 @@ async function main() {
     assert(deploymentReportBody.includes("State store from env: `sqlite`"), "Server deployment report should summarize env storage.");
     assert(deploymentReportBody.includes("Payment provider from env:"), "Server deployment report should summarize payment readiness.");
     assert(!deploymentReportBody.includes("zl_server_"), "Server deployment report must not expose generated secret values.");
+    const deploymentReportJson = await runNodeScript("scripts/generate-server-deployment-report.js", [
+      "--json",
+      "--stdout"
+    ], {
+      env: {
+        ZEROLAG_ENV_FILE: sqliteEnvPath
+      }
+    });
+    assert(deploymentReportJson.status === 0, `Server deployment JSON report command failed: ${deploymentReportJson.stderr || deploymentReportJson.stdout}`);
+    const deploymentReportJsonBody = JSON.parse(deploymentReportJson.stdout);
+    assert(deploymentReportJsonBody.ready === false, "Server deployment JSON report should expose the readiness boolean.");
+    assert(deploymentReportJsonBody.snapshot.privateEnvFile.loaded === true, "Server deployment JSON report should show the private env file loaded.");
+    assert(deploymentReportJsonBody.storage.stateStore === "sqlite", "Server deployment JSON report should summarize storage.");
+    assert(Array.isArray(deploymentReportJsonBody.gates) && deploymentReportJsonBody.gates.length >= 1, "Server deployment JSON report should include gate results.");
+    assert(!deploymentReportJson.stdout.includes("zl_server_"), "Server deployment JSON report must not expose generated secret values.");
     const strictDeploymentReportPath = path.join(tempDir, "server-deployment-report-strict.md");
     const strictDeploymentReport = await runNodeScript("scripts/generate-server-deployment-report.js", [
       "--strict",

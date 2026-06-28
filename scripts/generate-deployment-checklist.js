@@ -174,6 +174,7 @@ Run these in order before a paid public release:
 \`\`\`powershell
 npm run deploy:checklist
 npm run server:deployment-report
+npm run server:deployment-report:json
 npm run server:deployment-report:strict
 npm run server:secrets -- --profile sqlite --write
 npm run server:env-check -- --profile sqlite

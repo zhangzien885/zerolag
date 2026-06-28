@@ -30,6 +30,7 @@
     "production:check:strict": "node scripts/production-check.js --strict",
     "deploy:checklist": "node scripts/generate-deployment-checklist.js",
     "server:deployment-report": "node scripts/generate-server-deployment-report.js",
+    "server:deployment-report:json": "node scripts/generate-server-deployment-report.js --json",
     "server:deployment-report:strict": "node scripts/generate-server-deployment-report.js --strict",
     "release:preflight": "node scripts/release-preflight.js",
     "release:preflight:strict": "node scripts/release-preflight.js --strict",
