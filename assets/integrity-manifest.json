@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T02:11:50.824Z",
+  "generatedAt": "2026-06-28T02:16:59.873Z",
   "files": [
     {
       "path": "package.json",
@@ -8,15 +8,15 @@
     },
     {
       "path": "main.js",
-      "sha256": "dcdd409a829453c89440197ff3b40b97e830bf1adde31b573a3107c1d4aee4d3"
+      "sha256": "2874cfea147323db487834bf63ef858a194ce39f8c14309304e76cc364017f37"
     },
     {
       "path": "preload.js",
-      "sha256": "7e729402f5bdea10e2ecc335d91e15d461e59e2389eba519160eb101f90db901"
+      "sha256": "c57945a7c35b26a582408c18c979dd4749588c97427924b26cd3e6871b5307e0"
     },
     {
       "path": "src/index.html",
-      "sha256": "4a7ad5f84846948de7cdca1e188f31353c5e3959d3a27fb89b70a4203fb5ed26"
+      "sha256": "23983e1049a676f92578555a95e5eadf760a3174968e96f5301a9b2c5e843895"
     },
     {
       "path": "src/splash.html",
@@ -24,7 +24,7 @@
     },
     {
       "path": "src/renderer.js",
-      "sha256": "d0810b3145a34f5a68689a8bf48911051cfecc7c19f55ce6c46c5aaf1e2fed92"
+      "sha256": "3dd747794c60873b5beabc7359d183b85e6b742bb8b2b62c16fd3e926228adc3"
     },
     {
       "path": "src/styles.css",
@@ -40,7 +40,7 @@
     },
     {
       "path": "scripts/production-check.js",
-      "sha256": "0b4594be9623da30fb796996a72dcac25543c6b44354878de776a82f96d970d3"
+      "sha256": "498716e8c5201678adacbeb5c98ba873b991e4627059c64e264daa4a480429b0"
     },
     {
       "path": "assets/zerolag-logo.svg",
@@ -55,5 +55,5 @@
       "sha256": "03088e08120ee7508d175a61b3b6f66ee31a657ec592adfd60e5f352f890fc6d"
     }
   ],
-  "signature": "bfc33138ab4f4ca7fcbcb035b6cf3ea53f229f4396cad083454a485378556810"
+  "signature": "7ab7cf6889fb4024af94599b41238776d61309dbd83a84c5b6b84f9bd4d3a1d5"
 }

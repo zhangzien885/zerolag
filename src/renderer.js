@@ -32,6 +32,7 @@ const els = {
   supportState: document.querySelector("#supportState"),
   supportDetail: document.querySelector("#supportDetail"),
   supportBundleButton: document.querySelector("#supportBundleButton"),
+  supportContactButton: document.querySelector("#supportContactButton"),
   toolboxOverlay: document.querySelector("#toolboxOverlay"),
   closeToolboxButton: document.querySelector("#closeToolboxButton"),
   resultState: document.querySelector("#resultState"),
@@ -726,6 +727,35 @@ els.supportBundleButton.addEventListener("click", async () => {
     addLog("支持诊断包生成失败。", "warn");
   } finally {
     els.supportBundleButton.disabled = false;
+  }
+});
+
+els.supportContactButton.addEventListener("click", async () => {
+  els.supportContactButton.disabled = true;
+  setText(els.toolState, "打开支持");
+  setText(els.supportState, "连接中");
+
+  try {
+    const result = await window.zeroLag.openSupportUrl();
+    if (result && result.ok) {
+      setText(els.toolState, "支持已打开");
+      setText(els.supportState, "已打开");
+      setText(els.supportDetail, "已打开官方支持页面，可把诊断包发送给客服排查。");
+      addLog("已打开官方支持入口。", "good");
+      return;
+    }
+
+    setText(els.toolState, "待配置");
+    setText(els.supportState, "未配置");
+    setText(els.supportDetail, "客服入口暂未配置，正式官网上线后这里会直接打开支持页面。");
+    addLog("客服入口暂未配置。", "warn");
+  } catch {
+    setText(els.toolState, "打开失败");
+    setText(els.supportState, "打开失败");
+    setText(els.supportDetail, "官方支持页面打开失败，请稍后再试。");
+    addLog("官方支持入口打开失败。", "warn");
+  } finally {
+    els.supportContactButton.disabled = false;
   }
 });
 

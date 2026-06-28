@@ -29,6 +29,7 @@
 - Game toolbox button that opens a dedicated toolbox dialog with local game library, add-game picker, one-click game launch, network latency check, DNS refresh, and Boost session timer.
 - Support diagnostics export in the game toolbox for customer support, without exposing activation codes, tokens, protected tuning parameters, or game paths.
 - Redacted local support log included in diagnostics, limited to recent user-facing events and filtered for activation codes, tokens, URLs, paths, and GUIDs.
+- Official support/contact button in the game toolbox, driven by production `supportUrl` configuration.
 - System detection panel for CPU, discrete GPU preference, live memory usage, and Game Mode status.
 - Memory usage refresh every second with one decimal place.
 - Anti-tamper integrity manifest for protected files.
@@ -105,6 +106,7 @@
 - Added signed update-manifest verification in the desktop client plus release tooling for generating, signing, and verifying update metadata.
 - Added customer-support diagnostics bundle export from the desktop toolbox with redacted membership and runtime details.
 - Added redacted support-event logging so exported diagnostics include recent user-facing operation history without sensitive codes or implementation details.
+- Added a configurable official support/contact link in the desktop toolbox and production readiness checks for `supportUrl`.
 
 ## Known Boundaries
 

@@ -45,6 +45,8 @@ function main() {
   addIssue(warnings, productionMode, "app-config releaseMode is not production yet.");
   addIssue(issues, !productionMode || isHttpsUrl(config.websiteUrl), "Production websiteUrl must be HTTPS.");
   addIssue(issues, !productionMode || !isPlaceholderUrl(config.websiteUrl), "Production websiteUrl must not use a placeholder domain.");
+  addIssue(issues, !productionMode || isHttpsUrl(config.supportUrl), "Production supportUrl must be HTTPS.");
+  addIssue(issues, !productionMode || !isPlaceholderUrl(config.supportUrl), "Production supportUrl must not use a placeholder domain.");
   addIssue(issues, !productionMode || isHttpsUrl(config.apiBaseUrl), "Production apiBaseUrl must be HTTPS.");
   addIssue(issues, !productionMode || isHttpsUrl(config.updateManifestUrl), "Production updateManifestUrl must be HTTPS.");
   addIssue(issues, !productionMode || Boolean(config.updatePublicKeyPem), "Production updatePublicKeyPem is required for signed update metadata.");

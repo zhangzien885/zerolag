@@ -69,6 +69,7 @@ function readAppConfig() {
     apiBaseUrl: process.env.ZEROLAG_API_BASE_URL || config.apiBaseUrl,
     updateManifestUrl: process.env.ZEROLAG_UPDATE_MANIFEST_URL || config.updateManifestUrl,
     updatePublicKeyPem: process.env.ZEROLAG_UPDATE_PUBLIC_KEY || config.updatePublicKeyPem,
+    supportUrl: process.env.ZEROLAG_SUPPORT_URL || config.supportUrl,
     allowLocalDemoLicense: process.env.ZEROLAG_ALLOW_LOCAL_DEMO
       ? /^(1|true|yes)$/i.test(process.env.ZEROLAG_ALLOW_LOCAL_DEMO)
       : Boolean(config.allowLocalDemoLicense),
@@ -2228,6 +2229,21 @@ app.whenReady().then(async () => {
     if (!isHttpUrl(target)) return false;
     await shell.openExternal(target);
     return true;
+  });
+  ipcMain.handle("zerolag:open-support-url", async () => {
+    const target = readAppConfig().supportUrl;
+    if (!isHttpUrl(target)) {
+      return {
+        ok: false,
+        configured: false
+      };
+    }
+
+    await shell.openExternal(target);
+    return {
+      ok: true,
+      configured: true
+    };
   });
   ipcMain.handle("zerolag:open-update-url", async (_event, url) => {
     const target = String(url || "");

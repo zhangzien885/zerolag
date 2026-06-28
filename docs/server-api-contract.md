@@ -32,6 +32,7 @@ The desktop client reads production endpoints from `assets/app-config.json`.
 - `releaseMode`: use `production` for paid release builds.
 - `apiBaseUrl`: HTTPS API base URL, for example `https://api.zerolag.example`.
 - `websiteUrl`: HTTPS public website URL.
+- `supportUrl`: HTTPS support/contact page URL opened from the desktop toolbox.
 - `updateManifestUrl`: HTTPS update metadata URL.
 - `allowLocalDemoLicense`: must be `false` in production.
 - `offlineGraceHours`: short validation grace window when the server is temporarily unreachable.
