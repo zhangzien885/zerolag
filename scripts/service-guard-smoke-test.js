@@ -87,7 +87,9 @@ function main() {
   assertOk(manifest.visibleInWindowsServices === true, "Service guard must stay visible in Windows service tools.");
   assertOk(manifest.account === "NT AUTHORITY\\LocalService", "Service guard should use the LocalService account.");
   assertOk(manifest.startupType === "Automatic", "Service guard should start automatically after install.");
-  assertOk(manifest.serviceBinaryStatus === "planned", "Manifest should clearly mark the service binary status until the real service is implemented.");
+  assertOk(manifest.serviceBinaryStatus === "worker-implemented", "Manifest should mark the runtime worker as implemented until the native service executable exists.");
+  assertOk(manifest.serviceWorker === "service-guard/runtime-guard-service.js", "Manifest service worker path is wrong.");
+  assertOk(manifest.serviceCore === "service-guard/runtime-guard-core.js", "Manifest service core path is wrong.");
   assertOk(manifest.installScript === "build/install-runtime-guard-service.ps1", "Manifest install script path is wrong.");
   assertOk(manifest.uninstallScript === "build/uninstall-runtime-guard-service.ps1", "Manifest uninstall script path is wrong.");
   assertOk(manifest.taskSchedulerFallback && manifest.taskSchedulerFallback.enabledWhenServiceInstallFails === true, "Task Scheduler fallback must be documented.");
@@ -108,9 +110,16 @@ function main() {
   assertOk(targets.includes("build/service-guard.json->service-guard/service-guard.json"), "Service guard manifest must be packaged as an extra resource.");
   assertOk(targets.includes("build/install-runtime-guard-service.ps1->service-guard/install-runtime-guard-service.ps1"), "Install script must be packaged as an extra resource.");
   assertOk(targets.includes("build/uninstall-runtime-guard-service.ps1->service-guard/uninstall-runtime-guard-service.ps1"), "Uninstall script must be packaged as an extra resource.");
+  assertOk(targets.includes("scripts/runtime-guard-core.js->service-guard/runtime-guard-core.js"), "Runtime guard core must be packaged as an extra resource.");
+  assertOk(targets.includes("scripts/runtime-guard-service.js->service-guard/runtime-guard-service.js"), "Runtime guard service worker must be packaged as an extra resource.");
   assertOk(packageJson.scripts && packageJson.scripts["guard:service:smoke"], "guard:service:smoke script is missing.");
+  assertOk(packageJson.scripts && packageJson.scripts["guard:runtime:smoke"], "guard:runtime:smoke script is missing.");
   assertOk((packageJson.scripts.ci || "").includes("npm run guard:service:smoke"), "npm run ci must include guard:service:smoke.");
+  assertOk((packageJson.scripts.ci || "").includes("npm run guard:runtime:smoke"), "npm run ci must include guard:runtime:smoke.");
   assertOk((packageJson.scripts.check || "").includes("scripts/service-guard-smoke-test.js"), "npm run check must syntax-check service-guard-smoke-test.js.");
+  assertOk((packageJson.scripts.check || "").includes("scripts/runtime-guard-service.js"), "npm run check must syntax-check runtime-guard-service.js.");
+  assertOk(JSON.stringify(packageJson.build.asarUnpack || []).includes("runtime-guard-core"), "runtime-guard-core must be unpacked for watchdog execution.");
+  assertOk(JSON.stringify(packageJson.build.asarUnpack || []).includes("runtime-watchdog"), "runtime-watchdog must be unpacked for cleanup execution.");
   assertNoForbiddenText(packageText, "package.json");
 
   console.log("ZeroLag service guard smoke test passed.");

@@ -19,6 +19,7 @@
     "release:report:smoke": "node scripts/release-report-smoke-test.js",
     "ci:reports:smoke": "node scripts/ci-report-artifact-smoke-test.js",
     "guard:service:smoke": "node scripts/service-guard-smoke-test.js",
+    "guard:runtime:smoke": "node scripts/runtime-guard-service-smoke-test.js",
     "release:gate": "node scripts/check-release-gate.js",
     "release:gate:smoke": "node scripts/release-gate-smoke-test.js",
     "website:release": "node scripts/publish-website-release.js",
@@ -26,8 +27,8 @@
     "website:release:smoke": "node scripts/website-release-publish-smoke-test.js",
     "release:verify": "npm run installer:smoke && npm run release:artifacts && npm run release:report && npm run release:gate && npm run website:release",
     "release:build": "npm run dist:win && npm run release:verify",
-    "check": "node --check main.js && node --check preload.js && node --check src/renderer.js && node --check website/script.js && node --check scripts/integrity.js && node --check scripts/protect-template.js && node --check scripts/runtime-watchdog.js && node --check scripts/package-smoke-test.js && node --check scripts/installer-smoke-test.js && node --check scripts/generate-release-artifacts.js && node --check scripts/generate-release-report.js && node --check scripts/release-report-smoke-test.js && node --check scripts/ci-report-artifact-smoke-test.js && node --check scripts/service-guard-smoke-test.js && node --check scripts/check-release-gate.js && node --check scripts/release-gate-smoke-test.js && node --check scripts/publish-website-release.js && node --check scripts/website-smoke-test.js && node --check scripts/website-release-publish-smoke-test.js && node --check scripts/production-check.js && node --check scripts/server-production-check.js && node --check scripts/server-smoke-test.js && node --check scripts/release-preflight.js && node --check scripts/generate-deployment-checklist.js && node --check scripts/generate-server-deployment-report.js && node --check scripts/server-deployment-report-smoke-test.js && node --check scripts/migrate-state-to-sqlite.js && node --check scripts/backup-sqlite-state.js && node --check scripts/restore-sqlite-state.js && node --check scripts/check-sqlite-backups.js && node --check scripts/check-server-env.js && node --check scripts/generate-icon.js && node --check scripts/generate-server-secrets.js && node --check scripts/local-integration.js && node --check scripts/sign-update-manifest.js && node --check scripts/update-signing-smoke-test.js && node --check server/env.js && node --check server/state-store.js && node --check server/index.js && node --check server/admin-client.js && node --check server/create-activation-code.js && node --check server/self-test.js",
-    "ci": "npm run check && npm run production:check && npm run server:check && npm run server:test && npm run server:smoke && npm run server:deployment-report:smoke && npm run release:report:smoke && npm run ci:reports:smoke && npm run guard:service:smoke && npm run release:gate:smoke && npm run update:smoke && npm run website:smoke && npm run website:release:smoke && npm run release:preflight && npm run integrity:verify",
+    "check": "node --check main.js && node --check preload.js && node --check src/renderer.js && node --check website/script.js && node --check scripts/integrity.js && node --check scripts/protect-template.js && node --check scripts/runtime-guard-core.js && node --check scripts/runtime-guard-service.js && node --check scripts/runtime-guard-service-smoke-test.js && node --check scripts/runtime-watchdog.js && node --check scripts/package-smoke-test.js && node --check scripts/installer-smoke-test.js && node --check scripts/generate-release-artifacts.js && node --check scripts/generate-release-report.js && node --check scripts/release-report-smoke-test.js && node --check scripts/ci-report-artifact-smoke-test.js && node --check scripts/service-guard-smoke-test.js && node --check scripts/check-release-gate.js && node --check scripts/release-gate-smoke-test.js && node --check scripts/publish-website-release.js && node --check scripts/website-smoke-test.js && node --check scripts/website-release-publish-smoke-test.js && node --check scripts/production-check.js && node --check scripts/server-production-check.js && node --check scripts/server-smoke-test.js && node --check scripts/release-preflight.js && node --check scripts/generate-deployment-checklist.js && node --check scripts/generate-server-deployment-report.js && node --check scripts/server-deployment-report-smoke-test.js && node --check scripts/migrate-state-to-sqlite.js && node --check scripts/backup-sqlite-state.js && node --check scripts/restore-sqlite-state.js && node --check scripts/check-sqlite-backups.js && node --check scripts/check-server-env.js && node --check scripts/generate-icon.js && node --check scripts/generate-server-secrets.js && node --check scripts/local-integration.js && node --check scripts/sign-update-manifest.js && node --check scripts/update-signing-smoke-test.js && node --check server/env.js && node --check server/state-store.js && node --check server/index.js && node --check server/admin-client.js && node --check server/create-activation-code.js && node --check server/self-test.js",
+    "ci": "npm run check && npm run production:check && npm run server:check && npm run server:test && npm run server:smoke && npm run server:deployment-report:smoke && npm run release:report:smoke && npm run ci:reports:smoke && npm run guard:service:smoke && npm run guard:runtime:smoke && npm run release:gate:smoke && npm run update:smoke && npm run website:smoke && npm run website:release:smoke && npm run release:preflight && npm run integrity:verify",
     "protect-template": "node scripts/protect-template.js",
     "integrity": "node scripts/integrity.js",
     "integrity:verify": "node scripts/integrity.js --verify",
@@ -80,6 +81,7 @@
     ],
     "asar": true,
     "asarUnpack": [
+      "scripts/runtime-guard-core.js",
       "scripts/runtime-watchdog.js"
     ],
     "extraResources": [
@@ -94,6 +96,14 @@
       {
         "from": "build/uninstall-runtime-guard-service.ps1",
         "to": "service-guard/uninstall-runtime-guard-service.ps1"
+      },
+      {
+        "from": "scripts/runtime-guard-core.js",
+        "to": "service-guard/runtime-guard-core.js"
+      },
+      {
+        "from": "scripts/runtime-guard-service.js",
+        "to": "service-guard/runtime-guard-service.js"
       }
     ],
     "win": {

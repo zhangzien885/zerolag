@@ -80,7 +80,9 @@ Implemented in prototype:
 - Encrypted tuning package instead of a plain JSON template.
 - Integrity verification for protected files.
 - Windows Service guard manifest plus install/uninstall script assets.
+- Runtime guard core and service worker that reuse the same signed-session cleanup flow as the desktop watchdog.
 - CI smoke test for transparent service-guard packaging and prohibited behavior guardrails.
+- CI smoke test for service-worker cleanup behavior in dry-run mode.
 
 Still required for paid production:
 
@@ -88,5 +90,5 @@ Still required for paid production:
 - Installer-managed Task Scheduler fallback.
 - Server-issued signed session IDs and key rotation.
 - Server-side subscription/session validation.
-- Installer invocation of the service install/uninstall scripts.
+- Installer invocation of the service install/uninstall scripts with the native service executable.
 - Uninstaller cleanup.
