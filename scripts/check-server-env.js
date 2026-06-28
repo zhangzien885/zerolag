@@ -61,6 +61,10 @@ function isDisabled(value) {
   return String(value || "") === "1";
 }
 
+function isSafeKeyVersion(value) {
+  return /^[a-zA-Z0-9_.-]{3,64}$/.test(String(value || "").trim());
+}
+
 function readEnvFile(filePath) {
   const entries = new Map();
   const duplicateKeys = [];
@@ -103,10 +107,12 @@ function inspect(entries, profile) {
   const paymentProvider = normalizePaymentProvider(value(entries, "ZEROLAG_PAYMENT_PROVIDER", defaultPaymentProvider));
   const paymentAllowedProviders = paymentProviderList(value(entries, "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS", ""));
   const paymentUrlTemplate = value(entries, "ZEROLAG_PAYMENT_URL_TEMPLATE", "");
+  const runtimeSessionKeyVersion = value(entries, "ZEROLAG_RUNTIME_SESSION_KEY_VERSION", "");
   const required = [
     "ZEROLAG_SERVER_SECRET",
     "ZEROLAG_ADMIN_SECRET",
     "ZEROLAG_PAYMENT_WEBHOOK_SECRET",
+    "ZEROLAG_RUNTIME_SESSION_KEY_VERSION",
     "ZEROLAG_SERVER_HOST",
     "ZEROLAG_SERVER_PORT",
     "ZEROLAG_STATE_STORE",
@@ -137,6 +143,7 @@ function inspect(entries, profile) {
   addIssue(issues, isStrongSecret(value(entries, "ZEROLAG_SERVER_SECRET"), defaultServerSecret), "ZEROLAG_SERVER_SECRET must be a custom strong secret.");
   addIssue(issues, isStrongSecret(value(entries, "ZEROLAG_ADMIN_SECRET"), defaultAdminSecret), "ZEROLAG_ADMIN_SECRET must be a custom strong secret.");
   addIssue(issues, isStrongSecret(value(entries, "ZEROLAG_PAYMENT_WEBHOOK_SECRET"), defaultPaymentWebhookSecret), "ZEROLAG_PAYMENT_WEBHOOK_SECRET must be a custom strong secret.");
+  addIssue(issues, isSafeKeyVersion(runtimeSessionKeyVersion), "ZEROLAG_RUNTIME_SESSION_KEY_VERSION must be 3-64 safe characters.");
   addIssue(issues, !isDisabled(value(entries, "ZEROLAG_RATE_LIMIT_DISABLED")), "ZEROLAG_RATE_LIMIT_DISABLED must not be 1.");
   addIssue(issues, !isDisabled(value(entries, "ZEROLAG_SERVER_BACKUP_DISABLED")), "ZEROLAG_SERVER_BACKUP_DISABLED must not be 1.");
   addIssue(issues, !isDisabled(value(entries, "ZEROLAG_MAINTENANCE_DISABLED")), "ZEROLAG_MAINTENANCE_DISABLED must not be 1.");
@@ -164,6 +171,7 @@ function inspect(entries, profile) {
       sqliteConfigured: stateStore === "sqlite" && entries.has("ZEROLAG_SQLITE_STATE_PATH"),
       paymentProvider,
       paymentAllowedProviderCount: paymentAllowedProviders.length,
+      runtimeSessionKeyVersion,
       rateLimitEnabled: !isDisabled(value(entries, "ZEROLAG_RATE_LIMIT_DISABLED")),
       backupsEnabled: !isDisabled(value(entries, "ZEROLAG_SERVER_BACKUP_DISABLED")),
       maintenanceEnabled: !isDisabled(value(entries, "ZEROLAG_MAINTENANCE_DISABLED"))

@@ -25,7 +25,7 @@ function firstGuid(text) {
 }
 
 function runtimeSessionSigningBody(session) {
-  return JSON.stringify({
+  const body = {
     version: session.version,
     parentPid: Number(session.parentPid) || 0,
     runtimePowerPlanGuid: session.runtimePowerPlanGuid || "",
@@ -34,7 +34,13 @@ function runtimeSessionSigningBody(session) {
     licenseSessionId: session.licenseSessionId || "",
     createdAt: session.createdAt || "",
     expiresAt: session.expiresAt || ""
-  });
+  };
+
+  if (Number(session.version || 1) >= 2 || session.runtimeSessionKeyVersion) {
+    body.runtimeSessionKeyVersion = session.runtimeSessionKeyVersion || "";
+  }
+
+  return JSON.stringify(body);
 }
 
 function signRuntimeSessionPayload(session) {

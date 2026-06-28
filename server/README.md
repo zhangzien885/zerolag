@@ -128,6 +128,7 @@ Start the server, then create a code through the admin API:
 
 ```powershell
 $env:ZEROLAG_ADMIN_SECRET="change-this-before-production"
+$env:ZEROLAG_RUNTIME_SESSION_KEY_VERSION="runtime-session-v1"
 npm run server:admin -- create-code ZL-PRO-TEST-002 30 1
 npm run server:admin -- orders
 npm run server:admin -- complete-latest manual_trade_id
@@ -195,6 +196,8 @@ $env:ZEROLAG_TRUST_PROXY="0"
 ```
 
 Keep rate limiting enabled in production, and add edge protection through the hosting provider or reverse proxy before public release. Set `ZEROLAG_TRUST_PROXY=1` only when your reverse proxy overwrites client IP headers safely.
+
+`ZEROLAG_RUNTIME_SESSION_KEY_VERSION` is a safe deployment label returned with server-issued runtime sessions. Increase it when rotating the runtime-session signing strategy so desktop clients and support reports can identify which version authorized a Boost session.
 
 ## Website Analytics
 

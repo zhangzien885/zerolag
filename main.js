@@ -259,7 +259,7 @@ function recordSupportLog(message, type = "info") {
 }
 
 function runtimeSessionSigningBody(session) {
-  return JSON.stringify({
+  const body = {
     version: session.version,
     parentPid: Number(session.parentPid) || 0,
     runtimePowerPlanGuid: session.runtimePowerPlanGuid || "",
@@ -268,7 +268,13 @@ function runtimeSessionSigningBody(session) {
     licenseSessionId: session.licenseSessionId || "",
     createdAt: session.createdAt || "",
     expiresAt: session.expiresAt || ""
-  });
+  };
+
+  if (Number(session.version || 1) >= 2 || session.runtimeSessionKeyVersion) {
+    body.runtimeSessionKeyVersion = session.runtimeSessionKeyVersion || "";
+  }
+
+  return JSON.stringify(body);
 }
 
 function signRuntimeSessionPayload(session) {
@@ -646,7 +652,9 @@ function normalizeServerLicensePayload(data, machineHash) {
     expiresAt,
     serverToken: token,
     subscriptionId: data.subscriptionId || "",
-    serverSessionId: data.sessionId || data.licenseSessionId || "",
+    serverSessionId: data.sessionId || data.licenseSessionId || data.serverSessionId || "",
+    runtimeSessionKeyVersion: data.runtimeSessionKeyVersion || data.sessionKeyVersion || "",
+    runtimeSessionRevision: Number(data.runtimeSessionRevision || data.sessionRevision || 0),
     lastValidatedAt: new Date().toISOString()
   };
 
@@ -679,6 +687,9 @@ function licenseStatusFromServerRecord(record, active, reason) {
     reason,
     source: "server",
     subscriptionId: record.subscriptionId || "",
+    serverSessionId: record.serverSessionId || "",
+    runtimeSessionKeyVersion: record.runtimeSessionKeyVersion || "",
+    runtimeSessionRevision: Number(record.runtimeSessionRevision || 0),
     serverBacked: true
   };
 }
@@ -1261,13 +1272,15 @@ async function writeRuntimeSession(plan) {
   const license = await readLicenseStatusV2();
   const createdAt = new Date().toISOString();
   const expiresAt = license.expiresAt || new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  const serverSessionId = license.serverSessionId || license.licenseSessionId || "";
   const session = {
-    version: 1,
+    version: serverSessionId ? 2 : 1,
     parentPid: process.pid,
     runtimePowerPlanGuid: plan.guid,
     originalPowerPlanGuid,
     machineHash,
-    licenseSessionId: sha256([machineHash, license.plan || "", expiresAt].join("|")),
+    licenseSessionId: serverSessionId || sha256([machineHash, license.plan || "", expiresAt].join("|")),
+    runtimeSessionKeyVersion: license.runtimeSessionKeyVersion || "",
     createdAt,
     expiresAt
   };

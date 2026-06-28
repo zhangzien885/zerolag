@@ -54,6 +54,7 @@ function writePrivateEnv(tempDir) {
     `ZEROLAG_SERVER_SECRET=${secretFragments[0]}`,
     `ZEROLAG_ADMIN_SECRET=${secretFragments[1]}`,
     `ZEROLAG_PAYMENT_WEBHOOK_SECRET=${secretFragments[2]}`,
+    "ZEROLAG_RUNTIME_SESSION_KEY_VERSION=runtime-session-v1",
     "ZEROLAG_SERVER_HOST=0.0.0.0",
     "ZEROLAG_SERVER_PORT=8787",
     `ZEROLAG_SERVER_STATE_PATH=${path.join(tempDir, "server-state.json")}`,
@@ -133,6 +134,7 @@ function main() {
     assert(serverData.snapshot.privateEnvFile.path === "server.env (external)", "Server report should sanitize the env file path.");
     assert(serverData.envCheck.issueCount === 0, "Server report should not have env issues with the isolated CI env.");
     assert(serverData.storage.stateStore === "sqlite", "Server report should capture the SQLite profile.");
+    assert(serverData.runtimeGuards.runtimeSessionKeyVersion === "runtime-session-v1", "Server report should capture runtime session key version.");
     assert(serverData.payment.provider === "wechat_pay", "Server report should capture the configured payment provider.");
 
     const releaseMarkdown = path.join(tempDir, "release-candidate-report.md");
@@ -141,6 +143,7 @@ function main() {
     assert(releaseData.serverDeployment.snapshot.privateEnvFile.loaded === true, "Release report should embed the loaded server env summary.");
     assert(Array.isArray(releaseData.serverDeployment.gates), "Release report should embed server deployment gates.");
     assert(releaseData.serverDeployment.envCheck.issueCount === 0, "Release report should embed the env-check result.");
+    assert(releaseData.serverDeployment.runtimeGuards.runtimeSessionKeyVersion === "runtime-session-v1", "Release report should embed runtime session key version.");
 
     console.log("ZeroLag CI report artifact smoke test passed.");
   } finally {

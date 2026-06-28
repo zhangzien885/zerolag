@@ -240,6 +240,7 @@ async function main() {
     assert(readiness.body.secrets.adminSecret === "custom", "Readiness should report custom admin secret.");
     assert(readiness.body.maintenance.enabled === true, "Readiness should include maintenance status.");
     assert(readiness.body.payment.provider === "manual", "Readiness should include payment provider status.");
+    assert(readiness.body.runtimeSession.keyVersion === "runtime-session-v1", "Readiness should include runtime session key version.");
     assert(readiness.body.storage.kind === "json-file", "Readiness should report default JSON file storage.");
     assert(
       readiness.body.warnings.includes("PAYMENT_PROVIDER_MANUAL"),
@@ -321,6 +322,7 @@ async function main() {
     const envTemplate = await runNodeScript("scripts/generate-server-secrets.js");
     assert(envTemplate.status === 0, `Server env template command failed: ${envTemplate.stderr || envTemplate.stdout}`);
     assert(envTemplate.stdout.includes("# Profile: json"), "Default server env template should use the JSON profile.");
+    assert(envTemplate.stdout.includes("ZEROLAG_RUNTIME_SESSION_KEY_VERSION=runtime-session-v1"), "Server env template should include runtime session key version.");
     assert(envTemplate.stdout.includes("ZEROLAG_PAYMENT_ALLOWED_PROVIDERS=manual,manual-admin"), "Server env template should use a safer payment allowlist.");
     assert(envTemplate.stdout.includes("# ZEROLAG_STATE_STORE=sqlite"), "Default server env template should document SQLite opt-in.");
     const sqliteEnvPath = path.join(tempDir, "sqlite-server.env");
@@ -334,6 +336,7 @@ async function main() {
     const sqliteEnvFile = fs.readFileSync(sqliteEnvPath, "utf8");
     assert(sqliteEnvFile.includes("# Profile: sqlite"), "SQLite server env template should record its profile.");
     assert(sqliteEnvFile.includes("ZEROLAG_STATE_STORE=sqlite"), "SQLite server env template should activate SQLite storage.");
+    assert(sqliteEnvFile.includes("ZEROLAG_RUNTIME_SESSION_KEY_VERSION=runtime-session-v1"), "SQLite server env template should include runtime session key version.");
     assert(sqliteEnvFile.includes("ZEROLAG_SQLITE_BACKUP_MAX_AGE_HOURS=24"), "SQLite server env template should include backup freshness settings.");
     const sqliteEnvCheck = await runNodeScript("scripts/check-server-env.js", [
       "--file",
@@ -345,6 +348,7 @@ async function main() {
     const sqliteEnvCheckBody = JSON.parse(sqliteEnvCheck.stdout);
     assert(sqliteEnvCheckBody.ok === true, "SQLite server env check should return ok.");
     assert(sqliteEnvCheckBody.summary.stateStore === "sqlite", "SQLite server env check should report sqlite storage.");
+    assert(sqliteEnvCheckBody.summary.runtimeSessionKeyVersion === "runtime-session-v1", "SQLite server env check should report runtime session key version.");
     assert(!sqliteEnvCheck.stdout.includes("zl_server_"), "Server env check must not print generated secret values.");
     const deploymentReportPath = path.join(tempDir, "server-deployment-report.md");
     const deploymentReport = await runNodeScript("scripts/generate-server-deployment-report.js", [
@@ -361,6 +365,7 @@ async function main() {
     assert(deploymentReportBody.includes("ZeroLag Server Deployment Report"), "Server deployment report should include its title.");
     assert(deploymentReportBody.includes("State store from env: `sqlite`"), "Server deployment report should summarize env storage.");
     assert(deploymentReportBody.includes("Payment provider from env:"), "Server deployment report should summarize payment readiness.");
+    assert(deploymentReportBody.includes("Runtime session key version: `runtime-session-v1`"), "Server deployment report should summarize runtime session key version.");
     assert(!deploymentReportBody.includes("zl_server_"), "Server deployment report must not expose generated secret values.");
     const deploymentReportJson = await runNodeScript("scripts/generate-server-deployment-report.js", [
       "--json",
@@ -375,6 +380,7 @@ async function main() {
     assert(deploymentReportJsonBody.ready === false, "Server deployment JSON report should expose the readiness boolean.");
     assert(deploymentReportJsonBody.snapshot.privateEnvFile.loaded === true, "Server deployment JSON report should show the private env file loaded.");
     assert(deploymentReportJsonBody.storage.stateStore === "sqlite", "Server deployment JSON report should summarize storage.");
+    assert(deploymentReportJsonBody.runtimeGuards.runtimeSessionKeyVersion === "runtime-session-v1", "Server deployment JSON report should summarize runtime session key version.");
     assert(Array.isArray(deploymentReportJsonBody.gates) && deploymentReportJsonBody.gates.length >= 1, "Server deployment JSON report should include gate results.");
     assert(!deploymentReportJson.stdout.includes("zl_server_"), "Server deployment JSON report must not expose generated secret values.");
     const strictDeploymentReportPath = path.join(tempDir, "server-deployment-report-strict.md");
@@ -522,6 +528,7 @@ async function main() {
         ZEROLAG_SERVER_SECRET: "self-test-server-secret-12345678901234567890",
         ZEROLAG_ADMIN_SECRET: "self-test-admin-secret-123456789012345678901",
         ZEROLAG_PAYMENT_WEBHOOK_SECRET: "self-test-payment-secret-12345678901234567",
+        ZEROLAG_RUNTIME_SESSION_KEY_VERSION: "runtime-session-v1",
         ZEROLAG_SERVER_HOST: "0.0.0.0",
         ZEROLAG_SERVER_PORT: "8787",
         ZEROLAG_SERVER_STATE_PATH: migrationJsonPath,
@@ -969,6 +976,9 @@ async function main() {
     });
     assert(activated.statusCode === 200 && activated.body.active, "Activation failed.");
     assert(Boolean(activated.body.token), "Activation did not return a token.");
+    assert(/^rsess_/.test(activated.body.sessionId || ""), "Activation should return a server-issued runtime session id.");
+    assert(activated.body.runtimeSessionKeyVersion === "runtime-session-v1", "Activation should return the runtime session key version.");
+    assert(activated.body.runtimeSessionRevision === 1, "Activation should start runtime session revision tracking.");
     const firstExpiresAt = new Date(activated.body.expiresAt).getTime();
 
     const validated = await requestJson(port, "/v1/licenses/validate", {
@@ -980,6 +990,10 @@ async function main() {
     });
     assert(validated.statusCode === 200 && validated.body.active, "Validation failed.");
     assert(validated.body.token !== activated.body.token, "Validation should rotate token.");
+    assert(/^rsess_/.test(validated.body.sessionId || ""), "Validation should return a server-issued runtime session id.");
+    assert(validated.body.sessionId !== activated.body.sessionId, "Validation should rotate the runtime session id.");
+    assert(validated.body.runtimeSessionRevision === activated.body.runtimeSessionRevision + 1, "Validation should increment runtime session revision.");
+    assert(validated.body.runtimeSessionKeyVersion === activated.body.runtimeSessionKeyVersion, "Validation should keep the configured runtime session key version.");
 
     const renewalOrder = await requestJson(port, "/v1/orders/create", {
       plan: "ZeroLag Pro Monthly",
@@ -1009,6 +1023,8 @@ async function main() {
     });
     assert(renewed.statusCode === 200 && renewed.body.active, "Renewal activation failed.");
     assert(renewed.body.subscriptionId === activated.body.subscriptionId, "Renewal should extend the existing subscription.");
+    assert(renewed.body.sessionId !== validated.body.sessionId, "Renewal should rotate the runtime session id.");
+    assert(renewed.body.runtimeSessionRevision > validated.body.runtimeSessionRevision, "Renewal should advance runtime session revision.");
     assert(
       new Date(renewed.body.expiresAt).getTime() >= firstExpiresAt + 29 * 24 * 60 * 60 * 1000,
       "Renewal should extend the subscription expiry."
@@ -1021,6 +1037,9 @@ async function main() {
     assert(adminSubscriptions.body.subscriptions.length === 1, "Admin subscription list should show one renewed subscription.");
     assert(adminSubscriptions.body.subscriptions[0].subscriptionId === activated.body.subscriptionId, "Admin subscription list should include the active subscription.");
     assert(adminSubscriptions.body.subscriptions[0].activationCount === 2, "Renewed subscription should show two activation links.");
+    assert(adminSubscriptions.body.subscriptions[0].runtimeSessionRevision === renewed.body.runtimeSessionRevision, "Admin subscription list should show runtime session revision.");
+    assert(adminSubscriptions.body.subscriptions[0].runtimeSessionKeyVersion === "runtime-session-v1", "Admin subscription list should show runtime key version.");
+    assert(!JSON.stringify(adminSubscriptions.body.subscriptions[0]).includes(renewed.body.sessionId), "Admin subscription list must not expose raw runtime session ids.");
 
     const adminSubscriptionDetail = await requestJson(port, `/v1/admin/subscriptions/${activated.body.subscriptionId}`, null, {
       "X-ZeroLag-Admin-Secret": "self-test-admin"

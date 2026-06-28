@@ -20,6 +20,7 @@ const defaultServerSecret = "zerolag-dev-server-secret-change-before-production"
 const defaultAdminSecret = "zerolag-dev-admin-secret-change-before-production";
 const defaultPaymentWebhookSecret = "zerolag-dev-payment-webhook-secret-change-before-production";
 const defaultPaymentProvider = "manual";
+const defaultRuntimeSessionKeyVersion = "runtime-session-v1";
 const defaultPaymentAllowedProviders = [
   "manual",
   "manual-admin",
@@ -142,6 +143,15 @@ function paymentConfigFromOptions(options = {}) {
     urlTemplate: String(input.urlTemplate || process.env.ZEROLAG_PAYMENT_URL_TEMPLATE || defaultPaymentUrlTemplate),
     message: String(input.message || process.env.ZEROLAG_PAYMENT_MESSAGE || defaultPaymentMessage)
   };
+}
+
+function runtimeSessionKeyVersionFromOptions(options = {}) {
+  const input = options.runtimeSession || {};
+  const value = String(input.keyVersion || process.env.ZEROLAG_RUNTIME_SESSION_KEY_VERSION || defaultRuntimeSessionKeyVersion)
+    .trim()
+    .replace(/[^a-zA-Z0-9_.-]/g, "_")
+    .slice(0, 64);
+  return value || defaultRuntimeSessionKeyVersion;
 }
 
 function paymentProviderAllowed(provider, options = {}) {
@@ -429,7 +439,9 @@ function safeSubscriptionRecord(subscription) {
     device: maskDeviceHash(subscription.deviceHash),
     appVersion: subscription.appVersion || "",
     channel: subscription.channel || "",
-    lastValidatedAt: subscription.lastValidatedAt || ""
+    lastValidatedAt: subscription.lastValidatedAt || "",
+    runtimeSessionRevision: Number(subscription.runtimeSessionRevision || 0),
+    runtimeSessionKeyVersion: subscription.runtimeSessionKeyVersion || ""
   };
 }
 
@@ -554,6 +566,8 @@ function cleanupExpiredServerState(state, input = {}) {
     if (subscription.status === "active" && Number.isFinite(expiresAt) && expiresAt <= now) {
       subscription.status = "expired";
       subscription.expiredAt = subscription.expiredAt || nowIso();
+      subscription.runtimeSessionId = "";
+      subscription.runtimeSessionExpiredAt = subscription.expiredAt;
       expiredSubscriptions += 1;
     }
   });
@@ -721,6 +735,9 @@ function serverReadiness(options = {}) {
       provider: payment.provider,
       allowedProviders: payment.allowedProviders,
       paymentUrlConfigured: payment.urlTemplate !== defaultPaymentUrlTemplate
+    },
+    runtimeSession: {
+      keyVersion: runtimeSessionKeyVersionFromOptions(options)
     },
     warnings
   };
@@ -1005,6 +1022,22 @@ function issueToken(state, subscription, options = {}) {
   return token;
 }
 
+function rotateSubscriptionRuntimeSession(subscription, input = {}, options = {}) {
+  const now = nowIso();
+  subscription.runtimeSessionId = randomId("rsess");
+  subscription.runtimeSessionIssuedAt = now;
+  subscription.runtimeSessionRotatedAt = now;
+  subscription.runtimeSessionRotateReason = String(input.reason || "validation").slice(0, 64);
+  subscription.runtimeSessionKeyVersion = runtimeSessionKeyVersionFromOptions(options);
+  subscription.runtimeSessionRevision = Number(subscription.runtimeSessionRevision || 0) + 1;
+
+  return {
+    sessionId: subscription.runtimeSessionId,
+    keyVersion: subscription.runtimeSessionKeyVersion,
+    revision: subscription.runtimeSessionRevision
+  };
+}
+
 function invalidateSubscriptionTokens(state, subscriptionId) {
   Object.entries(state.tokens || {}).forEach(([hash, token]) => {
     if (token.subscriptionId === subscriptionId) {
@@ -1020,6 +1053,8 @@ function revokeSubscriptionInState(state, subscriptionId, input = {}) {
   subscription.status = "revoked";
   subscription.revokedAt = subscription.revokedAt || nowIso();
   subscription.revokeReason = input.reason || "manual_revoke";
+  subscription.runtimeSessionId = "";
+  subscription.runtimeSessionRevokedAt = nowIso();
 
   if (input.disableActivationCodes !== false) {
     subscriptionActivationHashes(subscription).forEach((hash) => {
@@ -1042,7 +1077,9 @@ function successLicensePayload(subscription, token) {
     expiresAt: subscription.expiresAt,
     token,
     subscriptionId: subscription.subscriptionId,
-    sessionId: randomId("sess")
+    sessionId: subscription.runtimeSessionId || "",
+    runtimeSessionKeyVersion: subscription.runtimeSessionKeyVersion || defaultRuntimeSessionKeyVersion,
+    runtimeSessionRevision: Number(subscription.runtimeSessionRevision || 0)
   };
 }
 
@@ -1088,6 +1125,7 @@ async function activateLicense(request, response, options = {}) {
 
   const existing = findExistingSubscriptionByCodeAndDevice(state, hash, deviceHash);
   if (existing) {
+    const runtimeSession = rotateSubscriptionRuntimeSession(existing, { reason: "activation_reuse" }, options);
     const token = issueToken(state, existing, options);
     existing.lastValidatedAt = nowIso();
     appendAuditEvent(state, "license.reused", {
@@ -1098,7 +1136,8 @@ async function activateLicense(request, response, options = {}) {
         device: maskDeviceHash(deviceHash),
         plan: existing.plan,
         channel: String(body.channel || ""),
-        appVersion: String(body.appVersion || "")
+        appVersion: String(body.appVersion || ""),
+        runtimeSessionRevision: runtimeSession.revision
       }
     });
     saveState(state, options);
@@ -1130,6 +1169,7 @@ async function activateLicense(request, response, options = {}) {
     code.useCount = Number(code.useCount || 0) + 1;
     code.updatedAt = nowIso();
 
+    const runtimeSession = rotateSubscriptionRuntimeSession(renewable, { reason: "renewal" }, options);
     const token = issueToken(state, renewable, options);
     appendAuditEvent(state, "license.renewed", {
       actor: "client",
@@ -1141,7 +1181,8 @@ async function activateLicense(request, response, options = {}) {
         expiresAt: renewable.expiresAt,
         renewalCount: Number(renewable.renewalCount || 0),
         channel: renewable.channel,
-        appVersion: renewable.appVersion
+        appVersion: renewable.appVersion,
+        runtimeSessionRevision: runtimeSession.revision
       }
     });
     saveState(state, options);
@@ -1166,6 +1207,7 @@ async function activateLicense(request, response, options = {}) {
   code.useCount = Number(code.useCount || 0) + 1;
   code.updatedAt = nowIso();
 
+  const runtimeSession = rotateSubscriptionRuntimeSession(subscription, { reason: "activation" }, options);
   const token = issueToken(state, subscription, options);
   appendAuditEvent(state, "license.activated", {
     actor: "client",
@@ -1176,7 +1218,8 @@ async function activateLicense(request, response, options = {}) {
       plan: subscription.plan,
       expiresAt: subscription.expiresAt,
       channel: subscription.channel,
-      appVersion: subscription.appVersion
+      appVersion: subscription.appVersion,
+      runtimeSessionRevision: runtimeSession.revision
     }
   });
   saveState(state, options);
@@ -1219,6 +1262,8 @@ async function validateLicense(request, response, options = {}) {
   if (!activeSubscription(subscription)) {
     if (subscription.status !== "revoked") {
       subscription.status = "expired";
+      subscription.runtimeSessionId = "";
+      subscription.runtimeSessionExpiredAt = nowIso();
     }
     saveState(state, options);
     jsonResponse(response, 200, { active: false, message: "Membership expired." });
@@ -1227,6 +1272,7 @@ async function validateLicense(request, response, options = {}) {
 
   delete state.tokens[tokenHash(secret, token)];
   subscription.lastValidatedAt = nowIso();
+  rotateSubscriptionRuntimeSession(subscription, { reason: "validation" }, options);
   const nextToken = issueToken(state, subscription, options);
   saveState(state, options);
   jsonResponse(response, 200, successLicensePayload(subscription, nextToken));

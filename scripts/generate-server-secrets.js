@@ -102,6 +102,7 @@ function buildEnvFile(inputProfile = "json") {
     `ZEROLAG_SERVER_SECRET=${randomSecret("server")}`,
     `ZEROLAG_ADMIN_SECRET=${randomSecret("admin")}`,
     `ZEROLAG_PAYMENT_WEBHOOK_SECRET=${randomSecret("payment")}`,
+    "ZEROLAG_RUNTIME_SESSION_KEY_VERSION=runtime-session-v1",
     "",
     "ZEROLAG_SERVER_HOST=127.0.0.1",
     "ZEROLAG_SERVER_PORT=8787",

@@ -2,6 +2,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { spawnSync } = require("child_process");
+const { signRuntimeSessionPayload, verifyRuntimeSessionPayload } = require("./runtime-guard-core");
 
 const rootDir = path.join(__dirname, "..");
 
@@ -32,6 +33,37 @@ function readJson(filePath) {
 }
 
 function main() {
+  const legacySession = {
+    version: 1,
+    parentPid: process.pid,
+    runtimePowerPlanGuid: "11111111-1111-1111-1111-111111111111",
+    originalPowerPlanGuid: "22222222-2222-2222-2222-222222222222",
+    machineHash: "a".repeat(64),
+    licenseSessionId: "legacy-local-session",
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 60 * 1000).toISOString()
+  };
+  assertOk(verifyRuntimeSessionPayload({
+    ...legacySession,
+    signature: signRuntimeSessionPayload(legacySession)
+  }), "Runtime guard should still verify legacy v1 session signatures.");
+
+  const serverSession = {
+    ...legacySession,
+    version: 2,
+    licenseSessionId: "rsess_server_authorized",
+    runtimeSessionKeyVersion: "runtime-session-v1"
+  };
+  const signedServerSession = {
+    ...serverSession,
+    signature: signRuntimeSessionPayload(serverSession)
+  };
+  assertOk(verifyRuntimeSessionPayload(signedServerSession), "Runtime guard should verify server-authorized v2 session signatures.");
+  assertOk(!verifyRuntimeSessionPayload({
+    ...signedServerSession,
+    runtimeSessionKeyVersion: "runtime-session-v2"
+  }), "Runtime guard should reject tampered runtime session key versions.");
+
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-runtime-guard-service-smoke-"));
 
   try {

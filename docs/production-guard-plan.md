@@ -50,6 +50,7 @@ The session file should contain only what the guard needs:
 - Original power plan GUID.
 - Device ID hash.
 - Subscription session ID.
+- Runtime session key version.
 - Creation timestamp.
 - Signed payload signature.
 
@@ -76,6 +77,7 @@ Implemented in prototype:
 - Detached watchdog process cleanup after app force kill.
 - Signed runtime session file with tamper rejection.
 - Runtime-session expiry cleanup.
+- Server-issued runtime session IDs with configurable key-version labels, written into the signed desktop runtime session when server membership is active.
 - Temporary Task Scheduler fallback while Boost is active.
 - Encrypted tuning package instead of a plain JSON template.
 - Integrity verification for protected files.
@@ -95,6 +97,6 @@ Still required for paid production:
 - Native Windows Service wrapper executable.
 - Installer service registration without the private-validation guard after the native wrapper is ready.
 - Enable the NSIS guard hook in the final signed installer after the native service wrapper is ready and privately validated.
-- Server-issued signed session IDs and key rotation.
+- Server-signed runtime session key material and full production key rotation.
 - Server-side subscription/session validation.
 - Uninstaller cleanup.

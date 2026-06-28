@@ -97,6 +97,7 @@ Minimum production server variables:
 - `ZEROLAG_SERVER_SECRET`: custom strong secret for hashing activation codes and tokens.
 - `ZEROLAG_ADMIN_SECRET`: custom strong secret for private admin endpoints.
 - `ZEROLAG_PAYMENT_WEBHOOK_SECRET`: custom strong secret for payment callbacks.
+- `ZEROLAG_RUNTIME_SESSION_KEY_VERSION`: safe key-version label returned with server-issued runtime sessions, for example `runtime-session-v1`.
 - `ZEROLAG_PAYMENT_PROVIDER`: active checkout provider returned during order creation, for example `wechat_pay` or `alipay`.
 - `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS`: comma-separated signed webhook provider allowlist.
 - `ZEROLAG_PAYMENT_URL_TEMPLATE`: checkout URL template; supports `{orderId}`, `{amountCents}`, `{currency}`, and `{plan}`.
@@ -195,7 +196,9 @@ Success response:
   "expiresAt": "2026-07-27T00:00:00.000Z",
   "token": "opaque-license-token",
   "subscriptionId": "sub_123",
-  "sessionId": "sess_123"
+  "sessionId": "rsess_123",
+  "runtimeSessionKeyVersion": "runtime-session-v1",
+  "runtimeSessionRevision": 1
 }
 ```
 
@@ -211,6 +214,8 @@ Failure response:
 ## POST `/v1/licenses/validate`
 
 Checks whether the current device and subscription can continue using Boost.
+
+Successful validation rotates both the opaque license token and the server-issued runtime session ID. The desktop client stores the returned `sessionId` in the signed runtime session file as `licenseSessionId`; it is not a user-facing membership code.
 
 Request:
 
@@ -233,7 +238,9 @@ Success response:
   "expiresAt": "2026-07-27T00:00:00.000Z",
   "token": "rotated-license-token",
   "subscriptionId": "sub_123",
-  "sessionId": "sess_456"
+  "sessionId": "rsess_456",
+  "runtimeSessionKeyVersion": "runtime-session-v1",
+  "runtimeSessionRevision": 2
 }
 ```
 

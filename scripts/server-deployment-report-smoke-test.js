@@ -62,6 +62,7 @@ function main() {
     const markdownBody = fs.readFileSync(markdownPath, "utf8");
     assert(markdownBody.includes("ZeroLag Server Deployment Report"), "Markdown report should include the report title.");
     assert(markdownBody.includes("Strict Gate Details"), "Markdown report should include gate details.");
+    assert(markdownBody.includes("Runtime session key version: `runtime-session-v1`"), "Markdown report should include runtime session key version.");
     assert(markdownBody.includes("Env file does not exist: missing-server.env (external)"), "Markdown report should sanitize external env paths.");
     assertNoSensitiveText(markdownBody, "Markdown report");
 
@@ -74,6 +75,7 @@ function main() {
     const data = JSON.parse(jsonBody);
     assert(data.ready === false, "JSON report should expose a false readiness state for the isolated dev smoke config.");
     assert(data.snapshot.privateEnvFile.path === "missing-server.env (external)", "JSON report should sanitize the env file path.");
+    assert(data.runtimeGuards.runtimeSessionKeyVersion === "runtime-session-v1", "JSON report should include runtime session key version.");
     assert(Array.isArray(data.gates) && data.gates.length >= 1, "JSON report should include gate results.");
     assert(data.gates.some((gate) => gate.ok === false), "JSON report should include failed gates for the isolated dev smoke config.");
 
