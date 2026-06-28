@@ -40,6 +40,8 @@ function main() {
   const serviceGuardPath = path.join(appDir, "resources", "service-guard", "service-guard.json");
   const serviceGuardInstallPath = path.join(appDir, "resources", "service-guard", "install-runtime-guard-service.ps1");
   const serviceGuardUninstallPath = path.join(appDir, "resources", "service-guard", "uninstall-runtime-guard-service.ps1");
+  const taskFallbackInstallPath = path.join(appDir, "resources", "service-guard", "install-runtime-guard-task.ps1");
+  const taskFallbackUninstallPath = path.join(appDir, "resources", "service-guard", "uninstall-runtime-guard-task.ps1");
   const serviceGuardCorePath = path.join(appDir, "resources", "service-guard", "runtime-guard-core.js");
   const serviceGuardWorkerPath = path.join(appDir, "resources", "service-guard", "runtime-guard-service.js");
   const iconPath = path.join(rootDir, "build", "icon.ico");
@@ -52,6 +54,8 @@ function main() {
   const serviceGuard = fileInfo(serviceGuardPath);
   fileInfo(serviceGuardInstallPath);
   fileInfo(serviceGuardUninstallPath);
+  fileInfo(taskFallbackInstallPath);
+  fileInfo(taskFallbackUninstallPath);
   fileInfo(serviceGuardCorePath);
   fileInfo(serviceGuardWorkerPath);
   const icon = fileInfo(iconPath);

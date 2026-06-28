@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T15:03:19.725Z",
+  "generatedAt": "2026-06-28T15:16:10.331Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "9e369aa10b829e3e0ce94fee7ccf3d249366bd5b2a1f46413468cc96fc448a2f"
+      "sha256": "fc2c1d633cf524f2c61159587857a2817af38c599b2dd43092605b6e278cdc79"
     },
     {
       "path": "main.js",
@@ -56,7 +56,7 @@
     },
     {
       "path": "scripts/package-smoke-test.js",
-      "sha256": "58287ec562ea9d7b1dac2f4e5255f80803d27067dd12e08408a037a021437048"
+      "sha256": "423b2400172324aa980f5a123e03924da70cbaa4f9e2fdf6ebb5c2a1ac72786a"
     },
     {
       "path": "scripts/installer-smoke-test.js",
@@ -64,11 +64,15 @@
     },
     {
       "path": "scripts/service-guard-smoke-test.js",
-      "sha256": "53142dbb43ae17769e0c8dac409cb31d14eb44345482bb1b04e019ab6e2c84de"
+      "sha256": "6c3c94450c4dc4337b4f4ed8d133c964501b961a6a1c928097253bc262a83e7c"
     },
     {
       "path": "scripts/service-install-script-smoke-test.js",
       "sha256": "9ceef9ece1b47a69bb8386b2b0b733e7c9f92b8763bdf9946acfdf1b85073e4d"
+    },
+    {
+      "path": "scripts/task-fallback-smoke-test.js",
+      "sha256": "3715a7740c3bd5c2aedf9a7d21de56de886ce9b996d4ac69aede78aaaad9aa5e"
     },
     {
       "path": "scripts/generate-release-artifacts.js",
@@ -112,7 +116,7 @@
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "4f1fb1d25794c672b4fdffc3bf6af25ae6907be5e4cc627f0a55e39c56f2a4d9"
+      "sha256": "e62b37d9570909278241ca450dd40d9b7b1e1eb538b218ea66a4a705909f1022"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -180,7 +184,7 @@
     },
     {
       "path": "build/service-guard.json",
-      "sha256": "46d69ed9d6496f6a5646fdb0c0291875943d78687d7e04e48d67940bc783e99b"
+      "sha256": "f48adfc98435558b5d830eeab178f578d89a2c63bf19f7ae6c5f370bb530d9e1"
     },
     {
       "path": "build/install-runtime-guard-service.ps1",
@@ -189,7 +193,15 @@
     {
       "path": "build/uninstall-runtime-guard-service.ps1",
       "sha256": "0d37619a7230f9b929a9f7de2d0c71991f9cba6ef7810885cae91dc31e422e56"
+    },
+    {
+      "path": "build/install-runtime-guard-task.ps1",
+      "sha256": "75547ba125a31484d41317c373d31d1597bfd49d494827819c2983d1d292853a"
+    },
+    {
+      "path": "build/uninstall-runtime-guard-task.ps1",
+      "sha256": "ffac0d451b4b9392015d5bc35a9ff72996ff14c2589ae77a57043061fbcc0471"
     }
   ],
-  "signature": "62e2c11f882ef42174b3e8fd3d9b41e994511874366fcf12560f9f80e00f03a6"
+  "signature": "82b773d85f51c8f5043afb04a9d92dfe6e167757216da5f0b1c3379566b38ac8"
 }

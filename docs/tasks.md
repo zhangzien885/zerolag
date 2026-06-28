@@ -68,7 +68,7 @@
 
 - Replace local demo license with server-side account, device, and subscription validation. First client contract and client-side integration seam are in place.
 - Implement the native Windows Service wrapper executable as the primary runtime tuning cleanup layer. Electron worker mode, service manifest, service worker, install/uninstall scripts, packaging resources, and smoke checks are in place.
-- Move the prototype Task Scheduler guard into the installer as a production fallback if service installation fails.
+- Wire the installer to invoke the Task Scheduler fallback after a real service-install failure. Fallback scripts, manifest entries, packaging resources, and smoke checks are in place.
 - Harden signed runtime sessions with server-issued session IDs and key rotation.
 - Clean runtime tuning after app force kill, crash, logout, restart, subscription expiry, integrity failure, or server authorization failure.
 - Add visible uninstall flow that removes service/task and restores the original power plan.
@@ -125,6 +125,7 @@
 - Added a reusable runtime guard core plus service worker that can clean invalid or stale runtime sessions in dry-run-tested service mode.
 - Added a desktop `--runtime-guard-service` entry so the installed ZeroLag executable can run the guard worker without opening the UI.
 - Added service install-script gating so accidental Windows Service registration is blocked until the native service wrapper is ready.
+- Added installer-managed Task Scheduler fallback assets with logon/periodic triggers, explicit registration gating, packaging resources, and smoke checks.
 - Added release preflight checks and a release checklist for packaging, signing, update metadata, production config, and strict final gates.
 - Added Electron Builder packaging scripts and Windows NSIS installer configuration, with build-resource guidance for the final Windows icon and signing assets.
 - Added a reproducible ZeroLag Windows icon generator and generated `build/icon.ico` for packaged builds.

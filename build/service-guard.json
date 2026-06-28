@@ -17,9 +17,17 @@
   "installScript": "build/install-runtime-guard-service.ps1",
   "uninstallScript": "build/uninstall-runtime-guard-service.ps1",
   "taskSchedulerFallback": {
-    "taskName": "ZeroLagRuntimeGuard",
+    "taskName": "ZeroLagRuntimeGuardFallback",
     "enabledWhenServiceInstallFails": true,
-    "highestPrivileges": true
+    "highestPrivileges": true,
+    "intervalMinutes": 5,
+    "triggers": [
+      "user logon",
+      "periodic cleanup"
+    ],
+    "registrationStatus": "explicit-private-validation-only",
+    "installScript": "build/install-runtime-guard-task.ps1",
+    "uninstallScript": "build/uninstall-runtime-guard-task.ps1"
   },
   "allowedActions": [
     "verify signed runtime session",

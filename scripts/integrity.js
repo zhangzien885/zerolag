@@ -23,6 +23,7 @@ const protectedFiles = [
   "scripts/installer-smoke-test.js",
   "scripts/service-guard-smoke-test.js",
   "scripts/service-install-script-smoke-test.js",
+  "scripts/task-fallback-smoke-test.js",
   "scripts/generate-release-artifacts.js",
   "scripts/generate-release-report.js",
   "scripts/release-report-smoke-test.js",
@@ -52,7 +53,9 @@ const protectedFiles = [
   "assets/zerolag-power-plan-template.protected.json",
   "build/service-guard.json",
   "build/install-runtime-guard-service.ps1",
-  "build/uninstall-runtime-guard-service.ps1"
+  "build/uninstall-runtime-guard-service.ps1",
+  "build/install-runtime-guard-task.ps1",
+  "build/uninstall-runtime-guard-task.ps1"
 ];
 
 function sha256File(filePath) {
