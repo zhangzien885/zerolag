@@ -15,6 +15,7 @@ const protectedFiles = [
   "src/styles.css",
   "scripts/runtime-watchdog.js",
   "scripts/local-integration.js",
+  "scripts/generate-icon.js",
   "scripts/production-check.js",
   "scripts/release-preflight.js",
   "scripts/server-production-check.js",

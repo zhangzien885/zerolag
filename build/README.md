@@ -8,4 +8,10 @@ Before a public Windows release, add the final application icon as:
 build/icon.ico
 ```
 
+The current icon can be regenerated with:
+
+```powershell
+npm run icon:generate
+```
+
 Do not store signing certificates or certificate passwords in this directory.
