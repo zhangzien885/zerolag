@@ -72,6 +72,7 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 - Run `npm run website:release:smoke` to simulate available and preparing website release publishing without touching the real website manifest.
 - Run `npm run release:verify` when validating an existing installer output; it runs `release:gate` before publishing sanitized website release metadata.
 - Run `npm run release:build` to build the installer and then run the gated verification chain.
+- Download the `zerolag-ci-reports` artifact from the latest GitHub Actions run and review the redacted server deployment and release-candidate reports before publishing.
 - Configure Windows code signing in the build environment.
 - Prefer CI secrets such as `WIN_CSC_LINK` and `WIN_CSC_KEY_PASSWORD` for electron-builder signing.
 - Keep signing certificates and passwords outside Git.

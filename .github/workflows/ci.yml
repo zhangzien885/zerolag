@@ -71,3 +71,26 @@ jobs:
           npm run server:check-sqlite-backups -- --dir $backupDir --max-age-hours 24
           npm run server:check:strict
           npm run server:smoke
+
+      - name: Generate CI release reports
+        if: always()
+        shell: pwsh
+        run: |
+          $reportDir = Join-Path $env:RUNNER_TEMP "zerolag-ci-reports"
+          New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
+
+          $serverReport = Join-Path $reportDir "server-deployment-report.md"
+          $serverReportJson = Join-Path $reportDir "server-deployment-report.json"
+
+          npm run server:deployment-report -- --output $serverReport
+          npm run server:deployment-report:json -- --output $serverReportJson
+          npm run release:report -- --output-dir $reportDir
+
+      - name: Upload CI release reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zerolag-ci-reports
+          path: ${{ runner.temp }}/zerolag-ci-reports
+          if-no-files-found: warn
+          retention-days: 14

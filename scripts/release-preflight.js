@@ -102,6 +102,11 @@ function main() {
   addIssue(issues, ciWorkflow.includes("npm run server:backup-sqlite"), "GitHub CI strict server sample must create a SQLite backup.");
   addIssue(issues, ciWorkflow.includes("npm run server:env-check -- --profile sqlite --strict"), "GitHub CI strict server sample must run strict SQLite env validation.");
   addIssue(issues, ciWorkflow.includes("npm run server:check-sqlite-backups"), "GitHub CI strict server sample must validate SQLite backups.");
+  addIssue(issues, ciWorkflow.includes("npm run server:deployment-report -- --output"), "GitHub CI workflow must generate a Markdown server deployment report artifact.");
+  addIssue(issues, ciWorkflow.includes("npm run server:deployment-report:json -- --output"), "GitHub CI workflow must generate a redacted JSON server deployment report artifact.");
+  addIssue(issues, ciWorkflow.includes("npm run release:report -- --output-dir"), "GitHub CI workflow must generate a release candidate report artifact.");
+  addIssue(issues, ciWorkflow.includes("actions/upload-artifact@v4"), "GitHub CI workflow must upload release reports as an artifact.");
+  addIssue(issues, ciWorkflow.includes("zerolag-ci-reports"), "GitHub CI workflow must use the zerolag-ci-reports artifact name.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:verify", "release:gate", "website:release"), "release:verify must run release:gate before website:release.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:build", "dist:win", "release:verify"), "release:build must build the installer before running release:verify.");
   addIssue(issues, gitignore.includes(".secrets/"), ".gitignore must keep .secrets/ out of Git.");

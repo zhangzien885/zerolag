@@ -148,7 +148,7 @@ It also runs the non-strict release preflight so release gaps stay visible durin
 
 ## Continuous Integration
 
-GitHub Actions runs on pushes and pull requests to `main`. The workflow installs dependencies with `npm ci`, runs `npm run ci`, then performs strict SQLite server readiness, backup validation, and smoke testing against a temporary private env file.
+GitHub Actions runs on pushes and pull requests to `main`. The workflow installs dependencies with `npm ci`, runs `npm run ci`, then performs strict SQLite server readiness, backup validation, and smoke testing against a temporary private env file. Each run also uploads a redacted `zerolag-ci-reports` artifact with server deployment and release-candidate reports for private review.
 
 ## Package
 
