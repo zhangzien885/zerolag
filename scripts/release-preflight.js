@@ -91,7 +91,7 @@ function main() {
   const gitignore = readTextIfExists(".gitignore");
   const ciWorkflow = readTextIfExists(".github/workflows/ci.yml");
 
-  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:verify", "release:artifacts", "release:report", "release:report:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "server:check", "server:smoke", "server:test", "server:env-check", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:sign", "update:smoke"].forEach((scriptName) => {
+  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:verify", "release:artifacts", "release:report", "release:report:smoke", "ci:reports:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "server:check", "server:smoke", "server:test", "server:env-check", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:sign", "update:smoke"].forEach((scriptName) => {
     addIssue(issues, hasScript(packageJson, scriptName), `package.json script is missing: ${scriptName}`);
   });
 
@@ -107,6 +107,7 @@ function main() {
   addIssue(issues, ciWorkflow.includes("npm run release:report -- --output-dir"), "GitHub CI workflow must generate a release candidate report artifact.");
   addIssue(issues, ciWorkflow.includes("actions/upload-artifact@v4"), "GitHub CI workflow must upload release reports as an artifact.");
   addIssue(issues, ciWorkflow.includes("zerolag-ci-reports"), "GitHub CI workflow must use the zerolag-ci-reports artifact name.");
+  addIssue(issues, (packageJson.scripts.ci || "").includes("npm run ci:reports:smoke"), "npm run ci must verify CI report artifact generation.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:verify", "release:gate", "website:release"), "release:verify must run release:gate before website:release.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:build", "dist:win", "release:verify"), "release:build must build the installer before running release:verify.");
   addIssue(issues, gitignore.includes(".secrets/"), ".gitignore must keep .secrets/ out of Git.");

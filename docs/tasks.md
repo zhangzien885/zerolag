@@ -120,6 +120,7 @@
 - Added GitHub Actions CI for pushes and pull requests, including local verification plus strict server readiness against a temporary private env file.
 - Upgraded GitHub Actions strict server readiness to exercise SQLite state, SQLite backup validation, strict SQLite env checks, and isolated server smoke testing.
 - Added GitHub Actions report artifacts so each CI run uploads redacted server deployment and release-candidate reports for private release review.
+- Added a CI report-artifact smoke test that verifies generated deployment/release reports are parseable and do not expose private env values.
 - Added release preflight checks and a release checklist for packaging, signing, update metadata, production config, and strict final gates.
 - Added Electron Builder packaging scripts and Windows NSIS installer configuration, with build-resource guidance for the final Windows icon and signing assets.
 - Added a reproducible ZeroLag Windows icon generator and generated `build/icon.ico` for packaged builds.
