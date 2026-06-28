@@ -31,9 +31,12 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 
 ## 4. Installer And Signing
 
-- Add the final Windows installer packaging config.
-- Install and configure the packaging toolchain.
+- Verify the Windows installer packaging config in `package.json`.
+- Run `npm run pack:dir` for an unpacked local build.
+- Run `npm run dist:win` only after the strict release gates are satisfied.
+- Add the final Windows icon at `build/icon.ico`.
 - Configure Windows code signing in the build environment.
+- Prefer CI secrets such as `WIN_CSC_LINK` and `WIN_CSC_KEY_PASSWORD` for electron-builder signing.
 - Keep signing certificates and passwords outside Git.
 
 ## 5. Final Gates

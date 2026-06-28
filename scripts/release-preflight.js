@@ -32,6 +32,7 @@ function isSemver(value) {
 function hasStrongCodeSigningSignal() {
   return Boolean(
     process.env.CSC_LINK
+      || process.env.WIN_CSC_LINK
       || process.env.WINDOWS_CODESIGN_CERT
       || process.env.ZEROLAG_CODESIGN_CERT
   );
@@ -49,6 +50,15 @@ function addReleaseGate(issues, warnings, ok, message) {
 
 function hasScript(packageJson, scriptName) {
   return Boolean(packageJson.scripts && packageJson.scripts[scriptName]);
+}
+
+function hasWindowsNsisTarget(build) {
+  const targets = build && build.win && build.win.target;
+  if (!Array.isArray(targets)) return false;
+  return targets.some((target) => {
+    if (typeof target === "string") return target === "nsis";
+    return target && target.target === "nsis";
+  });
 }
 
 function main() {
@@ -74,15 +84,22 @@ function main() {
   const gitignore = readTextIfExists(".gitignore");
   const ciWorkflow = readTextIfExists(".github/workflows/ci.yml");
 
-  ["check", "ci", "production:check", "server:check", "server:smoke", "server:test", "integrity:verify", "update:sign"].forEach((scriptName) => {
+  ["check", "ci", "pack:dir", "dist:win", "production:check", "server:check", "server:smoke", "server:test", "integrity:verify", "update:sign"].forEach((scriptName) => {
     addIssue(issues, hasScript(packageJson, scriptName), `package.json script is missing: ${scriptName}`);
   });
 
+  const build = packageJson.build || {};
   addIssue(issues, ciWorkflow.includes("npm run ci"), "GitHub CI workflow must run npm run ci.");
   addIssue(issues, gitignore.includes(".secrets/"), ".gitignore must keep .secrets/ out of Git.");
   addIssue(issues, gitignore.includes("dist/"), ".gitignore must keep dist/ build outputs out of Git.");
   addIssue(issues, gitignore.includes("out/"), ".gitignore must keep out/ build outputs out of Git.");
   addIssue(issues, isSemver(packageJson.version), "package.json version must be semantic, for example 1.0.0.");
+  addIssue(issues, Boolean(packageJson.author), "package.json author must be set for packaged builds.");
+  addIssue(issues, Boolean(build.appId), "Installer packaging config must define build.appId.");
+  addIssue(issues, Boolean(build.productName), "Installer packaging config must define build.productName.");
+  addIssue(issues, Array.isArray(build.files) && build.files.length > 0, "Installer packaging config must define build.files.");
+  addIssue(issues, hasWindowsNsisTarget(build), "Installer packaging config must target Windows NSIS.");
+  addIssue(issues, build.win && build.win.requestedExecutionLevel === "requireAdministrator", "Windows package must request administrator execution.");
 
   addReleaseGate(issues, warnings, packageJson.version !== "0.1.0", "Release version is still 0.1.0.");
   addReleaseGate(issues, warnings, !/prototype/i.test(packageJson.description || ""), "package.json description still says prototype.");
@@ -96,8 +113,10 @@ function main() {
   addReleaseGate(issues, warnings, updateManifest.latest === packageJson.version, "Update manifest latest version must match package.json version before release.");
   addReleaseGate(issues, warnings, isHttpsUrl(updateManifest.downloadUrl) && !isPlaceholderUrl(updateManifest.downloadUrl), "Update manifest downloadUrl must be a real HTTPS URL.");
   addReleaseGate(issues, warnings, updateManifest.signatureAlgorithm === "RSA-SHA256" && Boolean(updateManifest.signature), "Update manifest must be signed before release.");
-  addReleaseGate(issues, warnings, Boolean(packageJson.build), "Installer packaging config is not defined yet.");
   addReleaseGate(issues, warnings, Boolean(packageJson.devDependencies && packageJson.devDependencies["electron-builder"]), "electron-builder is not installed yet.");
+  addReleaseGate(issues, warnings, build.asar === true, "Installer packaging should keep app files inside an asar archive.");
+  addReleaseGate(issues, warnings, JSON.stringify(build.asarUnpack || []).includes("runtime-watchdog"), "Runtime watchdog must stay unpacked for packaged cleanup execution.");
+  addReleaseGate(issues, warnings, fileExists("build/icon.ico"), "Final Windows icon is not configured at build/icon.ico.");
   addReleaseGate(issues, warnings, hasStrongCodeSigningSignal(), "Windows code-signing certificate environment is not configured in this shell.");
 
   printResult({ issues, warnings, packageJson, appConfig });

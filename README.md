@@ -147,3 +147,12 @@ It also runs the non-strict release preflight so release gaps stay visible durin
 ## Continuous Integration
 
 GitHub Actions runs on pushes and pull requests to `main`. The workflow installs dependencies with `npm ci`, runs `npm run ci`, then performs a strict server readiness and smoke test against a temporary private env file.
+
+## Package
+
+```powershell
+npm run pack:dir
+npm run dist:win
+```
+
+`pack:dir` creates an unpacked desktop build for local verification. `dist:win` is the Windows NSIS installer entry point for release builds. Before a public installer, add `build/icon.ico`, configure real production URLs, sign update metadata, and set up Windows code signing.
