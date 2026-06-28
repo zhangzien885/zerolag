@@ -92,6 +92,12 @@ function listen(server) {
   });
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 async function main() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-server-test-"));
   const options = {
@@ -129,6 +135,50 @@ async function main() {
     assert(readiness.statusCode === 200 && readiness.body.ok, "Readiness endpoint failed.");
     assert(readiness.body.state.summary.activationCodes.total >= 1, "Readiness should include state summary.");
     assert(readiness.body.secrets.adminSecret === "custom", "Readiness should report custom admin secret.");
+    assert(readiness.body.maintenance.enabled === true, "Readiness should include maintenance status.");
+
+    const autoTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-auto-maintenance-test-"));
+    const autoOptions = {
+      statePath: path.join(autoTempDir, "server-state.json"),
+      serverSecret: "auto-maintenance-secret",
+      adminSecret: "auto-maintenance-admin",
+      paymentWebhookSecret: "auto-maintenance-payment",
+      maintenance: {
+        intervalMs: 50
+      }
+    };
+    const autoCode = "ZL-PRO-AUTO-CLEANUP";
+    const autoDeviceHash = crypto.createHash("sha256").update("auto-device").digest("hex");
+    addActivationCode(autoCode, { durationDays: 30, maxUses: 1 }, autoOptions);
+    const autoServer = createAppServer(autoOptions);
+    const autoPort = await listen(autoServer);
+    try {
+      const autoActivated = await requestJson(autoPort, "/v1/licenses/activate", {
+        activationCode: autoCode,
+        deviceHash: autoDeviceHash,
+        appVersion: "0.1.0",
+        channel: "auto-maintenance"
+      });
+      assert(autoActivated.statusCode === 200 && autoActivated.body.active, "Auto-maintenance activation failed.");
+
+      const autoState = loadState(autoOptions);
+      autoState.subscriptions[autoActivated.body.subscriptionId].status = "active";
+      autoState.subscriptions[autoActivated.body.subscriptionId].expiresAt = new Date(Date.now() - 60 * 1000).toISOString();
+      fs.writeFileSync(autoOptions.statePath, `${JSON.stringify(autoState, null, 2)}\n`, "utf8");
+      await sleep(180);
+
+      const autoCleanedState = loadState(autoOptions);
+      assert(autoCleanedState.subscriptions[autoActivated.body.subscriptionId].status === "expired", "Automatic maintenance should expire stale subscriptions.");
+      assert(
+        !Object.values(autoCleanedState.tokens || {}).some((token) => token.subscriptionId === autoActivated.body.subscriptionId),
+        "Automatic maintenance should remove stale tokens."
+      );
+    } finally {
+      await new Promise((resolve) => {
+        autoServer.close(resolve);
+      });
+      fs.rmSync(autoTempDir, { recursive: true, force: true });
+    }
 
     const rateTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-rate-limit-test-"));
     const rateServer = createAppServer({

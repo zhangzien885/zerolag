@@ -11,6 +11,7 @@ const maxAuditEvents = 2000;
 const defaultBackupRetention = 25;
 const defaultRateLimitWindowMs = 60 * 1000;
 const defaultRateLimitMax = 120;
+const defaultMaintenanceIntervalMs = 6 * 60 * 60 * 1000;
 const defaultServerSecret = "zerolag-dev-server-secret-change-before-production";
 const defaultAdminSecret = "zerolag-dev-admin-secret-change-before-production";
 const defaultPaymentWebhookSecret = "zerolag-dev-payment-webhook-secret-change-before-production";
@@ -112,6 +113,14 @@ function rateLimitConfigFromOptions(options = {}, routeKey = "default") {
     namespace: String(input.namespace || statePathFromOptions(options)),
     trustProxy: input.trustProxy === true || process.env.ZEROLAG_TRUST_PROXY === "1",
     windowMs: positiveNumber(input.windowMs || process.env.ZEROLAG_RATE_LIMIT_WINDOW_MS, defaultRateLimitWindowMs)
+  };
+}
+
+function maintenanceConfigFromOptions(options = {}) {
+  const input = options.maintenance || {};
+  return {
+    enabled: input.enabled !== false && process.env.ZEROLAG_MAINTENANCE_DISABLED !== "1",
+    intervalMs: positiveNumber(input.intervalMs || process.env.ZEROLAG_MAINTENANCE_INTERVAL_MS, defaultMaintenanceIntervalMs)
   };
 }
 
@@ -442,6 +451,15 @@ function cleanupExpiredServerState(state, input = {}) {
   };
 }
 
+function runServerMaintenance(options = {}, actor = "maintenance") {
+  const state = loadState(options);
+  const cleanup = cleanupExpiredServerState(state, { actor });
+  if (cleanup.changed) {
+    saveState(state, options);
+  }
+  return cleanup;
+}
+
 function fileSnapshot(filePath) {
   try {
     if (!fs.existsSync(filePath)) {
@@ -507,6 +525,7 @@ function serverReadiness(options = {}) {
   const backupFiles = listBackupFiles(options);
   const state = loadState(options);
   const rateLimit = rateLimitConfigFromOptions(options, "admin");
+  const maintenance = maintenanceConfigFromOptions(options);
   const warnings = [];
 
   if (serverSecretFromOptions(options) === defaultServerSecret) warnings.push("SERVER_SECRET_DEFAULT");
@@ -542,6 +561,10 @@ function serverReadiness(options = {}) {
       enabled: rateLimit.enabled,
       trustProxy: rateLimit.trustProxy,
       windowMs: rateLimit.windowMs
+    },
+    maintenance: {
+      enabled: maintenance.enabled,
+      intervalMs: maintenance.intervalMs
     },
     warnings
   };
@@ -1379,14 +1402,7 @@ async function adminReadiness(request, response, options = {}) {
 async function maintenanceCleanupAdmin(request, response, options = {}) {
   if (!requireAdmin(request, response, options)) return;
 
-  const state = loadState(options);
-  const cleanup = cleanupExpiredServerState(state, {
-    actor: adminActor(request)
-  });
-
-  if (cleanup.changed) {
-    saveState(state, options);
-  }
+  const cleanup = runServerMaintenance(options, adminActor(request));
 
   jsonResponse(response, 200, {
     ok: true,
@@ -1529,7 +1545,34 @@ function createAppServer(options = {}) {
   const server = http.createServer((request, response) => {
     routeRequest(request, response, options);
   });
+  attachAutomaticMaintenance(server, options);
   return server;
+}
+
+function attachAutomaticMaintenance(server, options = {}) {
+  const config = maintenanceConfigFromOptions(options);
+  if (!config.enabled) return;
+
+  let stopped = false;
+  const runSafely = () => {
+    if (stopped) return;
+    try {
+      runServerMaintenance(options, "maintenance");
+    } catch {
+      // Maintenance should never take down the API server.
+    }
+  };
+  const interval = setInterval(runSafely, config.intervalMs);
+  const immediate = setImmediate(runSafely);
+
+  if (typeof interval.unref === "function") interval.unref();
+  if (typeof immediate.unref === "function") immediate.unref();
+
+  server.on("close", () => {
+    stopped = true;
+    clearInterval(interval);
+    clearImmediate(immediate);
+  });
 }
 
 function startServer(options = {}) {

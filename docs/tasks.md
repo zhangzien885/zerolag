@@ -104,8 +104,8 @@
 - Added admin membership support endpoints and CLI helpers for listing subscriptions, inspecting linked orders, filtering active memberships, and manually revoking access.
 - Added operational audit events and admin audit log queries for order, payment, activation, renewal, refund, and manual revoke actions without exposing activation codes or tokens.
 - Added server-side rate limiting for order creation, payment webhooks, activation, validation, and admin endpoints to reduce abuse before public release.
-- Added public health and admin readiness checks for server deployment operations, including state, backup, update-manifest, secret, and rate-limit status.
-- Added admin maintenance cleanup for expired subscriptions and stale server tokens with audit logging.
+- Added public health and admin readiness checks for server deployment operations, including state, backup, update-manifest, secret, rate-limit, and maintenance status.
+- Added automatic and admin-triggered maintenance cleanup for expired subscriptions and stale server tokens with audit logging.
 - Added safer JSON-state persistence with atomic writes, rolling backups, corrupted-state fallback, and admin state export for migration or emergency recovery.
 - Added signed update-manifest verification in the desktop client plus release tooling for generating, signing, and verifying update metadata.
 - Added customer-support diagnostics bundle export from the desktop toolbox with redacted membership and runtime details.

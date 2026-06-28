@@ -22,7 +22,7 @@ ZeroLag is a Windows gaming performance optimizer prototype.
 - Provides a game-toolbox version center for manual update checks and download handoff.
 - Keeps running in the Windows tray when the main window is closed; use the tray menu to reopen or fully exit.
 - Provides server health and admin readiness checks for private deployment operations.
-- Provides admin maintenance cleanup for expired memberships and stale server tokens.
+- Provides automatic and admin-triggered maintenance cleanup for expired memberships and stale server tokens.
 - Provides manual rescan and restore-daily-mode controls from the topbar.
 - Includes a game toolbox button that opens local game library, one-click game launch, network latency check, DNS refresh, and Boost session timer tools.
 - Exports a redacted support diagnostics bundle from the game toolbox for customer support.

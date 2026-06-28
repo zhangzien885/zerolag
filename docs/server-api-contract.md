@@ -61,6 +61,8 @@ X-ZeroLag-Admin-Secret: ADMIN_SECRET
 
 Marks expired active subscriptions as `expired`, removes tokens that can no longer authorize a valid subscription, and writes a compact `maintenance.cleanup` audit event with the changed counts.
 
+The server also runs the same cleanup automatically on startup and then on an interval. Use `ZEROLAG_MAINTENANCE_INTERVAL_MS` to adjust the interval, or set `ZEROLAG_MAINTENANCE_DISABLED=1` to disable automatic cleanup when an external scheduler owns maintenance.
+
 ## Configuration
 
 The desktop client reads production endpoints from `assets/app-config.json`.
