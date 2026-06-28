@@ -17,10 +17,12 @@ It provides:
 - `POST /v1/admin/subscriptions/revoke`
 - `GET /v1/admin/audit-events`
 - `GET /v1/admin/summary`
+- `GET /v1/admin/export`
 - `GET /v1/updates/manifest`
 - local activation-code creation for early testing
 - device binding and token rotation
 - in-memory rate limiting for public, payment, and admin endpoints
+- atomic state writes, rolling state backups, and admin state export
 
 ## Start Locally
 
@@ -67,6 +69,7 @@ npm run server:admin -- subscription sub_xxx
 npm run server:admin -- revoke-subscription sub_xxx support_revoke
 npm run server:admin -- audit-events 50
 npm run server:admin -- audit-events 50 payment.succeeded
+npm run server:admin -- export-state .\server-state-export.json
 npm run server:admin -- summary
 ```
 
@@ -100,6 +103,26 @@ $env:ZEROLAG_TRUST_PROXY="0"
 ```
 
 Keep rate limiting enabled in production, and add edge protection through the hosting provider or reverse proxy before public release. Set `ZEROLAG_TRUST_PROXY=1` only when your reverse proxy overwrites client IP headers safely.
+
+## State Safety
+
+The JSON-state MVP now writes state through a temporary file and atomic rename. Before overwriting an existing state file, the server keeps a rolling backup under `server/data/backups` by default. If the main state JSON is corrupted, `loadState` attempts to recover from the newest readable backup.
+
+Optional environment variables:
+
+```powershell
+$env:ZEROLAG_SERVER_BACKUP_DIR="D:\zerolag-backups"
+$env:ZEROLAG_SERVER_BACKUP_RETENTION="25"
+$env:ZEROLAG_SERVER_BACKUP_DISABLED="0"
+```
+
+Admins can export the current state for migration or manual backup:
+
+```powershell
+npm run server:admin -- export-state .\server-state-export.json
+```
+
+The export contains sensitive operational state and should be stored privately.
 
 ## Order Flow MVP
 
@@ -146,6 +169,7 @@ For a paid release:
 - Use a strong `ZEROLAG_ADMIN_SECRET`.
 - Use a strong `ZEROLAG_PAYMENT_WEBHOOK_SECRET`.
 - Keep rate limiting enabled and add reverse-proxy protection for public traffic.
+- Keep server state backups enabled until JSON state is replaced by a real database.
 - Move state from JSON to a real database.
 - Replace the manual payment placeholder with WeChat Pay, Alipay, Stripe, or another provider that calls the signed webhook.
 

@@ -8,6 +8,7 @@ const defaultDataDir = path.join(__dirname, "data");
 const defaultStatePath = path.join(defaultDataDir, "server-state.json");
 const updateManifestPath = path.join(rootDir, "assets", "update.json");
 const maxAuditEvents = 2000;
+const defaultBackupRetention = 25;
 const defaultRateLimitWindowMs = 60 * 1000;
 const defaultRateLimitMax = 120;
 const defaultRateLimitByRoute = {
@@ -77,6 +78,16 @@ function paymentWebhookSecretFromOptions(options = {}) {
   return options.paymentWebhookSecret
     || process.env.ZEROLAG_PAYMENT_WEBHOOK_SECRET
     || "zerolag-dev-payment-webhook-secret-change-before-production";
+}
+
+function backupConfigFromOptions(options = {}) {
+  const input = options.backup || {};
+  const retention = Number(input.retention ?? process.env.ZEROLAG_SERVER_BACKUP_RETENTION ?? defaultBackupRetention);
+  return {
+    dir: input.dir || process.env.ZEROLAG_SERVER_BACKUP_DIR || path.join(path.dirname(statePathFromOptions(options)), "backups"),
+    enabled: input.enabled !== false && process.env.ZEROLAG_SERVER_BACKUP_DISABLED !== "1",
+    retention: Number.isFinite(retention) && retention >= 0 ? Math.floor(retention) : defaultBackupRetention
+  };
 }
 
 function positiveNumber(value, fallback) {
@@ -161,14 +172,83 @@ function loadState(options = {}) {
       ...JSON.parse(fs.readFileSync(statePath, "utf8"))
     };
   } catch {
-    return createEmptyState();
+    return loadLatestBackupState(options) || createEmptyState();
   }
+}
+
+function safeTimestampForFileName(date = new Date()) {
+  return date.toISOString().replace(/[:.]/g, "-");
+}
+
+function listBackupFiles(options = {}) {
+  const config = backupConfigFromOptions(options);
+  if (!fs.existsSync(config.dir)) return [];
+
+  return fs.readdirSync(config.dir)
+    .filter((fileName) => fileName.endsWith(".json"))
+    .map((fileName) => {
+      const filePath = path.join(config.dir, fileName);
+      const stats = fs.statSync(filePath);
+      return {
+        fileName,
+        filePath,
+        createdAt: stats.mtime.toISOString(),
+        sizeBytes: stats.size
+      };
+    })
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+}
+
+function pruneBackupFiles(options = {}) {
+  const config = backupConfigFromOptions(options);
+  if (config.retention <= 0) return;
+
+  listBackupFiles(options)
+    .slice(config.retention)
+    .forEach((backup) => {
+      fs.rmSync(backup.filePath, { force: true });
+    });
+}
+
+function backupCurrentStateFile(statePath, options = {}) {
+  const config = backupConfigFromOptions(options);
+  if (!config.enabled || config.retention === 0 || !fs.existsSync(statePath)) return null;
+
+  const currentState = fs.readFileSync(statePath);
+  const digest = crypto.createHash("sha256").update(currentState).digest("hex").slice(0, 12);
+  fs.mkdirSync(config.dir, { recursive: true });
+  const backupPath = path.join(config.dir, `server-state-${safeTimestampForFileName()}-${digest}-${crypto.randomBytes(3).toString("hex")}.json`);
+  fs.writeFileSync(backupPath, currentState);
+  pruneBackupFiles(options);
+  return backupPath;
+}
+
+function loadLatestBackupState(options = {}) {
+  for (const backup of listBackupFiles(options)) {
+    try {
+      return {
+        ...createEmptyState(),
+        ...JSON.parse(fs.readFileSync(backup.filePath, "utf8"))
+      };
+    } catch {
+      // Keep scanning older backups if the latest snapshot is also damaged.
+    }
+  }
+
+  return null;
+}
+
+function writeFileAtomic(filePath, content) {
+  const tempPath = `${filePath}.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`;
+  fs.writeFileSync(tempPath, content, "utf8");
+  fs.renameSync(tempPath, filePath);
 }
 
 function saveState(state, options = {}) {
   const statePath = statePathFromOptions(options);
   fs.mkdirSync(path.dirname(statePath), { recursive: true });
-  fs.writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+  backupCurrentStateFile(statePath, options);
+  writeFileAtomic(statePath, `${JSON.stringify(state, null, 2)}\n`);
 }
 
 function safeActivationCodeRecord(record) {
@@ -297,6 +377,18 @@ function stateSummary(state) {
     tokens: {
       active: Object.keys(state.tokens || {}).length
     }
+  };
+}
+
+function stateExportPayload(state) {
+  const serializedState = JSON.stringify(state);
+  return {
+    ok: true,
+    exportedAt: nowIso(),
+    schemaVersion: Number(state.version || 1),
+    stateSha256: sha256(serializedState),
+    summary: stateSummary(state),
+    state
   };
 }
 
@@ -1123,6 +1215,13 @@ async function adminSummary(request, response, options = {}) {
   });
 }
 
+async function exportStateAdmin(request, response, options = {}) {
+  if (!requireAdmin(request, response, options)) return;
+
+  const state = loadState(options);
+  jsonResponse(response, 200, stateExportPayload(state));
+}
+
 async function routeRequest(request, response, options = {}) {
   const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
 
@@ -1203,6 +1302,12 @@ async function routeRequest(request, response, options = {}) {
     if (request.method === "GET" && url.pathname === "/v1/admin/summary") {
       if (!applyRateLimit(request, response, "admin", options)) return;
       await adminSummary(request, response, options);
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/v1/admin/export") {
+      if (!applyRateLimit(request, response, "admin", options)) return;
+      await exportStateAdmin(request, response, options);
       return;
     }
 

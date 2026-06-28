@@ -1,4 +1,6 @@
 const http = require("http");
+const fs = require("fs");
+const path = require("path");
 const { signPaymentWebhook } = require("./index");
 
 const baseUrl = process.env.ZEROLAG_ADMIN_API_BASE_URL || "http://127.0.0.1:8787";
@@ -18,6 +20,7 @@ function usage() {
   console.log("  node server/admin-client.js subscription [subscriptionId]");
   console.log("  node server/admin-client.js revoke-subscription [subscriptionId] [reason]");
   console.log("  node server/admin-client.js audit-events [limit] [type]");
+  console.log("  node server/admin-client.js export-state [outputFile]");
   console.log("  node server/admin-client.js summary");
 }
 
@@ -245,6 +248,27 @@ async function main() {
     const response = await requestJson(`/v1/admin/audit-events${query}`);
     console.log(JSON.stringify(response.body, null, 2));
     process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
+  if (command === "export-state") {
+    const outputFile = path.resolve(process.argv[3] || `zerolag-state-export-${Date.now()}.json`);
+    const response = await requestJson("/v1/admin/export");
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      console.log(JSON.stringify(response.body, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+
+    fs.mkdirSync(path.dirname(outputFile), { recursive: true });
+    fs.writeFileSync(outputFile, `${JSON.stringify(response.body, null, 2)}\n`, "utf8");
+    console.log(JSON.stringify({
+      ok: true,
+      outputFile,
+      stateSha256: response.body.stateSha256,
+      summary: response.body.summary
+    }, null, 2));
     return;
   }
 

@@ -23,6 +23,8 @@ Sensitive public, payment, and admin endpoints are rate limited per client IP. A
 Production deployments should keep app-level rate limiting enabled and add reverse-proxy or hosting-provider protection at the edge.
 Only enable trusted proxy IP headers when the reverse proxy overwrites them safely.
 
+The JSON-state MVP uses atomic writes and rolling local backups before each overwrite. Admins can export current state for migration or private backup, but the export should be treated as sensitive operational data.
+
 ## Configuration
 
 The desktop client reads production endpoints from `assets/app-config.json`.
@@ -317,6 +319,30 @@ Response:
     "activationCodes": { "total": 1, "enabled": 1, "used": 0 },
     "subscriptions": { "total": 0, "active": 0, "expired": 0 },
     "tokens": { "active": 0 }
+  }
+}
+```
+
+## GET `/v1/admin/export`
+
+Exports the current server state for private backup, migration, or emergency support. This endpoint is admin-only and the response can contain sensitive operational data.
+
+Response:
+
+```json
+{
+  "ok": true,
+  "exportedAt": "2026-07-27T00:00:00.000Z",
+  "schemaVersion": 1,
+  "stateSha256": "sha256-of-exported-state",
+  "summary": {
+    "orders": { "total": 2, "paid": 1 },
+    "subscriptions": { "total": 1, "active": 1 }
+  },
+  "state": {
+    "version": 1,
+    "orders": {},
+    "subscriptions": {}
   }
 }
 ```

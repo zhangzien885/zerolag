@@ -2,7 +2,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
-const { addActivationCode, createAppServer, signPaymentWebhook } = require("./index");
+const { addActivationCode, createAppServer, loadState, signPaymentWebhook } = require("./index");
 
 function requestJson(port, pathname, body, headers = {}) {
   return new Promise((resolve, reject) => {
@@ -405,6 +405,23 @@ async function main() {
     });
     assert(renewalAuditEvents.statusCode === 200, "Filtered audit events failed.");
     assert(renewalAuditEvents.body.events.length === 1, "Filtered audit events should return renewal event.");
+
+    const stateExport = await requestJson(port, "/v1/admin/export", null, {
+      "X-ZeroLag-Admin-Secret": "self-test-admin"
+    });
+    assert(stateExport.statusCode === 200 && stateExport.body.ok, "Admin state export failed.");
+    assert(stateExport.body.stateSha256 && stateExport.body.state.orders, "Admin state export should include state and checksum.");
+    assert(stateExport.body.summary.orders.total >= 2, "Admin state export should include a useful summary.");
+
+    const backupDir = path.join(tempDir, "backups");
+    const backupFiles = fs.readdirSync(backupDir).filter((fileName) => fileName.endsWith(".json"));
+    assert(backupFiles.length > 0, "State saves should create rolling backups.");
+
+    const stateBeforeCorruption = fs.readFileSync(options.statePath, "utf8");
+    fs.writeFileSync(options.statePath, "{ broken json", "utf8");
+    const recoveredState = loadState(options);
+    assert(Object.keys(recoveredState.orders || {}).length > 0, "Corrupted state should recover from the latest backup.");
+    fs.writeFileSync(options.statePath, stateBeforeCorruption, "utf8");
 
     console.log("ZeroLag server self-test passed.");
   } finally {
