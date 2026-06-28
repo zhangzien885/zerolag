@@ -52,6 +52,13 @@ function hasScript(packageJson, scriptName) {
   return Boolean(packageJson.scripts && packageJson.scripts[scriptName]);
 }
 
+function scriptIncludesInOrder(packageJson, scriptName, first, second) {
+  const script = packageJson.scripts && packageJson.scripts[scriptName] || "";
+  const firstIndex = script.indexOf(first);
+  const secondIndex = script.indexOf(second);
+  return firstIndex >= 0 && secondIndex >= 0 && firstIndex < secondIndex;
+}
+
 function hasWindowsNsisTarget(build) {
   const targets = build && build.win && build.win.target;
   if (!Array.isArray(targets)) return false;
@@ -90,6 +97,8 @@ function main() {
 
   const build = packageJson.build || {};
   addIssue(issues, ciWorkflow.includes("npm run ci"), "GitHub CI workflow must run npm run ci.");
+  addIssue(issues, scriptIncludesInOrder(packageJson, "release:verify", "release:gate", "website:release"), "release:verify must run release:gate before website:release.");
+  addIssue(issues, scriptIncludesInOrder(packageJson, "release:build", "dist:win", "release:verify"), "release:build must build the installer before running release:verify.");
   addIssue(issues, gitignore.includes(".secrets/"), ".gitignore must keep .secrets/ out of Git.");
   addIssue(issues, gitignore.includes("dist/"), ".gitignore must keep dist/ build outputs out of Git.");
   addIssue(issues, gitignore.includes("out/"), ".gitignore must keep out/ build outputs out of Git.");
