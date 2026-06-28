@@ -24,6 +24,8 @@ function usage() {
   console.log("  node server/admin-client.js subscription [subscriptionId]");
   console.log("  node server/admin-client.js revoke-subscription [subscriptionId] [reason]");
   console.log("  node server/admin-client.js audit-events [limit] [type]");
+  console.log("  node server/admin-client.js ops-summary");
+  console.log("  node server/admin-client.js ops-csv [outputFile]");
   console.log("  node server/admin-client.js analytics");
   console.log("  node server/admin-client.js analytics-funnel");
   console.log("  node server/admin-client.js analytics-csv [outputFile]");
@@ -119,6 +121,82 @@ function analyticsPayloadFromSummary(summary) {
       statuses: websiteEvents.statuses || {},
       daily: websiteEvents.daily || {},
       dailyEvents: websiteEvents.dailyEvents || {}
+    }
+  };
+}
+
+function arrayFromResponse(body, key) {
+  return body && Array.isArray(body[key]) ? body[key] : [];
+}
+
+function centsTotal(records) {
+  return records.reduce((total, record) => total + Number(record.amountCents || 0), 0);
+}
+
+function currencyBreakdown(orders) {
+  return orders.reduce((totals, order) => {
+    const currency = order.currency || "CNY";
+    totals[currency] = (totals[currency] || 0) + Number(order.amountCents || 0);
+    return totals;
+  }, {});
+}
+
+function isExpiringWithinDays(subscription, days) {
+  if (!subscription || !subscription.active) return false;
+  const expiresAt = new Date(subscription.expiresAt || "").getTime();
+  if (!Number.isFinite(expiresAt)) return false;
+  return expiresAt <= Date.now() + days * 24 * 60 * 60 * 1000;
+}
+
+function operationsPayloadFromData(summary, orders, subscriptions) {
+  const paidOrders = orders.filter((order) => order.status === "paid");
+  const pendingOrders = orders.filter((order) => order.status === "pending");
+  const refundedOrders = orders.filter((order) => order.status === "refunded");
+  const activeSubscriptions = subscriptions.filter((subscription) => subscription.active);
+  const renewedSubscriptions = subscriptions.filter((subscription) => Number(subscription.renewalCount || 0) > 0);
+
+  return {
+    ok: true,
+    generatedAt: new Date().toISOString(),
+    orders: {
+      total: Number(summary && summary.orders && summary.orders.total || orders.length),
+      pending: Number(summary && summary.orders && summary.orders.pending || pendingOrders.length),
+      paid: Number(summary && summary.orders && summary.orders.paid || paidOrders.length),
+      refunded: Number(summary && summary.orders && summary.orders.refunded || refundedOrders.length),
+      grossRevenueCents: centsTotal(paidOrders),
+      refundedRevenueCents: centsTotal(refundedOrders),
+      netRevenueCents: centsTotal(paidOrders) - centsTotal(refundedOrders),
+      currencies: currencyBreakdown(paidOrders)
+    },
+    subscriptions: {
+      total: Number(summary && summary.subscriptions && summary.subscriptions.total || subscriptions.length),
+      active: Number(summary && summary.subscriptions && summary.subscriptions.active || activeSubscriptions.length),
+      expired: Number(summary && summary.subscriptions && summary.subscriptions.expired || 0),
+      revoked: Number(summary && summary.subscriptions && summary.subscriptions.revoked || 0),
+      expiringIn7Days: subscriptions.filter((subscription) => isExpiringWithinDays(subscription, 7)).length,
+      renewed: renewedSubscriptions.length,
+      boundDevices: new Set(subscriptions.map((subscription) => subscription.device).filter(Boolean)).size
+    },
+    latest: {
+      orders: orders.slice(0, 5).map((order) => ({
+        orderId: order.orderId,
+        status: order.status,
+        plan: order.plan,
+        amountCents: Number(order.amountCents || 0),
+        currency: order.currency || "CNY",
+        createdAt: order.createdAt || "",
+        paidAt: order.paidAt || "",
+        refundedAt: order.refundedAt || ""
+      })),
+      subscriptions: subscriptions.slice(0, 5).map((subscription) => ({
+        subscriptionId: subscription.subscriptionId,
+        status: subscription.status,
+        active: Boolean(subscription.active),
+        plan: subscription.plan,
+        expiresAt: subscription.expiresAt || "",
+        renewalCount: Number(subscription.renewalCount || 0),
+        device: subscription.device || ""
+      }))
     }
   };
 }
@@ -235,6 +313,64 @@ function analyticsCsvFromSummary(summary) {
     ...sortedMetricRows("status", analytics.statuses, analytics.updatedAt),
     ...sortedMetricRows("day", analytics.daily, analytics.updatedAt),
     ...sortedDailyEventRows(analytics.dailyEvents, analytics.updatedAt)
+  ];
+
+  return `${rows.map((row) => row.map(csvEscape).join(",")).join("\n")}\n`;
+}
+
+function operationsCsvFromData(orders, subscriptions) {
+  const rows = [
+    [
+      "recordType",
+      "id",
+      "status",
+      "plan",
+      "amountCents",
+      "currency",
+      "createdAt",
+      "paidAt",
+      "refundedAt",
+      "expiresAt",
+      "device",
+      "renewalCount",
+      "activationCount",
+      "appVersion",
+      "channel"
+    ],
+    ...orders.map((order) => [
+      "order",
+      order.orderId || "",
+      order.status || "",
+      order.plan || "",
+      Number(order.amountCents || 0),
+      order.currency || "CNY",
+      order.createdAt || "",
+      order.paidAt || "",
+      order.refundedAt || "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]),
+    ...subscriptions.map((subscription) => [
+      "subscription",
+      subscription.subscriptionId || "",
+      subscription.status || "",
+      subscription.plan || "",
+      "",
+      "",
+      subscription.createdAt || "",
+      "",
+      subscription.revokedAt || "",
+      subscription.expiresAt || "",
+      subscription.device || "",
+      Number(subscription.renewalCount || 0),
+      Number(subscription.activationCount || 0),
+      subscription.appVersion || "",
+      subscription.channel || ""
+    ])
   ];
 
   return `${rows.map((row) => row.map(csvEscape).join(",")).join("\n")}\n`;
@@ -694,6 +830,56 @@ async function main() {
     const response = await requestJson(`/v1/admin/audit-events${query}`);
     console.log(JSON.stringify(response.body, null, 2));
     process.exitCode = response.statusCode >= 200 && response.statusCode < 300 ? 0 : 1;
+    return;
+  }
+
+  if (command === "ops-summary") {
+    const [summaryResponse, ordersResponse, subscriptionsResponse] = await Promise.all([
+      requestJson("/v1/admin/summary"),
+      requestJson("/v1/admin/orders"),
+      requestJson("/v1/admin/subscriptions")
+    ]);
+    const failed = [summaryResponse, ordersResponse, subscriptionsResponse]
+      .find((response) => response.statusCode < 200 || response.statusCode >= 300);
+    if (failed) {
+      console.log(JSON.stringify(failed.body, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+
+    console.log(JSON.stringify(operationsPayloadFromData(
+      summaryResponse.body.summary,
+      arrayFromResponse(ordersResponse.body, "orders"),
+      arrayFromResponse(subscriptionsResponse.body, "subscriptions")
+    ), null, 2));
+    return;
+  }
+
+  if (command === "ops-csv") {
+    const outputFile = path.resolve(process.argv[3] || `zerolag-operations-${Date.now()}.csv`);
+    const [ordersResponse, subscriptionsResponse] = await Promise.all([
+      requestJson("/v1/admin/orders"),
+      requestJson("/v1/admin/subscriptions")
+    ]);
+    const failed = [ordersResponse, subscriptionsResponse]
+      .find((response) => response.statusCode < 200 || response.statusCode >= 300);
+    if (failed) {
+      console.log(JSON.stringify(failed.body, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+
+    fs.mkdirSync(path.dirname(outputFile), { recursive: true });
+    fs.writeFileSync(outputFile, operationsCsvFromData(
+      arrayFromResponse(ordersResponse.body, "orders"),
+      arrayFromResponse(subscriptionsResponse.body, "subscriptions")
+    ), "utf8");
+    console.log(JSON.stringify({
+      ok: true,
+      outputFile,
+      orders: arrayFromResponse(ordersResponse.body, "orders").length,
+      subscriptions: arrayFromResponse(subscriptionsResponse.body, "subscriptions").length
+    }, null, 2));
     return;
   }
 

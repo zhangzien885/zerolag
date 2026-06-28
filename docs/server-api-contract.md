@@ -156,6 +156,15 @@ npm run server:admin -- analytics-report .\website-analytics.html
 The private analytics output includes `dailyEvents`, and CSV exports include `day_event` rows in the form `YYYY-MM-DD:event_name` so operators can compare daily download, purchase, and support-click trends without collecting user-level data.
 The HTML report command generates a local private dashboard for visual review; it uses the same aggregate admin summary and does not create a public analytics page.
 
+Private operator exports for orders and memberships:
+
+```powershell
+npm run server:admin -- ops-summary
+npm run server:admin -- ops-csv .\zerolag-operations.csv
+```
+
+These commands use existing admin-only summary, order, and subscription endpoints. They are intended for private revenue, refund, renewal, and expiry review. CSV output omits activation codes and tokens.
+
 ## POST `/v1/licenses/activate`
 
 Exchanges a member code or payment-issued activation code for a server-backed device license.

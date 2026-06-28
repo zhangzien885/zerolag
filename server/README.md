@@ -103,14 +103,19 @@ npm run server:admin -- subscription sub_xxx
 npm run server:admin -- revoke-subscription sub_xxx support_revoke
 npm run server:admin -- audit-events 50
 npm run server:admin -- audit-events 50 payment.succeeded
+npm run server:admin -- ops-summary
+npm run server:admin -- ops-csv .\zerolag-operations.csv
 npm run server:admin -- analytics
 npm run server:admin -- analytics-funnel
 npm run server:admin -- analytics-csv .\website-analytics.csv
+npm run server:admin -- analytics-report .\website-analytics.html
 npm run server:admin -- export-state .\server-state-export.json
 npm run server:admin -- summary
 ```
 
 The admin API requires the `X-ZeroLag-Admin-Secret` header. In production this must be a strong secret stored outside the repo.
+
+`ops-summary` and `ops-csv` are private operator tools for reviewing paid orders, refunds, active memberships, renewals, and upcoming expirations. The CSV export intentionally omits activation codes and tokens.
 
 Signed payment webhooks require the `X-ZeroLag-Signature` header. The signature format is:
 

@@ -566,6 +566,23 @@ async function main() {
     });
     assert(adminSubscriptionDetail.statusCode === 200, "Admin subscription detail failed.");
     assert(adminSubscriptionDetail.body.orders.length === 2, "Admin subscription detail should include linked paid orders.");
+    const adminOpsSummary = await runAdminClient(port, ["ops-summary"]);
+    assert(adminOpsSummary.status === 0, `Admin ops summary command failed: ${adminOpsSummary.stderr || adminOpsSummary.stdout}`);
+    const adminOpsSummaryBody = JSON.parse(adminOpsSummary.stdout);
+    assert(adminOpsSummaryBody.orders.paid === 2, "Admin ops summary should include paid order count.");
+    assert(adminOpsSummaryBody.orders.grossRevenueCents === 6000, "Admin ops summary should include gross paid revenue.");
+    assert(adminOpsSummaryBody.subscriptions.active === 1, "Admin ops summary should include active membership count.");
+    assert(adminOpsSummaryBody.subscriptions.renewed === 1, "Admin ops summary should include renewed membership count.");
+    assert(!JSON.stringify(adminOpsSummaryBody).includes(completedOrder.body.order.activationCode), "Admin ops summary must not expose activation codes.");
+    const opsCsvPath = path.join(tempDir, "operations.csv");
+    const adminOpsCsv = await runAdminClient(port, ["ops-csv", opsCsvPath]);
+    assert(adminOpsCsv.status === 0, `Admin ops CSV command failed: ${adminOpsCsv.stderr || adminOpsCsv.stdout}`);
+    assert(fs.existsSync(opsCsvPath), "Admin ops CSV command should write a CSV file.");
+    const opsCsv = fs.readFileSync(opsCsvPath, "utf8");
+    assert(opsCsv.startsWith("recordType,id,status,plan,amountCents,currency"), "Admin ops CSV should include a stable header.");
+    assert(opsCsv.includes("order,"), "Admin ops CSV should include order rows.");
+    assert(opsCsv.includes("subscription,"), "Admin ops CSV should include subscription rows.");
+    assert(!opsCsv.includes(completedOrder.body.order.activationCode), "Admin ops CSV must not expose activation codes.");
 
     const blocked = await requestJson(port, "/v1/licenses/validate", {
       token: validated.body.token,
