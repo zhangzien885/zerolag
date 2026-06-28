@@ -118,6 +118,7 @@
 - Added automatic private server env-file loading for service startup, admin tools, activation-code creation, and production readiness checks.
 - Added a safe server smoke-test command for checking health and admin readiness with isolated temporary state before deployment.
 - Added GitHub Actions CI for pushes and pull requests, including local verification plus strict server readiness against a temporary private env file.
+- Added release preflight checks and a release checklist for packaging, signing, update metadata, production config, and strict final gates.
 
 ## Known Boundaries
 

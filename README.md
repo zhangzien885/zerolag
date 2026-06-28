@@ -53,6 +53,8 @@ npm run server:check
 npm run server:check:strict
 npm run server:smoke
 npm run server:secrets
+npm run release:preflight
+npm run release:preflight:strict
 ```
 
 `production:check` validates desktop release config. `server:check` validates server deployment environment variables. Use the `:strict` variants before a real paid release.
@@ -60,6 +62,8 @@ npm run server:secrets
 `server:secrets` prints strong private server secrets; use `npm run server:secrets -- --write` to save them under `.secrets/server.env`.
 
 Server commands automatically load `.secrets/server.env` when it exists. Existing system environment variables stay higher priority, and `ZEROLAG_ENV_FILE` can point commands at another private env file for staging or deployment tests.
+
+`release:preflight` summarizes the remaining packaging, signing, update, and production-config gates. Use `release:preflight:strict` only when preparing a real public build. See `docs/release-checklist.md`.
 
 ## Signed updates
 
@@ -138,6 +142,7 @@ npm run ci
 ```
 
 `ci` runs the standard local verification set used by GitHub Actions: syntax checks, desktop production readiness, server readiness, server self-test, server smoke test, and integrity verification.
+It also runs the non-strict release preflight so release gaps stay visible during normal development.
 
 ## Continuous Integration
 
