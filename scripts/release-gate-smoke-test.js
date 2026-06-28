@@ -42,6 +42,47 @@ function assertNoSensitiveText(text, label) {
   }
 }
 
+function writePassingReport(tempDir) {
+  const reportPath = path.join(tempDir, "release-candidate-report.json");
+  const report = {
+    generatedAt: new Date().toISOString(),
+    git: {
+      dirty: false
+    },
+    readiness: [
+      {
+        name: "Release mode",
+        ok: true,
+        nextStep: "Ready"
+      },
+      {
+        name: "Installer artifacts",
+        ok: true,
+        nextStep: "Ready"
+      }
+    ],
+    serverDeployment: {
+      ready: true,
+      strictFailureSummary: "",
+      gates: [
+        {
+          label: "Private env file passes validation",
+          ok: true,
+          detail: "0 issue(s), 0 warning(s)"
+        },
+        {
+          label: "Rate limit, backup, and maintenance guards are enabled",
+          ok: true,
+          detail: "enabled"
+        }
+      ]
+    }
+  };
+
+  fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+  return reportPath;
+}
+
 function main() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-release-gate-smoke-"));
 
@@ -71,6 +112,24 @@ function main() {
     assert(report.serverDeployment && Array.isArray(report.serverDeployment.gates), "Generated report should include server deployment gates.");
     assert(report.serverDeployment.ready === false, "Smoke release gate should expose an unready server deployment.");
     assertNoSensitiveText(reportBody, "Release gate report JSON");
+
+    writePassingReport(tempDir);
+    const passing = spawnSync(process.execPath, [
+      path.join(rootDir, "scripts", "check-release-gate.js"),
+      "--no-generate",
+      "--output-dir",
+      tempDir
+    ], {
+      cwd: rootDir,
+      env: isolatedEnv(tempDir),
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+
+    assert(passing.status === 0, `Release gate should pass for a ready fixture: ${passing.stderr || passing.stdout}`);
+    assert(passing.stdout.includes("ZeroLag release gate passed."), "Release gate should print a clear passing header.");
+    assertNoSensitiveText(passing.stdout, "Passing release gate stdout");
+    assertNoSensitiveText(passing.stderr, "Passing release gate stderr");
 
     console.log("ZeroLag release gate smoke test passed.");
   } finally {
