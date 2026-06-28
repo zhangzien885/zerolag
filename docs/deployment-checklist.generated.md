@@ -63,6 +63,7 @@ npm run server:migrate-sqlite -- --input <json-state> --output <sqlite-state>
 npm run server:backup-sqlite -- --input <sqlite-state> --output <sqlite-backup>
 npm run production:check:strict
 npm run server:check:strict
+npm run server:smoke
 npm run release:preflight:strict
 npm run ci
 npm run release:build
@@ -79,5 +80,6 @@ npm run server:restore-sqlite -- --input <sqlite-backup> --output <sqlite-state>
 ## Notes
 
 - Keep `.secrets/server.env` private and out of Git.
+- Default `server:smoke` uses isolated state; use `-- --live-state` only during planned private maintenance.
 - Do not upload private analytics or operations CSV exports to the public website.
 - Replace the JSON state store with a real database before broad public traffic.

@@ -153,6 +153,7 @@
 - Added a SQLite state backup command with read-back checksum verification and overwrite protection for wider paid testing.
 - Added a SQLite state restore command with read-back checksum verification, same-file protection, and overwrite protection for private recovery.
 - Added SQLite-aware production readiness checks that validate the configured database path, table, server state document, backup directory, and safe summary output.
+- Hardened the server smoke test so SQLite deployments use an isolated temporary SQLite state by default instead of touching the configured live database.
 
 ## Known Boundaries
 

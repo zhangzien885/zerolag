@@ -47,6 +47,8 @@ npm run server:smoke
 
 The smoke test loads the same private env file as the server, starts a temporary local API instance, checks `/v1/health`, and verifies `/v1/admin/readiness` with the configured admin secret. By default it uses isolated temporary state so it does not mutate real membership data.
 
+If `ZEROLAG_STATE_STORE=sqlite` is configured, the default smoke test uses a temporary SQLite file and prints `Mode: isolated-sqlite`. It still avoids the configured live SQLite path.
+
 To intentionally test against the configured state path:
 
 ```powershell

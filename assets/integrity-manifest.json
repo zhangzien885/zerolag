@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T11:01:21.961Z",
+  "generatedAt": "2026-06-28T11:10:23.182Z",
   "files": [
     {
       "path": "package.json",
@@ -84,11 +84,11 @@
     },
     {
       "path": "scripts/server-smoke-test.js",
-      "sha256": "ef35b90cc187730b5ff1e7bdf3464259038617ee4fe7d20a2fb2f672500df834"
+      "sha256": "2d3d46cbe9b098e50d4143874134facc81d854bdc6f5fb44f651075839510a18"
     },
     {
       "path": "scripts/generate-deployment-checklist.js",
-      "sha256": "852367f83c69a80db56237c76f4dd69019246e92cebaf79be8cb0b3b8358fdc5"
+      "sha256": "64768dc796a7dd27647f6ec94637f6db5cb7c59320eb316f6a80cd88d3dd4c8d"
     },
     {
       "path": "scripts/migrate-state-to-sqlite.js",
@@ -127,5 +127,5 @@
       "sha256": "03088e08120ee7508d175a61b3b6f66ee31a657ec592adfd60e5f352f890fc6d"
     }
   ],
-  "signature": "7614b6de0fa862ff135f53839e24a82da3c6c0d63c12f2dc647631ca9a490eb7"
+  "signature": "92530d1f34f6665dee4a4668959a54a5aa0ccd3e261353b2e92f0e190a57a6fd"
 }

@@ -426,6 +426,16 @@ async function main() {
       assert(missingSqliteProductionCheck.status === 1, "SQLite production check should fail when the SQLite state file is missing.");
       assert(missingSqliteProductionCheck.stdout.includes("SQLite state file does not exist"), "Missing SQLite check should explain the blocking issue.");
       assert(!fs.existsSync(missingSqlitePath), "SQLite production check must not create a missing SQLite file.");
+      const smokeExternalSqlitePath = path.join(migrationTempDir, "smoke-should-not-touch.sqlite");
+      const isolatedSqliteSmoke = await runNodeScript("scripts/server-smoke-test.js", [], {
+        env: {
+          ...sqliteCheckEnv,
+          ZEROLAG_SQLITE_STATE_PATH: smokeExternalSqlitePath
+        }
+      });
+      assert(isolatedSqliteSmoke.status === 0, `Isolated SQLite smoke test should pass: ${isolatedSqliteSmoke.stderr || isolatedSqliteSmoke.stdout}`);
+      assert(isolatedSqliteSmoke.stdout.includes("Mode: isolated-sqlite"), "SQLite smoke test should use an isolated temporary SQLite state by default.");
+      assert(!fs.existsSync(smokeExternalSqlitePath), "Default SQLite smoke test must not create or mutate the configured live SQLite path.");
     } finally {
       fs.rmSync(migrationTempDir, { recursive: true, force: true });
     }

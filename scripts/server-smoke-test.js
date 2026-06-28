@@ -7,12 +7,20 @@ const { loadServerEnvFile } = require("../server/env");
 loadServerEnvFile();
 
 const { createAppServer } = require("../server");
+const { createSqliteStateStore } = require("../server/state-store");
 
 const defaultAdminSecret = "zerolag-dev-admin-secret-change-before-production";
 const useLiveState = process.argv.includes("--live-state");
 const timeoutMs = positiveNumber(process.env.ZEROLAG_SMOKE_TIMEOUT_MS, 5000);
 const bindHost = process.env.ZEROLAG_SMOKE_HOST || "127.0.0.1";
 const bindPort = Math.max(0, Math.floor(positiveNumber(process.env.ZEROLAG_SMOKE_PORT, 0)));
+
+function normalizeStoreKind(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "_");
+}
 
 function positiveNumber(value, fallback) {
   const number = Number(value);
@@ -106,14 +114,27 @@ function createSmokeOptions() {
           namespace: `smoke:${process.pid}:${Date.now()}`
         }
       },
-      tempRoot: ""
+      tempRoot: "",
+      mode: "live-state"
     };
   }
 
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-smoke-"));
+  const requestedStore = normalizeStoreKind(process.env.ZEROLAG_STATE_STORE || "json");
+  const useIsolatedSqlite = requestedStore === "sqlite";
+  const isolatedSqliteStore = useIsolatedSqlite
+    ? createSqliteStateStore(path.join(tempRoot, "server-state.sqlite"))
+    : null;
   return {
     options: {
       statePath: path.join(tempRoot, "server-state.json"),
+      ...(isolatedSqliteStore ? {
+        stateStore: isolatedSqliteStore
+      } : {
+        storage: {
+          kind: "json"
+        }
+      }),
       backup: {
         dir: path.join(tempRoot, "backups"),
         enabled: true,
@@ -123,8 +144,16 @@ function createSmokeOptions() {
         namespace: `smoke:${process.pid}:${Date.now()}`
       }
     },
-    tempRoot
+    tempRoot,
+    mode: useIsolatedSqlite ? "isolated-sqlite" : "isolated-json",
+    stateStore: isolatedSqliteStore
   };
+}
+
+function closeSmokeStateStore(stateStore) {
+  if (stateStore && typeof stateStore.close === "function") {
+    stateStore.close();
+  }
 }
 
 function removeSmokeTemp(tempRoot) {
@@ -140,7 +169,7 @@ function removeSmokeTemp(tempRoot) {
 }
 
 async function main() {
-  const { options, tempRoot } = createSmokeOptions();
+  const { options, tempRoot, mode, stateStore } = createSmokeOptions();
   const server = createAppServer(options);
 
   try {
@@ -185,11 +214,12 @@ async function main() {
     );
 
     console.log("ZeroLag server smoke test passed.");
-    console.log(`Mode: ${useLiveState ? "live-state" : "isolated-state"}`);
+    console.log(`Mode: ${mode}`);
     console.log(`Health: ${health.body.product} ok`);
     console.log(`Readiness warnings: ${(readiness.body.warnings || []).length}`);
   } finally {
     await closeServer(server);
+    closeSmokeStateStore(stateStore);
     removeSmokeTemp(tempRoot);
   }
 }

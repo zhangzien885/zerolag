@@ -26,7 +26,8 @@ npm run deploy:checklist
 - Confirm `npm run server:check:strict` prints a safe SQLite summary and does not report SQLite storage issues.
 - Configure `ZEROLAG_PAYMENT_PROVIDER`, `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS`, `ZEROLAG_PAYMENT_URL_TEMPLATE`, and `ZEROLAG_PAYMENT_MESSAGE` for the real payment provider.
 - Run `npm run server:check:strict`.
-- Run `npm run server:smoke`.
+- Run `npm run server:smoke`; it should print `isolated-sqlite` when SQLite is configured and must not touch the live state path.
+- Run `npm run server:smoke -- --live-state` only during a planned private maintenance window when you intentionally want to test the configured live state.
 - Confirm backups, rate limiting, and maintenance cleanup are enabled.
 
 ## 3. Update Manifest
