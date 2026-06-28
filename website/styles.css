@@ -190,6 +190,12 @@ a {
   background: rgba(167, 255, 90, 0.07);
 }
 
+.purchase-button {
+  border-color: rgba(167, 255, 90, 0.42);
+  color: #d9ffc0;
+  background: linear-gradient(135deg, rgba(167, 255, 90, 0.13), rgba(78, 232, 143, 0.09));
+}
+
 .support-button {
   border-color: rgba(255, 199, 89, 0.34);
   color: #ffd889;

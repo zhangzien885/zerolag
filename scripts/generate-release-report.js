@@ -47,6 +47,7 @@ function buildReadiness(packageJson, appConfig, updateManifest, releaseArtifacts
     ["Release mode", appConfig.releaseMode === "production", "Set assets/app-config.json releaseMode to production"],
     ["Local demo disabled", appConfig.allowLocalDemoLicense === false, "Disable allowLocalDemoLicense before paid release"],
     ["Website URL", isHttpsUrl(appConfig.websiteUrl) && !isPlaceholderUrl(appConfig.websiteUrl), "Configure a real HTTPS websiteUrl"],
+    ["Purchase URL", isHttpsUrl(appConfig.purchaseUrl) && !isPlaceholderUrl(appConfig.purchaseUrl), "Configure a real HTTPS purchaseUrl"],
     ["Support URL", isHttpsUrl(appConfig.supportUrl) && !isPlaceholderUrl(appConfig.supportUrl), "Configure a real HTTPS supportUrl"],
     ["API URL", isHttpsUrl(appConfig.apiBaseUrl) && !isPlaceholderUrl(appConfig.apiBaseUrl), "Configure a real HTTPS apiBaseUrl"],
     ["Update manifest URL", isHttpsUrl(appConfig.updateManifestUrl) && !isPlaceholderUrl(appConfig.updateManifestUrl), "Configure a real HTTPS updateManifestUrl"],

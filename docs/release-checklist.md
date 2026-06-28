@@ -5,7 +5,7 @@ Use this checklist before preparing a paid public build.
 ## 1. Desktop Release Config
 
 - Set `assets/app-config.json` `releaseMode` to `production`.
-- Set real HTTPS values for `websiteUrl`, `supportUrl`, `apiBaseUrl`, and `updateManifestUrl`.
+- Set real HTTPS values for `websiteUrl`, `purchaseUrl`, `supportUrl`, `apiBaseUrl`, and `updateManifestUrl`.
 - Set `allowLocalDemoLicense` to `false`.
 - Add the production update public key to `updatePublicKeyPem`.
 

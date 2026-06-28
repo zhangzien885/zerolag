@@ -77,6 +77,10 @@ function assertReleaseManifest(release) {
     assertOk(isPublicHttpsUrl(release.supportUrl), "website/release.json supportUrl must be a real HTTPS URL when set.");
   }
 
+  if (release.purchaseUrl) {
+    assertOk(isPublicHttpsUrl(release.purchaseUrl), "website/release.json purchaseUrl must be a real HTTPS URL when set.");
+  }
+
   if (release.downloadReady) {
     assertOk(release.status === "available", "downloadReady releases must use available status.");
     assertOk(isPublicHttpsUrl(release.downloadUrl), "downloadReady releases must include a real HTTPS downloadUrl.");
@@ -106,7 +110,9 @@ function main() {
     "releaseChecksum",
     "copyChecksumButton",
     "releaseNotes",
+    "pricingPurchase",
     "downloadPrimary",
+    "downloadPurchase",
     "downloadSecondary",
     "downloadSupport"
   ].forEach((id) => assertHas(indexHtml, `id="${id}"`, "website download panel"));
@@ -119,11 +125,13 @@ function main() {
   assertHas(scriptJs, "formatBytes", "website installer size formatter");
   assertHas(scriptJs, "copyReleaseChecksum", "website checksum copy handler");
   assertHas(scriptJs, "clipboard.writeText", "website checksum clipboard path");
+  assertHas(scriptJs, "release.purchaseUrl", "website purchase link wiring");
   assertHas(scriptJs, "release.supportUrl", "website support link wiring");
   assertHas(scriptJs, "rel = \"noopener\"", "external download link safety");
   assertHas(stylesCss, ".release-checksum", "website release checksum style");
   assertHas(stylesCss, ".checksum-copy-button", "website checksum copy button style");
   assertHas(stylesCss, ".release-notes", "website release notes style");
+  assertHas(stylesCss, ".purchase-button", "website purchase button style");
   assertHas(stylesCss, ".support-button", "website support button style");
   assertHas(stylesCss, "[hidden]", "website hidden element style");
 

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T07:36:07.329Z",
+  "generatedAt": "2026-06-28T07:47:59.615Z",
   "files": [
     {
       "path": "package.json",
@@ -56,27 +56,27 @@
     },
     {
       "path": "scripts/generate-release-report.js",
-      "sha256": "4a86fc03901757619a1a74419166973b2bf48e0e448d0ad2811a91a1c725efcd"
+      "sha256": "beca4caba7c49428fee2e553645ba1dc54e09cc6238ce8f7e48df8b16168f527"
     },
     {
       "path": "scripts/publish-website-release.js",
-      "sha256": "2121719ade80980549610629a40c8d1a1f255ee6f1eef8b0e0b13e1c1cc9a709"
+      "sha256": "246779da5bc776ea99076b32eeaa2337a11f224781a1f923fe53b6a80fe2810f"
     },
     {
       "path": "scripts/website-smoke-test.js",
-      "sha256": "ef4cd23870eaed9e7a9f56c6bf9d99aa3e42e91ffb6ffc7fd82744d9c33e8cc8"
+      "sha256": "7cc08522116ca554ae3d47d968f042fd300042ff10b41968b598ea09c3092331"
     },
     {
       "path": "scripts/website-release-publish-smoke-test.js",
-      "sha256": "66fdfc5d6035056defc8394aada137d14daae4a30d0e287afb8e4bb4ef6bc076"
+      "sha256": "3763e6c28951ace69712d347749484a028dda72bdcc74fa9726e72402b8aef4a"
     },
     {
       "path": "scripts/production-check.js",
-      "sha256": "498716e8c5201678adacbeb5c98ba873b991e4627059c64e264daa4a480429b0"
+      "sha256": "1a6353779fe9ba2b98949e90fc8c7b8c68fd77a712bc866887de3672943ff904"
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "2a5031b3bc2e57e9db2033667c9c635c5b38647840e83ab39d23f7ddef5ca41e"
+      "sha256": "c1e06454cf8beafab08d47c7a6e622216dfaf1ca01154cf588d49883642e8dff"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -104,12 +104,12 @@
     },
     {
       "path": "assets/app-config.json",
-      "sha256": "eef49877473bccd463c4ec206ea13d702f5ab0975e60debcd0906e4b7dfb4232"
+      "sha256": "553698a74ecc8de12f108d38a8d0280e596b57ded90ce941f74828a66b9437a9"
     },
     {
       "path": "assets/zerolag-power-plan-template.protected.json",
       "sha256": "03088e08120ee7508d175a61b3b6f66ee31a657ec592adfd60e5f352f890fc6d"
     }
   ],
-  "signature": "6151978dbb47d2182fe91564542a545d112030df501295b2ce271262f839b5aa"
+  "signature": "20f39c358224245b919fdfbb974adfc55efd36de49352a3e496a36cb4b2881ed"
 }

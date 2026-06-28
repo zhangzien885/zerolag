@@ -9,7 +9,9 @@ const releaseDescription = document.querySelector("#releaseDescription");
 const releaseChecksum = document.querySelector("#releaseChecksum");
 const copyChecksumButton = document.querySelector("#copyChecksumButton");
 const releaseNotes = document.querySelector("#releaseNotes");
+const pricingPurchase = document.querySelector("#pricingPurchase");
 const downloadPrimary = document.querySelector("#downloadPrimary");
+const downloadPurchase = document.querySelector("#downloadPurchase");
 const downloadSecondary = document.querySelector("#downloadSecondary");
 const downloadSupport = document.querySelector("#downloadSupport");
 let fullReleaseChecksum = "";
@@ -66,6 +68,21 @@ function setExternalLink(anchor, url) {
   anchor.rel = "noopener";
 }
 
+function wirePurchaseLink(url) {
+  if (!url) return;
+
+  if (pricingPurchase) {
+    pricingPurchase.textContent = "开通 ZeroLag Pro";
+    setExternalLink(pricingPurchase, url);
+  }
+
+  if (downloadPurchase) {
+    downloadPurchase.hidden = false;
+    downloadPurchase.textContent = "开通会员";
+    setExternalLink(downloadPurchase, url);
+  }
+}
+
 async function copyReleaseChecksum() {
   if (!fullReleaseChecksum || !copyChecksumButton) return;
 
@@ -108,6 +125,8 @@ function renderReleaseNotes(notes) {
 
 function renderRelease(release) {
   if (!release || !release.version) return;
+
+  wirePurchaseLink(release.purchaseUrl);
 
   if (release.supportUrl && downloadSupport) {
     downloadSupport.hidden = false;

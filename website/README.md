@@ -17,4 +17,4 @@ npm run website:smoke
 npm run website:release:smoke
 ```
 
-This publishes sanitized release metadata for the static website, including version, download readiness, installer filename, installer size, SHA256 checksum, checksum-copy support, public release notes, and the production support/contact link when configured. `website:smoke` verifies the download panel wiring and public release metadata before deployment. `website:release:smoke` tests the publishing flow in temporary fixtures without changing `website/release.json`.
+This publishes sanitized release metadata for the static website, including version, download readiness, installer filename, installer size, SHA256 checksum, checksum-copy support, public release notes, the production purchase link, and the production support/contact link when configured. `website:smoke` verifies the download panel wiring and public release metadata before deployment. `website:release:smoke` tests the publishing flow in temporary fixtures without changing `website/release.json`.

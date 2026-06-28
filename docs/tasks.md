@@ -134,6 +134,7 @@
 - Added human-readable installer size display on the website download panel while keeping byte-accurate release metadata.
 - Added a website download-panel control for copying the full installer SHA256 checksum, with smoke-test coverage.
 - Added a website download-panel support CTA that opens the configured production support URL when available.
+- Added a configurable website purchase CTA sourced from production `purchaseUrl`, with publish and smoke-test coverage.
 
 ## Known Boundaries
 

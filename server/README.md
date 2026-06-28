@@ -198,6 +198,7 @@ For a paid release:
 - Use HTTPS.
 - Set `releaseMode` to `production`.
 - Set `allowLocalDemoLicense` to `false`.
+- Configure real HTTPS `websiteUrl`, `purchaseUrl`, `supportUrl`, `apiBaseUrl`, and `updateManifestUrl` values.
 - Use a strong `ZEROLAG_SERVER_SECRET`.
 - Use a strong `ZEROLAG_ADMIN_SECRET`.
 - Use a strong `ZEROLAG_PAYMENT_WEBHOOK_SECRET`.

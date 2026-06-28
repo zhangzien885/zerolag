@@ -2,6 +2,7 @@
   "releaseMode": "development",
   "releaseChannel": "alpha",
   "websiteUrl": "https://example.com/zerolag",
+  "purchaseUrl": "",
   "apiBaseUrl": "",
   "updateManifestUrl": "",
   "updatePublicKeyPem": "",

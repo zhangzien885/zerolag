@@ -61,6 +61,7 @@ function main() {
   const installer = artifacts.installer || {};
   const downloadUrl = publicUrl(updateManifest.downloadUrl);
   const supportUrl = publicUrl(appConfig.supportUrl);
+  const purchaseUrl = publicUrl(appConfig.purchaseUrl);
   const websiteRelease = {
     productName: artifacts.productName || "ZeroLag",
     version: artifacts.version || "",
@@ -69,6 +70,7 @@ function main() {
     downloadReady: Boolean(downloadUrl),
     downloadUrl,
     supportUrl,
+    purchaseUrl,
     generatedAt: new Date().toISOString(),
     releaseNotes: publicReleaseNotes(updateManifest.releaseNotes),
     installer: {
