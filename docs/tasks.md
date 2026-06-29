@@ -32,6 +32,7 @@
 - Manual rescan control: topbar "rescan" button refreshes license, permission, performance, diagnostics, and memory status on demand.
 - Game toolbox button that opens a dedicated toolbox dialog with local game library, add-game picker, one-click game launch, network latency check, DNS refresh, and Boost session timer.
 - Support diagnostics export in the game toolbox for customer support, without exposing activation codes, tokens, protected tuning parameters, or game paths.
+- Safe diagnostics bundle location reveal after export, without returning the full local file path to the renderer.
 - Redacted local support log included in diagnostics, limited to recent user-facing events and filtered for activation codes, tokens, URLs, paths, and GUIDs.
 - Official support/contact button in the game toolbox, driven by production `supportUrl` configuration with safe handoff feedback.
 - Support handoff summary in the game toolbox with case ID, membership, version, runtime, and readiness status before contacting support.
@@ -116,6 +117,7 @@
 - Added safer JSON-state persistence with atomic writes, rolling backups, corrupted-state fallback, and admin state export for migration or emergency recovery.
 - Added signed update-manifest verification in the desktop client plus release tooling for generating, signing, and verifying update metadata.
 - Added customer-support diagnostics bundle export from the desktop toolbox with redacted membership and runtime details.
+- Added a safe diagnostics bundle location reveal so users can find exported support files without exposing full local paths to the renderer.
 - Added redacted support-event logging so exported diagnostics include recent user-facing operation history without sensitive codes or implementation details.
 - Added a configurable official support/contact link in the desktop toolbox and production readiness checks for `supportUrl`.
 - Hardened official support/contact opening so missing, placeholder, or failed support links show user-safe feedback.

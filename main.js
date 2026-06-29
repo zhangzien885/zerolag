@@ -33,6 +33,7 @@ let splashWindow = null;
 let mainWindow = null;
 let tray = null;
 let supportLogWriteQueue = Promise.resolve();
+let lastSupportBundlePath = "";
 
 function defaultAppConfig() {
   return {
@@ -1169,6 +1170,7 @@ async function getSupportHandoff() {
 }
 
 async function createSupportBundle() {
+  lastSupportBundlePath = "";
   const defaultPath = path.join(app.getPath("desktop"), `ZeroLag-support-${safeFileTimestamp()}.json`);
   const result = await dialog.showSaveDialog(mainWindow || undefined, {
     title: "导出 ZeroLag 支持诊断包",
@@ -1188,10 +1190,11 @@ async function createSupportBundle() {
   const payload = await buildSupportDiagnosticPayload();
   fs.mkdirSync(path.dirname(result.filePath), { recursive: true });
   fs.writeFileSync(result.filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+  lastSupportBundlePath = result.filePath;
   return {
     ok: true,
-    filePath: result.filePath,
     fileName: path.basename(result.filePath),
+    canReveal: true,
     summary: {
       licenseActive: payload.license.active,
       admin: payload.permissions.admin,
@@ -1201,6 +1204,35 @@ async function createSupportBundle() {
       caseId: payload.supportHandoff.caseId
     }
   };
+}
+
+function revealLastSupportBundle() {
+  if (!lastSupportBundlePath) {
+    return {
+      ok: false,
+      reason: "NO_SUPPORT_BUNDLE"
+    };
+  }
+
+  if (!fs.existsSync(lastSupportBundlePath)) {
+    lastSupportBundlePath = "";
+    return {
+      ok: false,
+      reason: "SUPPORT_BUNDLE_MISSING"
+    };
+  }
+
+  try {
+    shell.showItemInFolder(lastSupportBundlePath);
+    return {
+      ok: true
+    };
+  } catch {
+    return {
+      ok: false,
+      reason: "SUPPORT_BUNDLE_REVEAL_FAILED"
+    };
+  }
 }
 
 async function addGameToLibrary() {
@@ -2371,6 +2403,7 @@ app.whenReady().then(async () => {
   ipcMain.handle("zerolag:flush-dns", async () => flushDnsCache());
   ipcMain.handle("zerolag:get-support-handoff", async () => getSupportHandoff());
   ipcMain.handle("zerolag:create-support-bundle", async () => createSupportBundle());
+  ipcMain.handle("zerolag:reveal-support-bundle", async () => revealLastSupportBundle());
   ipcMain.handle("zerolag:record-support-log", async (_event, entry) => recordSupportLog(entry && entry.message, entry && entry.type));
   ipcMain.handle("zerolag:get-app-config", async () => {
     const config = readAppConfig();

@@ -27,6 +27,7 @@ ZeroLag is a Windows extreme gaming performance optimizer.
 - Shows a restore assurance card so users can see when Boost can safely return to daily mode.
 - Includes a game toolbox button that opens local game library, one-click game launch, network latency check, DNS refresh, and Boost session timer tools.
 - Exports a redacted support diagnostics bundle from the game toolbox for customer support.
+- Reveals the saved diagnostics bundle location after export without exposing the full local path in the renderer.
 - Keeps a local redacted support log so diagnostics include recent user-facing events without activation codes, tokens, paths, or tuning details.
 - Opens a configured official support page from the game toolbox with safe handoff feedback for customer help and diagnostics.
 - Prepares and copies a support handoff summary with case ID, membership, version, runtime, and readiness status before contacting support.

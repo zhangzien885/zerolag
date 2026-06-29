@@ -51,6 +51,7 @@ const els = {
   supportBundleButton: document.querySelector("#supportBundleButton"),
   supportCopyButton: document.querySelector("#supportCopyButton"),
   supportContactButton: document.querySelector("#supportContactButton"),
+  supportRevealButton: document.querySelector("#supportRevealButton"),
   supportCaseId: document.querySelector("#supportCaseId"),
   supportMemberStatus: document.querySelector("#supportMemberStatus"),
   supportVersionStatus: document.querySelector("#supportVersionStatus"),
@@ -111,6 +112,7 @@ let pendingPaymentUrl = "";
 let pendingCheckoutMode = "payment";
 let purchaseAppConfig = {};
 let latestSupportHandoff = null;
+let latestSupportBundleReady = false;
 
 function setText(node, value) {
   node.textContent = value;
@@ -138,6 +140,12 @@ function addLog(message, type = "") {
 function setPill(node, text, className = "") {
   node.className = `status-pill ${className}`.trim();
   setText(node, text);
+}
+
+function setSupportBundleRevealReady(ready) {
+  latestSupportBundleReady = Boolean(ready);
+  els.supportRevealButton.hidden = !latestSupportBundleReady;
+  els.supportRevealButton.disabled = !latestSupportBundleReady;
 }
 
 function setStep(step, state) {
@@ -1167,6 +1175,7 @@ els.supportCopyButton.addEventListener("click", async () => {
 
 els.supportBundleButton.addEventListener("click", async () => {
   els.supportBundleButton.disabled = true;
+  setSupportBundleRevealReady(false);
   setText(els.toolState, "生成诊断");
   setText(els.supportState, "生成中");
   setText(els.supportDetail, "正在整理版本、会员、权限、系统检测、更新状态和最近操作记录。");
@@ -1187,7 +1196,8 @@ els.supportBundleButton.addEventListener("click", async () => {
     setText(els.toolState, "诊断完成");
     setText(els.supportState, "已生成");
     if (result.summary && result.summary.caseId) setText(els.supportCaseId, result.summary.caseId);
-    setText(els.supportDetail, `诊断文件已保存：${result.fileName || "ZeroLag-support.json"}。售后编号：${result.summary && result.summary.caseId ? result.summary.caseId : "已生成"}`);
+    setSupportBundleRevealReady(result.canReveal);
+    setText(els.supportDetail, `诊断文件已保存：${result.fileName || "ZeroLag-support.json"}。售后编号：${result.summary && result.summary.caseId ? result.summary.caseId : "已生成"}，可打开位置后发送给客服。`);
     addLog("支持诊断包已生成，可发送给客服排查。", "good");
   } catch {
     setText(els.toolState, "诊断失败");
@@ -1196,6 +1206,35 @@ els.supportBundleButton.addEventListener("click", async () => {
     addLog("支持诊断包生成失败。", "warn");
   } finally {
     els.supportBundleButton.disabled = false;
+  }
+});
+
+els.supportRevealButton.addEventListener("click", async () => {
+  els.supportRevealButton.disabled = true;
+  setText(els.toolState, "打开诊断位置");
+
+  try {
+    const result = await window.zeroLag.revealSupportBundle();
+    if (result && result.ok) {
+      setText(els.toolState, "位置已打开");
+      setText(els.supportState, "位置已打开");
+      setText(els.supportDetail, "已打开诊断文件所在位置，请把诊断包发送给客服排查。");
+      addLog("已打开诊断包所在位置。", "good");
+      return;
+    }
+
+    setSupportBundleRevealReady(false);
+    setText(els.toolState, "文件不可用");
+    setText(els.supportState, "需重新生成");
+    setText(els.supportDetail, "诊断文件可能已被移动或删除，请重新生成诊断包。");
+    addLog("诊断包位置不可用，请重新生成。", "warn");
+  } catch {
+    setText(els.toolState, "打开失败");
+    setText(els.supportState, "打开失败");
+    setText(els.supportDetail, "诊断包位置打开失败，请稍后再试或重新生成诊断包。");
+    addLog("诊断包位置打开失败。", "warn");
+  } finally {
+    els.supportRevealButton.disabled = !latestSupportBundleReady;
   }
 });
 
