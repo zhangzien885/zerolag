@@ -15,6 +15,7 @@ npm run server:deployment-report:strict
 ## 1. Desktop Release Config
 
 - Set `assets/app-config.json` `releaseMode` to `production`.
+- Prefer `npm run production:mode -- --mode production --write` so release mode is written only after required public release fields are ready.
 - Set real HTTPS values for `websiteUrl`, `purchaseUrl`, `analyticsUrl`, `supportUrl`, `apiBaseUrl`, and `updateManifestUrl`.
 - Use `npm run production:config -- --domain your-domain.example --write` to generate the production URL fields, then review them before building.
 - Set `allowLocalDemoLicense` to `false`.

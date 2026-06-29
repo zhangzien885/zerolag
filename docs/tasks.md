@@ -176,6 +176,7 @@
 - Added configurable payment-provider readiness with checkout URL templates and signed webhook provider allowlisting for future WeChat Pay / Alipay integration.
 - Added WeChat Pay and Alipay merchant credential env placeholders plus readiness checks across env validation, deployment checklist, and deployment reports.
 - Added a production URL config generator that prepares desktop website, purchase, support, analytics, API, update-manifest, and installer download URLs from one domain.
+- Added a guarded production-mode switch that refuses to write `releaseMode=production` until public URLs, public keys, update metadata, and demo-license settings are ready.
 - Added a generated deployment checklist command that consolidates desktop config, server secrets, payment provider, update metadata, signing, and final release gates.
 - Added a private server deployment report command that summarizes env, storage, backup, payment, update, and endpoint readiness without exposing secret values.
 - Added a redacted JSON server deployment report for CI, deployment scripts, and private operations dashboards.

@@ -56,6 +56,7 @@ npm run server:secrets
 npm run release:preflight
 npm run release:preflight:strict
 npm run release:version -- --version 1.0.0 --write
+npm run production:mode -- --mode production --write
 ```
 
 `production:check` validates desktop release config. `server:check` validates server deployment environment variables. Use the `:strict` variants before a real paid release.
@@ -66,6 +67,7 @@ Server commands automatically load `.secrets/server.env` when it exists. Existin
 
 `release:preflight` summarizes the remaining packaging, signing, update, and production-config gates. Use `release:preflight:strict` only when preparing a real public build. See `docs/release-checklist.md`.
 `release:version` synchronizes `package.json` and `assets/update.json` release versions; dry-run is default, and `--write` applies the change.
+`production:mode` switches `releaseMode` only after production URLs, public keys, update metadata, and demo-license settings are ready.
 
 ## Signed updates
 
