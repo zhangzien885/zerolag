@@ -52,7 +52,8 @@ npm run server:deployment-report:strict
 
 ## 3. Update Manifest
 
-- Update `assets/update.json` `latest` to match `package.json` version.
+- Run `npm run release:version -- --version 1.0.0 --write` to synchronize `package.json` and `assets/update.json` before signing.
+- Use `--min-supported 1.0.0` when a release should force very old clients to update.
 - Replace placeholder download URLs with the final HTTPS download page.
 - Keep `assets/update.json` public release notes customer-facing; do not mention internal protection strategy, watchdogs, Windows services, private keys, server env, or packaging helper details.
 - Run `npm run update:smoke` to verify the signing toolchain with temporary keys.
