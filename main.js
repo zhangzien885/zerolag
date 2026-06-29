@@ -2388,9 +2388,27 @@ app.whenReady().then(async () => {
   ipcMain.handle("zerolag:get-order-status", async (_event, orderId) => getMembershipOrderStatus(orderId));
   ipcMain.handle("zerolag:open-website", async () => {
     const target = readAppConfig().websiteUrl;
-    if (!isHttpUrl(target)) return false;
-    await shell.openExternal(target);
-    return true;
+    if (!isConfiguredPublicUrl(target)) {
+      return {
+        ok: false,
+        configured: false,
+        reason: "WEBSITE_URL_NOT_CONFIGURED"
+      };
+    }
+
+    try {
+      await shell.openExternal(target);
+      return {
+        ok: true,
+        configured: true
+      };
+    } catch {
+      return {
+        ok: false,
+        configured: true,
+        reason: "WEBSITE_URL_OPEN_FAILED"
+      };
+    }
   });
   ipcMain.handle("zerolag:open-purchase-url", async () => {
     const target = purchaseTargetFromConfig(readAppConfig());

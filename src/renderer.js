@@ -418,6 +418,43 @@ async function refreshServiceStatus() {
   }
 }
 
+function websiteOpenSucceeded(result) {
+  return result === true || Boolean(result && result.ok);
+}
+
+async function openOfficialWebsiteWithFeedback(source = "topbar") {
+  try {
+    const result = await window.zeroLag.openWebsite();
+    if (websiteOpenSucceeded(result)) {
+      if (source === "service") {
+        setText(els.serviceState, "官网已打开");
+        setText(els.serviceDetail, "已打开官方页面，可查看下载、购买和售后入口。");
+      }
+      addLog("已打开官方页面。", "good");
+      return true;
+    }
+
+    if (source === "service") {
+      setText(els.serviceState, result && result.configured ? "打开失败" : "官网未配置");
+      setText(
+        els.serviceDetail,
+        result && result.configured
+          ? "官方页面打开失败，请稍后再试。"
+          : "官网入口暂未准备好，正式上线后这里会直接打开官方页面。"
+      );
+    }
+    addLog(result && result.configured ? "官方页面打开失败。" : "官网入口暂未配置。", "warn");
+  } catch {
+    if (source === "service") {
+      setText(els.serviceState, "打开失败");
+      setText(els.serviceDetail, "官方页面打开失败，请稍后再试。");
+    }
+    addLog("官方页面打开失败。", "warn");
+  }
+
+  return false;
+}
+
 function renderSupportHandoff(handoff) {
   if (!handoff || !handoff.ok) {
     setText(els.supportCaseId, "准备失败");
@@ -982,25 +1019,8 @@ els.serviceRefreshButton.addEventListener("click", async () => {
 
 els.serviceWebsiteButton.addEventListener("click", async () => {
   els.serviceWebsiteButton.disabled = true;
-  try {
-    const opened = await window.zeroLag.openWebsite();
-    if (opened) {
-      setText(els.serviceState, "官网已打开");
-      setText(els.serviceDetail, "已打开官方页面，可查看下载、购买和售后入口。");
-      addLog("已打开官方页面。", "good");
-      return;
-    }
-
-    setText(els.serviceState, "官网未配置");
-    setText(els.serviceDetail, "官网入口暂未准备好，正式上线后这里会直接打开官方页面。");
-    addLog("官网入口暂未配置。", "warn");
-  } catch {
-    setText(els.serviceState, "打开失败");
-    setText(els.serviceDetail, "官方页面打开失败，请稍后再试。");
-    addLog("官方页面打开失败。", "warn");
-  } finally {
-    els.serviceWebsiteButton.disabled = false;
-  }
+  await openOfficialWebsiteWithFeedback("service");
+  els.serviceWebsiteButton.disabled = false;
 });
 
 els.addGameButton.addEventListener("click", async () => {
@@ -1217,7 +1237,9 @@ els.copyActivationCodeButton.addEventListener("click", async () => {
 });
 
 els.websiteButton.addEventListener("click", async () => {
-  await window.zeroLag.openWebsite();
+  els.websiteButton.disabled = true;
+  await openOfficialWebsiteWithFeedback("topbar");
+  els.websiteButton.disabled = false;
 });
 
 els.updateBadge.addEventListener("click", () => {

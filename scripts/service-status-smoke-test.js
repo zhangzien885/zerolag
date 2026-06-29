@@ -25,6 +25,8 @@ function main() {
   assertIncludes(mainJs, "publicServiceStatusFromConfig", "Main process must build a public service readiness summary.");
   assertIncludes(mainJs, "serviceStatus: publicServiceStatusFromConfig(config)", "App config IPC must return service readiness status.");
   assertIncludes(mainJs, "websiteConfigured: isConfiguredPublicUrl(config.websiteUrl)", "Website readiness must require a configured public website URL.");
+  assertIncludes(mainJs, "WEBSITE_URL_NOT_CONFIGURED", "Website opening must reject missing or placeholder URLs.");
+  assertIncludes(mainJs, "WEBSITE_URL_OPEN_FAILED", "Website opening must fail safely when the browser handoff fails.");
   assertIncludes(mainJs, "purchaseConfigured: Boolean(purchaseTargetFromConfig(config))", "Purchase readiness must reuse official purchase fallback rules.");
   assertIncludes(mainJs, "isConfiguredPublicUrl(config.apiBaseUrl)", "Account readiness must require a configured public API URL.");
   assertIncludes(mainJs, "isConfiguredPublicUrl(config.updateManifestUrl)", "Update readiness must require a configured public update URL.");
@@ -38,11 +40,15 @@ function main() {
   assertIncludes(indexHtml, 'id="serviceWebsiteButton"', "Toolbox must include a website open action.");
   assertIncludes(rendererJs, "renderServiceStatus", "Renderer must render service readiness.");
   assertIncludes(rendererJs, "refreshServiceStatus", "Renderer must refresh service readiness.");
+  assertIncludes(rendererJs, "websiteOpenSucceeded", "Renderer must support structured website-open results.");
+  assertIncludes(rendererJs, "openOfficialWebsiteWithFeedback", "Renderer must show user-safe website-open feedback.");
   assertIncludes(rendererJs, "refreshServiceStatus();", "Toolbox open must refresh service readiness.");
   assertIncludes(rendererJs, "renderServiceStatus(config);", "Update checks must refresh service readiness from app config.");
   assertIncludes(rendererJs, "setServiceStatus(els.serviceWebsiteState, status.websiteConfigured)", "Renderer must render website readiness.");
   assertIncludes(rendererJs, "serviceRefreshButton.addEventListener", "Renderer must wire service refresh action.");
   assertIncludes(rendererJs, "serviceWebsiteButton.addEventListener", "Renderer must wire website open action.");
+  assertIncludes(rendererJs, "websiteButton.addEventListener", "Renderer must wire topbar website action.");
+  assertIncludes(rendererJs, "els.websiteButton.disabled = true", "Topbar website action must avoid double clicks while opening.");
   assertIncludes(rendererJs, "window.zeroLag.openWebsite", "Renderer must open the official website from service actions.");
   assertIncludes(rendererJs, "部分官方服务已准备", "Service readiness copy must stay customer-facing.");
   assertIncludes(stylesCss, ".service-grid", "Service status grid must have dedicated styling.");

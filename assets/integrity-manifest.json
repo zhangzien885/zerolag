@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T05:35:32.524Z",
+  "generatedAt": "2026-06-29T05:41:11.705Z",
   "files": [
     {
       "path": "package.json",
@@ -8,7 +8,7 @@
     },
     {
       "path": "main.js",
-      "sha256": "7e5988567a729b2b07ac7f98b8c3b1fd5f75441e467df5968cf4450c01647c56"
+      "sha256": "223bcacc8fa64d6e5c8be4dcfd9873510b5964bca17240e7925be6e264b43215"
     },
     {
       "path": "preload.js",
@@ -24,7 +24,7 @@
     },
     {
       "path": "src/renderer.js",
-      "sha256": "87a7ad6df4964892ab307047b90aaf5eabc89e07d1ca6c2356be6167dbbe36c1"
+      "sha256": "19d9ea8aab358e1e4c4340adf6037d760360ee9ffffc709a14baa77e1a69e1ea"
     },
     {
       "path": "src/styles.css",
@@ -227,5 +227,5 @@
       "sha256": "32959ffda1c3a8acacbe1806248f89e439b1264bc5235bb98eab10bc167c2b5f"
     }
   ],
-  "signature": "d75fed84707986039b89880a4d5dab42fc379f657add1f94cfe3a5d35220e6c1"
+  "signature": "091f35c4bafbcb3c15e230746458934697a4a63f6b2e05df4fd90f6b3363980b"
 }
