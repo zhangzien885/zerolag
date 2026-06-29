@@ -1,14 +1,14 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T05:17:45.878Z",
+  "generatedAt": "2026-06-29T05:29:35.777Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "258fb1b84ce67867efaa46d643c4151b4c3cf7637da467c9ac61cb01e1108e60"
+      "sha256": "196d4472b9c9a9c43ce262130a4fb6e9b3d14b26c4be0b6b532e660621bce525"
     },
     {
       "path": "main.js",
-      "sha256": "0834a6b7ab4bf088d0594866113268cd322665fd17113ec2dbe80fb3d86561e3"
+      "sha256": "7e5988567a729b2b07ac7f98b8c3b1fd5f75441e467df5968cf4450c01647c56"
     },
     {
       "path": "preload.js",
@@ -16,7 +16,7 @@
     },
     {
       "path": "src/index.html",
-      "sha256": "8ce1c0fb90d915d4394f07c0e6a58cffbfc949e618aaf132a2cd107fccb54a80"
+      "sha256": "578ef2fc071a42feb6e7329de0e7766c6b062c6c838ec20129236f9a8ae0445c"
     },
     {
       "path": "src/splash.html",
@@ -24,11 +24,11 @@
     },
     {
       "path": "src/renderer.js",
-      "sha256": "710a0ed23474b012e53a07a7deb6dac7109d9d7910203e33c4558dc8d6531155"
+      "sha256": "643906b592b24cce31d396c1351f6b2ecfdca059711a38cc8532df5c0871a301"
     },
     {
       "path": "src/styles.css",
-      "sha256": "8f5aa7cf0b234d9248c2dd3c3f23c3e95ce3589a476db69c9046c475db147178"
+      "sha256": "2f365311c38668a5ddfe0a6acaf93cbe91c469f69190d84ab710ee1b652a0c89"
     },
     {
       "path": "scripts/runtime-guard-core.js",
@@ -136,7 +136,7 @@
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "651713993052407a09b73473bc2b4027469f21f68c0f111697af082767f2a3e0"
+      "sha256": "fb0edb9d6c9dcfc02ff9cf8727351876376e67c7c9de7ae179c1c9df99673854"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -227,5 +227,5 @@
       "sha256": "32959ffda1c3a8acacbe1806248f89e439b1264bc5235bb98eab10bc167c2b5f"
     }
   ],
-  "signature": "50a060a13f18321b33a87a3f9988e26e8c03186ad309f5a6b3c85b120796bc3e"
+  "signature": "013c0d92b7c1cc239d237cbc900f3c5b1d1d47024daaa08c21e6f0343166a5a8"
 }

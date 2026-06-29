@@ -36,6 +36,12 @@ const els = {
   versionDetail: document.querySelector("#versionDetail"),
   versionCheckButton: document.querySelector("#versionCheckButton"),
   versionInstallButton: document.querySelector("#versionInstallButton"),
+  serviceState: document.querySelector("#serviceState"),
+  serviceDetail: document.querySelector("#serviceDetail"),
+  servicePurchaseState: document.querySelector("#servicePurchaseState"),
+  serviceAccountState: document.querySelector("#serviceAccountState"),
+  serviceUpdateState: document.querySelector("#serviceUpdateState"),
+  serviceSupportState: document.querySelector("#serviceSupportState"),
   supportState: document.querySelector("#supportState"),
   supportDetail: document.querySelector("#supportDetail"),
   supportPrepareButton: document.querySelector("#supportPrepareButton"),
@@ -359,6 +365,49 @@ function supportUpdateLabel(update) {
   return update.current ? `当前 ${update.current}` : "已就绪";
 }
 
+function setServiceStatus(node, ready) {
+  setText(node, ready ? "已准备" : "准备中");
+  node.classList.toggle("ready", Boolean(ready));
+  node.classList.toggle("pending", !ready);
+}
+
+function renderServiceStatus(config = {}) {
+  const status = config.serviceStatus || {};
+  const checks = [
+    Boolean(status.purchaseConfigured),
+    Boolean(status.accountConfigured),
+    Boolean(status.updateConfigured),
+    Boolean(status.supportConfigured)
+  ];
+  const readyCount = checks.filter(Boolean).length;
+
+  setText(els.serviceState, readyCount === checks.length ? "全部就绪" : (readyCount ? `${readyCount}/${checks.length} 就绪` : "准备中"));
+  setText(
+    els.serviceDetail,
+    readyCount === checks.length
+      ? "购买、账号验证、版本更新和售后入口都已准备。"
+      : (readyCount
+        ? "部分官方服务已准备，其余通道会在正式上线前补齐。"
+        : "官方服务正在准备中，当前仍可使用本地检测和工具箱功能。")
+  );
+  setServiceStatus(els.servicePurchaseState, status.purchaseConfigured);
+  setServiceStatus(els.serviceAccountState, status.accountConfigured);
+  setServiceStatus(els.serviceUpdateState, status.updateConfigured);
+  setServiceStatus(els.serviceSupportState, status.supportConfigured);
+}
+
+async function refreshServiceStatus() {
+  setText(els.serviceState, "读取中");
+  setText(els.serviceDetail, "正在确认购买、账号、更新和售后通道是否准备就绪。");
+
+  try {
+    renderServiceStatus(await window.zeroLag.getAppConfig());
+  } catch {
+    setText(els.serviceState, "读取失败");
+    setText(els.serviceDetail, "服务状态暂时不可用，请稍后重新打开工具箱。");
+  }
+}
+
 function renderSupportHandoff(handoff) {
   if (!handoff || !handoff.ok) {
     setText(els.supportCaseId, "准备失败");
@@ -550,6 +599,7 @@ async function checkForUpdates(options = {}) {
       window.zeroLag.getAppConfig()
     ]);
     renderVersionCenter(update, config);
+    renderServiceStatus(config);
 
     if (!update || !update.updateAvailable) {
       pendingUpdate = null;
@@ -902,6 +952,7 @@ els.toolboxButton.addEventListener("click", () => {
   els.toolboxOverlay.hidden = false;
   setText(els.toolState, "待命");
   refreshGameLibrary();
+  refreshServiceStatus();
   refreshSupportHandoff();
 });
 

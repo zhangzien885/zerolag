@@ -1071,12 +1071,60 @@ body.ready-mid .metric-rail {
 
 .network-block p,
 .version-block p,
+.service-block p,
 .support-block p {
   min-height: 38px;
   margin: 0;
   color: var(--muted);
   font-size: 12px;
   line-height: 1.45;
+}
+
+.service-block {
+  grid-column: 1 / -1;
+}
+
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.service-grid div {
+  border: 1px solid rgba(196, 255, 220, 0.11);
+  background:
+    linear-gradient(135deg, rgba(167, 255, 90, 0.052), transparent 56%),
+    rgba(0, 0, 0, 0.18);
+  padding: 9px 10px;
+  min-width: 0;
+}
+
+.service-grid span,
+.service-grid strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.service-grid span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.service-grid strong {
+  margin-top: 5px;
+  color: var(--amber);
+  font-size: 12px;
+}
+
+.service-grid strong.ready {
+  color: var(--green);
+}
+
+.service-grid strong.pending {
+  color: var(--amber);
 }
 
 .support-handoff {
@@ -1856,6 +1904,10 @@ body.ready-mid .metric-rail {
     flex-direction: row;
     min-width: 0;
     margin-top: 14px;
+  }
+
+  .service-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .boost-core {

@@ -105,6 +105,16 @@ function purchaseTargetFromConfig(config) {
   return "";
 }
 
+function publicServiceStatusFromConfig(config) {
+  return {
+    websiteConfigured: isConfiguredPublicUrl(config.websiteUrl),
+    purchaseConfigured: Boolean(purchaseTargetFromConfig(config)),
+    accountConfigured: isConfiguredPublicUrl(config.apiBaseUrl),
+    updateConfigured: isConfiguredPublicUrl(config.updateManifestUrl),
+    supportConfigured: isConfiguredPublicUrl(config.supportUrl)
+  };
+}
+
 function normalizeBaseUrl(value) {
   return String(value || "").replace(/\/+$/, "");
 }
@@ -2369,7 +2379,8 @@ app.whenReady().then(async () => {
       releaseChannel: config.releaseChannel,
       websiteUrl: config.websiteUrl,
       purchaseUrl: config.purchaseUrl,
-      supportUrl: config.supportUrl
+      supportUrl: config.supportUrl,
+      serviceStatus: publicServiceStatusFromConfig(config)
     };
   });
   ipcMain.handle("zerolag:get-update-status", async () => readUpdateStatusV2());
