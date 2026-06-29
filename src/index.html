@@ -337,22 +337,31 @@
                   <b id="orderState">待创建</b>
                 </div>
                 <div>
-                  <span>激活码</span>
+                  <span>订单编号</span>
+                  <b id="paymentOrderId">待创建</b>
+                </div>
+                <div>
+                  <span>支付方式</span>
+                  <b id="paymentProvider">待连接</b>
+                </div>
+                <div>
+                  <span>开通凭证</span>
                   <b id="orderCode">等待开通</b>
                 </div>
               </div>
             </div>
             <div>
-              <span>支付占位</span>
+              <span>安全支付</span>
               <strong>正式版接入微信/支付宝</strong>
-              <p>当前原型可使用会员码激活：ZL-PRO-DEMO-2026</p>
+              <p>订单创建后会打开官方支付页，支付完成后回到这里刷新开通状态。</p>
             </div>
           </div>
         </div>
 
         <div class="purchase-actions">
-          <button id="paidButton" class="confirm-pay-button">我已完成支付</button>
-          <button id="copyDemoCodeButton" class="ghost-button">复制演示会员码</button>
+          <button id="paymentCheckoutButton" class="confirm-pay-button" disabled>打开支付页</button>
+          <button id="paidButton" class="ghost-button">刷新开通状态</button>
+          <button id="copyActivationCodeButton" class="ghost-button" disabled>复制激活码</button>
         </div>
       </div>
     </section>

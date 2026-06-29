@@ -65,12 +65,15 @@ const els = {
   purchaseOverlay: document.querySelector("#purchaseOverlay"),
   closePurchaseButton: document.querySelector("#closePurchaseButton"),
   paidButton: document.querySelector("#paidButton"),
-  copyDemoCodeButton: document.querySelector("#copyDemoCodeButton"),
+  copyActivationCodeButton: document.querySelector("#copyActivationCodeButton"),
+  paymentCheckoutButton: document.querySelector("#paymentCheckoutButton"),
   paymentState: document.querySelector("#paymentState"),
   paymentTitle: document.querySelector("#paymentTitle"),
   paymentMessage: document.querySelector("#paymentMessage"),
   orderState: document.querySelector("#orderState"),
   orderCode: document.querySelector("#orderCode"),
+  paymentOrderId: document.querySelector("#paymentOrderId"),
+  paymentProvider: document.querySelector("#paymentProvider"),
   updateOverlay: document.querySelector("#updateOverlay"),
   updateKicker: document.querySelector("#updateKicker"),
   updateTitle: document.querySelector("#updateTitle"),
@@ -94,6 +97,7 @@ let forceUpdateRequired = false;
 let boostStartedAt = "";
 let pendingPurchaseOrderId = "";
 let pendingPurchaseActivationCode = "";
+let pendingPaymentUrl = "";
 
 function setText(node, value) {
   node.textContent = value;
@@ -585,31 +589,54 @@ async function checkForUpdates(options = {}) {
 function renderPurchaseFallback() {
   pendingPurchaseOrderId = "";
   pendingPurchaseActivationCode = "";
-  setText(els.paymentState, "演示模式");
+  pendingPaymentUrl = "";
+  setText(els.paymentState, "支付通道准备中");
   setText(els.paymentTitle, "ZeroLag Pro 月度");
-  setText(els.paymentMessage, "当前未连接正式支付服务，可使用演示会员码体验。");
+  setText(els.paymentMessage, "当前客户端还没有连接正式支付服务，请稍后重试或前往官网购买。");
   setText(els.orderState, "待接入");
-  setText(els.orderCode, "演示会员码");
+  setText(els.paymentOrderId, "暂无订单");
+  setText(els.paymentProvider, "未连接");
+  setText(els.orderCode, "支付后生成");
   setText(els.paidButton, "刷新开通状态");
-  setText(els.copyDemoCodeButton, "复制演示会员码");
+  setText(els.copyActivationCodeButton, "复制激活码");
+  els.paymentCheckoutButton.disabled = true;
+  els.copyActivationCodeButton.disabled = true;
 }
 
-function renderPurchaseOrder(order) {
+function paymentProviderLabel(provider) {
+  const value = String(provider || "").toLowerCase();
+  if (value === "wechat_pay") return "微信支付";
+  if (value === "alipay") return "支付宝";
+  if (value === "manual") return "人工确认";
+  return provider ? provider : "待连接";
+}
+
+function isHttpPaymentUrl(value) {
+  return /^https?:\/\//i.test(String(value || ""));
+}
+
+function renderPurchaseOrder(order, payment = null) {
   const status = order && order.status ? order.status : "pending";
   const code = order && order.activationCode ? order.activationCode : "";
   pendingPurchaseOrderId = order && order.orderId ? order.orderId : pendingPurchaseOrderId;
   pendingPurchaseActivationCode = code;
-  setText(els.paymentState, status === "paid" ? "已完成" : "等待支付");
+  if (payment && payment.paymentUrl) pendingPaymentUrl = payment.paymentUrl;
+  setText(els.paymentState, status === "paid" ? "支付完成" : "等待支付");
   setText(els.paymentTitle, "ZeroLag Pro 月度");
   setText(els.paymentMessage, status === "paid"
     ? "会员开通信息已准备好，正在为你完成激活。"
-    : "订单已创建。完成支付后点击刷新开通状态。");
+    : ((payment && payment.message) || "订单已创建。打开官方支付页完成支付后，回到这里刷新开通状态。"));
   setText(els.orderState, status === "paid" ? "已开通" : "待支付");
   els.orderState.title = pendingPurchaseOrderId || "";
+  setText(els.paymentOrderId, pendingPurchaseOrderId ? shorten(pendingPurchaseOrderId, 18) : "待创建");
+  els.paymentOrderId.title = pendingPurchaseOrderId || "";
+  setText(els.paymentProvider, paymentProviderLabel(payment && payment.provider || order && order.paymentProvider));
   setText(els.orderCode, code ? shorten(code, 18) : "支付后生成");
   els.orderCode.title = code || "";
   setText(els.paidButton, "刷新开通状态");
-  setText(els.copyDemoCodeButton, code ? "复制激活码" : "复制演示会员码");
+  setText(els.copyActivationCodeButton, code ? "复制激活码" : "等待激活码");
+  els.paymentCheckoutButton.disabled = !isHttpPaymentUrl(pendingPaymentUrl) || status === "paid";
+  els.copyActivationCodeButton.disabled = !code;
 }
 
 async function activateFromPurchaseCode(code) {
@@ -656,13 +683,19 @@ async function refreshPurchaseOrder() {
 
 async function openPurchaseOverlay() {
   els.purchaseOverlay.hidden = false;
+  pendingPaymentUrl = "";
   setText(els.memberState, "等待支付");
   setText(els.paymentState, "准备中");
   setText(els.paymentTitle, "ZeroLag Pro 月度");
   setText(els.paymentMessage, "正在准备会员开通信息，请稍等。");
   setText(els.orderState, "创建中");
+  setText(els.paymentOrderId, "创建中");
+  setText(els.paymentProvider, "连接中");
   setText(els.orderCode, "等待开通");
   setText(els.paidButton, "刷新开通状态");
+  setText(els.copyActivationCodeButton, "复制激活码");
+  els.paymentCheckoutButton.disabled = true;
+  els.copyActivationCodeButton.disabled = true;
 
   try {
     const result = await window.zeroLag.createOrder();
@@ -671,7 +704,7 @@ async function openPurchaseOverlay() {
       return;
     }
 
-    renderPurchaseOrder(result.order);
+    renderPurchaseOrder(result.order, result.payment);
   } catch {
     renderPurchaseFallback();
   }
@@ -1005,11 +1038,37 @@ els.paidButton.addEventListener("click", async () => {
   await refreshPurchaseOrder();
 });
 
-els.copyDemoCodeButton.addEventListener("click", async () => {
-  const demoCode = pendingPurchaseActivationCode || "ZL-PRO-DEMO-2026";
+els.paymentCheckoutButton.addEventListener("click", async () => {
+  if (!isHttpPaymentUrl(pendingPaymentUrl)) {
+    addLog("支付页暂未准备好，请重新创建订单或稍后再试。", "warn");
+    return;
+  }
+
+  try {
+    const result = await window.zeroLag.openPaymentUrl(pendingPaymentUrl);
+    if (result && result.ok) {
+      setText(els.paymentState, "等待支付");
+      setText(els.paymentMessage, "支付页已打开。完成支付后回到 ZeroLag，点击刷新开通状态。");
+      addLog("已打开官方支付页。", "good");
+      return;
+    }
+  } catch {
+    // Keep payment failures user-safe; detailed provider errors stay server-side.
+  }
+
+  addLog("支付页暂未准备好，请稍后再试。", "warn");
+});
+
+els.copyActivationCodeButton.addEventListener("click", async () => {
+  if (!pendingPurchaseActivationCode) {
+    addLog("支付完成后才会生成激活码。", "warn");
+    return;
+  }
+
+  const demoCode = pendingPurchaseActivationCode;
   try {
     await navigator.clipboard.writeText(demoCode);
-    addLog(pendingPurchaseActivationCode ? "激活码已复制。" : "演示会员码已复制。", "good");
+    addLog("激活码已复制。", "good");
   } catch {
     addLog(`会员码：${demoCode}`, "good");
   }

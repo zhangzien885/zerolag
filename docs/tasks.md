@@ -16,6 +16,7 @@
 - Startup orphan cleanup for stale runtime sessions.
 - Local monthly membership prototype with signed license and machine binding.
 - Membership purchase and activation UI.
+- Production-style purchase flow with checkout handoff, order refresh, payment-provider status, and activation-code copy only after payment completion.
 - Membership expiry and renewal guidance in the desktop membership center.
 - Administrator relaunch prompt on normal startup.
 - VBS / HVCI / Credential Guard / Hypervisor disable flow.
@@ -204,6 +205,7 @@
 - Added an installer uninstall cleanup coordinator that performs one final runtime restore pass, removes Task Scheduler fallback entries, removes the Windows Service guard, and is covered by CI smoke checks.
 - Added restore-assurance UI coverage for the manual recovery control, including a visible recovery status card, safer restore result payload, and CI smoke checks.
 - Added a customer-support handoff flow that prepares a redacted case ID, membership/version/runtime/readiness summary, writes the same case ID into diagnostics, and verifies the flow in CI.
+- Added formal payment-flow UI coverage for checkout handoff, order/provider display, post-payment activation-code copy, and removal of customer-visible demo-code behavior.
 
 ## Known Boundaries
 

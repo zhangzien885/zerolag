@@ -2379,6 +2379,27 @@ app.whenReady().then(async () => {
       configured: true
     };
   });
+  ipcMain.handle("zerolag:open-payment-url", async (_event, url) => {
+    const target = String(url || "");
+    if (!isHttpUrl(target)) {
+      return {
+        ok: false,
+        reason: "PAYMENT_URL_NOT_READY"
+      };
+    }
+
+    try {
+      await shell.openExternal(target);
+      return {
+        ok: true
+      };
+    } catch {
+      return {
+        ok: false,
+        reason: "PAYMENT_URL_OPEN_FAILED"
+      };
+    }
+  });
   ipcMain.handle("zerolag:open-update-url", async (_event, url) => {
     const target = String(url || "");
     if (!isHttpUrl(target)) return false;

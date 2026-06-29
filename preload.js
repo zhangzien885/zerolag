@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld("zeroLag", {
   getOrderStatus: (orderId) => ipcRenderer.invoke("zerolag:get-order-status", orderId),
   openWebsite: () => ipcRenderer.invoke("zerolag:open-website"),
   openSupportUrl: () => ipcRenderer.invoke("zerolag:open-support-url"),
+  openPaymentUrl: (url) => ipcRenderer.invoke("zerolag:open-payment-url", url),
   openUpdateUrl: (url) => ipcRenderer.invoke("zerolag:open-update-url", url),
   openExternalUrl: (url) => ipcRenderer.invoke("zerolag:open-update-url", url),
   activateLicense: (code) => ipcRenderer.invoke("zerolag:activate-license", code),

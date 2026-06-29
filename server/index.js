@@ -454,7 +454,8 @@ function safeOrderRecord(order) {
     activationCode: order.status === "paid" ? order.activationCode || "" : "",
     createdAt: order.createdAt || "",
     paidAt: order.paidAt || "",
-    refundedAt: order.refundedAt || ""
+    refundedAt: order.refundedAt || "",
+    paymentProvider: order.paymentProvider || ""
   };
 }
 

@@ -85,6 +85,7 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 - Run `npm run guard:runtime:smoke` to verify the service worker can clean invalid runtime sessions in dry-run mode and write health/log state.
 - Run `npm run ui:restore:smoke` to verify the desktop restore assurance card, restore button state, and safe restore result copy.
 - Run `npm run ui:support:smoke` to verify the support handoff case ID, membership/version/runtime summary, diagnostics bundle case ID, and redaction guardrails.
+- Run `npm run ui:payment:smoke` to verify the purchase dialog checkout handoff, order/provider display, paid refresh path, and no-demo-code guardrails.
 - Confirm the installer service command uses `ZeroLag.exe --runtime-guard-service` and that the native service wrapper warning is resolved before paid public release.
 - Keep `ZEROLAG_ENABLE_GUARD_REGISTRATION` disabled for development installers; enable it only for private validation or the final signed build after the native service wrapper is ready.
 - Run `npm run dist:win` only after the strict release gates are satisfied.
