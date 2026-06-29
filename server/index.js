@@ -67,7 +67,30 @@ function codeHash(secret, code) {
 }
 
 function normalizeCode(code) {
-  return String(code || "").trim().toUpperCase();
+  const text = String(code || "")
+    .normalize("NFKC")
+    .toUpperCase()
+    .replace(/[‐‑‒–—―＿_]/g, "-");
+  const match = text.match(/ZL[\s-]*PRO[\sA-Z0-9-]*/);
+  const candidate = match ? match[0] : text;
+  let normalized = candidate
+    .replace(/\s*-\s*/g, "-")
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  if (normalized.startsWith("ZLPRO")) {
+    normalized = `ZL-PRO-${normalized.slice(5)}`;
+  }
+
+  if (normalized.startsWith("ZL-PRO-")) {
+    const body = normalized.slice(7).replace(/-/g, "");
+    if (/^[A-F0-9]{12}$/.test(body)) return `ZL-PRO-${body.slice(0, 6)}-${body.slice(6)}`;
+    if (/^DEMO[0-9]{4}$/.test(body)) return `ZL-PRO-DEMO-${body.slice(4)}`;
+  }
+
+  return normalized;
 }
 
 function createEmptyState() {

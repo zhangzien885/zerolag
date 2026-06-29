@@ -28,6 +28,8 @@ function main() {
   assertIncludes(preloadJs, "openPurchaseUrl", "Preload must expose official purchase fallback opening.");
   assertIncludes(mainJs, "zerolag:open-payment-url", "Main process must expose payment URL IPC.");
   assertIncludes(mainJs, "zerolag:open-purchase-url", "Main process must expose purchase URL IPC.");
+  assertIncludes(mainJs, "function normalizeActivationCode", "Main process must normalize pasted activation codes before activation.");
+  assertIncludes(mainJs, "activateLicenseV2(normalizeActivationCode(code))", "License activation IPC must use normalized activation codes.");
   assertIncludes(mainJs, "PAYMENT_URL_NOT_READY", "Payment URL IPC must reject missing or invalid URLs.");
   assertIncludes(mainJs, "PAYMENT_URL_OPEN_FAILED", "Payment URL IPC must fail safely if the browser handoff fails.");
   assertIncludes(mainJs, "purchaseTargetFromConfig", "Main process must choose purchase targets from app config.");
@@ -36,10 +38,14 @@ function main() {
   assertIncludes(mainJs, "PURCHASE_URL_OPEN_FAILED", "Purchase fallback must fail safely if the browser handoff fails.");
   assertIncludes(serverIndex, "paymentProvider: order.paymentProvider", "Order status must include the payment provider.");
   assertIncludes(indexHtml, 'id="paymentCheckoutButton"', "Purchase dialog must include a checkout button.");
+  assertIncludes(indexHtml, 'autocapitalize="characters"', "Activation-code input should encourage uppercase entry.");
   assertIncludes(indexHtml, 'id="paymentOrderId"', "Purchase dialog must show the order ID.");
   assertIncludes(indexHtml, 'id="paymentProvider"', "Purchase dialog must show the payment provider.");
   assertIncludes(indexHtml, 'id="copyActivationCodeButton"', "Purchase dialog must copy activation codes only after payment.");
   assertIncludes(rendererJs, "pendingPaymentUrl", "Renderer must keep checkout URL state.");
+  assertIncludes(rendererJs, "normalizeActivationCodeInput", "Renderer must normalize pasted activation codes.");
+  assertIncludes(rendererJs, 'licenseCode.addEventListener("paste"', "Renderer must normalize pasted activation codes after paste.");
+  assertIncludes(rendererJs, "normalizeLicenseInputField", "Renderer must normalize the activation field before submit.");
   assertIncludes(rendererJs, "pendingCheckoutMode", "Renderer must track whether checkout opens payment or purchase fallback.");
   assertIncludes(rendererJs, "purchaseFallbackAvailable", "Renderer must know when the official purchase fallback can be used.");
   assertIncludes(rendererJs, "前往官网购买", "Renderer must expose an official purchase fallback label.");
@@ -50,6 +56,8 @@ function main() {
   assertIncludes(rendererJs, "example\\.com|localhost|127\\.0\\.0\\.1", "Renderer must not enable placeholder purchase URLs.");
   assertIncludes(rendererJs, "wechat_pay", "Renderer must recognize WeChat Pay provider metadata.");
   assertIncludes(rendererJs, "alipay", "Renderer must recognize Alipay provider metadata.");
+  assertIncludes(serverIndex, "function normalizeCode", "Server must normalize activation codes consistently.");
+  assertIncludes(serverIndex, ".normalize(\"NFKC\")", "Server activation-code normalization must handle full-width pasted text.");
   assertOk(!indexHtml.includes("ZL-PRO-DEMO-2026"), "Purchase dialog must not show demo activation codes.");
   assertOk(!rendererJs.includes('pendingPurchaseActivationCode || "ZL-PRO-DEMO-2026"'), "Renderer must not copy a demo code by default.");
   assertOk(!rendererJs.includes("copyDemoCodeButton"), "Renderer must not keep demo-code naming in the formal payment flow.");

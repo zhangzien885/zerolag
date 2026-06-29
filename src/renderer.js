@@ -218,6 +218,41 @@ function formatDuration(totalSeconds) {
   return hours > 0 ? `${pad(hours)}:${pad(minutes)}:${pad(rest)}` : `${pad(minutes)}:${pad(rest)}`;
 }
 
+function normalizeActivationCodeInput(value) {
+  const text = String(value || "")
+    .normalize("NFKC")
+    .toUpperCase()
+    .replace(/[‐‑‒–—―＿_]/g, "-");
+  const match = text.match(/ZL[\s-]*PRO[\sA-Z0-9-]*/);
+  const candidate = match ? match[0] : text;
+  let code = candidate
+    .replace(/\s*-\s*/g, "-")
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  if (code.startsWith("ZLPRO")) {
+    code = `ZL-PRO-${code.slice(5)}`;
+  }
+
+  if (code.startsWith("ZL-PRO-")) {
+    const body = code.slice(7).replace(/-/g, "");
+    if (/^[A-F0-9]{12}$/.test(body)) return `ZL-PRO-${body.slice(0, 6)}-${body.slice(6)}`;
+    if (/^DEMO[0-9]{4}$/.test(body)) return `ZL-PRO-DEMO-${body.slice(4)}`;
+  }
+
+  return code;
+}
+
+function normalizeLicenseInputField() {
+  const normalized = normalizeActivationCodeInput(els.licenseCode.value);
+  if (els.licenseCode.value !== normalized) {
+    els.licenseCode.value = normalized;
+  }
+  return normalized;
+}
+
 function shorten(value, maxLength = 30) {
   const text = String(value || "未知").replace(/\s+/g, " ").trim();
   return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
@@ -1005,8 +1040,16 @@ els.licenseCode.addEventListener("keydown", (event) => {
   }
 });
 
+els.licenseCode.addEventListener("paste", () => {
+  setTimeout(normalizeLicenseInputField, 0);
+});
+
+els.licenseCode.addEventListener("blur", () => {
+  normalizeLicenseInputField();
+});
+
 els.activateButton.addEventListener("click", () => {
-  const code = els.licenseCode.value.trim();
+  const code = normalizeLicenseInputField();
   if (!code) {
     addLog("请输入会员码后再激活。", "warn");
     return;
