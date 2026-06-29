@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const cp = require("child_process");
 const asarTools = require("@electron/asar");
+const { inspectSigningEnv } = require("./check-code-signing-env");
 
 const rootDir = path.join(__dirname, "..");
 const defaultDistDir = path.join(rootDir, "dist");
@@ -130,7 +131,7 @@ function buildReadiness(packageJson, appConfig, updateManifest, releaseArtifacts
     ["Manifest download URL", isHttpsUrl(updateManifest.downloadUrl) && !isPlaceholderUrl(updateManifest.downloadUrl), "Set a real HTTPS update downloadUrl"],
     ["Manifest signature", updateManifest.signatureAlgorithm === "RSA-SHA256" && Boolean(updateManifest.signature), "Sign assets/update.json"],
     ["Installer artifacts", Boolean(releaseArtifacts.installer && releaseArtifacts.installer.sha256), "Run npm run release:build or npm run release:verify"],
-    ["Windows signing", Boolean(process.env.CSC_LINK || process.env.WIN_CSC_LINK || process.env.WINDOWS_CODESIGN_CERT || process.env.ZEROLAG_CODESIGN_CERT), "Configure Windows code signing in the build environment"]
+    ["Windows signing", inspectSigningEnv().ok, "Configure Windows code signing in the build environment"]
   ];
 
   return checks.map(([name, ok, nextStep]) => ({ name, ok, nextStep }));

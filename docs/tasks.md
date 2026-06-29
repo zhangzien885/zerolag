@@ -145,6 +145,7 @@
 - Gated `release:verify` and `release:build` so website release metadata is published only after the final release gate passes.
 - Added release candidate report generation with version, Git state, installer checksum status, readiness checks, and final release commands.
 - Added release version synchronization tooling so `package.json` and `assets/update.json` can be checked or updated together before signing.
+- Added a redacted Windows code-signing environment checker and wired release readiness reports to require both certificate and password readiness.
 - Updated package and README product description to use production-facing wording instead of prototype wording.
 - Disabled local demo activation in the default app config while documenting the explicit development override.
 - Added server deployment gate status to the release candidate report so desktop release readiness and server readiness are reviewed together.

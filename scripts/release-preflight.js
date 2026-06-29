@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { inspectSigningEnv } = require("./check-code-signing-env");
 
 const rootDir = path.join(__dirname, "..");
 const strict = process.argv.includes("--strict");
@@ -30,12 +31,7 @@ function isSemver(value) {
 }
 
 function hasStrongCodeSigningSignal() {
-  return Boolean(
-    process.env.CSC_LINK
-      || process.env.WIN_CSC_LINK
-      || process.env.WINDOWS_CODESIGN_CERT
-      || process.env.ZEROLAG_CODESIGN_CERT
-  );
+  return inspectSigningEnv().ok;
 }
 
 function forbiddenPublicReleaseNoteTerms() {
@@ -138,7 +134,7 @@ function main() {
   const gitignore = readTextIfExists(".gitignore");
   const ciWorkflow = readTextIfExists(".github/workflows/ci.yml");
 
-  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:guard:smoke", "installer:verify", "release:artifacts", "release:report", "release:report:smoke", "release:version", "release:version:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "runtime:keys", "runtime:keys:smoke", "app-config:snippet", "app-config:snippet:smoke", "server:bootstrap", "server:bootstrap:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "production:config", "production:config:smoke", "production:mode", "production:mode:smoke", "server:check", "server:smoke", "server:test", "server:env-check", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:prepare", "update:prepare:smoke", "update:sign", "update:smoke"].forEach((scriptName) => {
+  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:guard:smoke", "installer:verify", "release:artifacts", "release:report", "release:report:smoke", "release:version", "release:version:smoke", "signing:check", "signing:check:strict", "signing:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "runtime:keys", "runtime:keys:smoke", "app-config:snippet", "app-config:snippet:smoke", "server:bootstrap", "server:bootstrap:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "production:config", "production:config:smoke", "production:mode", "production:mode:smoke", "server:check", "server:smoke", "server:test", "server:env-check", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:prepare", "update:prepare:smoke", "update:sign", "update:smoke"].forEach((scriptName) => {
     addIssue(issues, hasScript(packageJson, scriptName), `package.json script is missing: ${scriptName}`);
   });
 
@@ -167,6 +163,7 @@ function main() {
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run production:config:smoke"), "npm run ci must verify production URL config generation.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run production:mode:smoke"), "npm run ci must verify guarded release-mode switching.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run release:version:smoke"), "npm run ci must verify release version synchronization.");
+  addIssue(issues, (packageJson.scripts.ci || "").includes("npm run signing:smoke"), "npm run ci must verify code-signing env checks.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run app-config:snippet:smoke"), "npm run ci must verify public-key app-config snippet application.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run update:prepare:smoke"), "npm run ci must verify update manifest preparation.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:verify", "release:gate", "website:release"), "release:verify must run release:gate before website:release.");

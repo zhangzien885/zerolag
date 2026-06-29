@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { loadServerEnvFile } = require("../server/env");
+const { inspectSigningEnv } = require("./check-code-signing-env");
 
 const rootDir = path.join(__dirname, "..");
 const defaultOutputPath = path.join(rootDir, "docs", "deployment-checklist.generated.md");
@@ -118,12 +119,7 @@ function buildChecklist() {
   const paymentUrlTemplate = env("ZEROLAG_PAYMENT_URL_TEMPLATE", defaultPaymentUrlTemplate);
   const statePath = env("ZEROLAG_SERVER_STATE_PATH", "");
   const backupDir = env("ZEROLAG_SERVER_BACKUP_DIR", "");
-  const signingReady = Boolean(
-    process.env.CSC_LINK
-      || process.env.WIN_CSC_LINK
-      || process.env.WINDOWS_CODESIGN_CERT
-      || process.env.ZEROLAG_CODESIGN_CERT
-  );
+  const signingReady = inspectSigningEnv().ok;
 
   const appItems = [
     checkbox(appConfig.releaseMode === "production", "Desktop release mode is production", `current: ${code(appConfig.releaseMode || "missing")}`),

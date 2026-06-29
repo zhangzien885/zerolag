@@ -97,6 +97,7 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 - Run `npm run release:build` to build the installer and then run the gated verification chain.
 - Download the `zerolag-ci-reports` artifact from the latest GitHub Actions run and review the redacted server deployment and release-candidate reports before publishing.
 - Configure Windows code signing in the build environment.
+- Run `npm run signing:check:strict` in the same shell or CI job that builds the installer.
 - Prefer CI secrets such as `WIN_CSC_LINK` and `WIN_CSC_KEY_PASSWORD` for electron-builder signing.
 - Keep signing certificates and passwords outside Git.
 

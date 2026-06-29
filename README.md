@@ -56,6 +56,7 @@ npm run server:secrets
 npm run release:preflight
 npm run release:preflight:strict
 npm run release:version -- --version 1.0.0 --write
+npm run signing:check:strict
 npm run app-config:snippet -- --snippet .\.secrets\update-app-config-snippet.json --write
 npm run app-config:snippet -- --snippet .\.secrets\runtime-session\runtime-session-v1.app-config-snippet.json --write
 npm run update:prepare -- --base-url https://cdn.your-domain.example/releases --private-key .\.secrets\update-private.pem --public-key .\.secrets\update-public.pem --write
@@ -70,6 +71,7 @@ Server commands automatically load `.secrets/server.env` when it exists. Existin
 
 `release:preflight` summarizes the remaining packaging, signing, update, and production-config gates. Use `release:preflight:strict` only when preparing a real public build. See `docs/release-checklist.md`.
 `release:version` synchronizes `package.json` and `assets/update.json` release versions; dry-run is default, and `--write` applies the change.
+`signing:check:strict` verifies that the installer signing certificate and password are configured without printing secret values.
 `app-config:snippet` safely applies public-key snippets to `assets/app-config.json` and rejects private key material.
 `update:prepare` builds the signed public update manifest from verified release artifacts and a real CDN base URL.
 `production:mode` switches `releaseMode` only after production URLs, public keys, update metadata, and demo-license settings are ready.
