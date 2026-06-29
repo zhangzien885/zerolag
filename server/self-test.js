@@ -1092,12 +1092,58 @@ async function main() {
     });
     assert(reboundAccount.statusCode === 200 && reboundAccount.body.memberships.length === 1, "Account membership binding should be idempotent.");
 
+    const secondAccount = await requestJson(port, "/v1/accounts/register", {
+      provider: "qq",
+      identifier: "100200300"
+    });
+    assert(secondAccount.statusCode === 201 && secondAccount.body.ok, "Second account registration failed.");
+
+    const crossAccountBind = await requestJson(port, "/v1/accounts/bind-membership", {
+      accountToken: secondAccount.body.token,
+      licenseToken: activated.body.token,
+      subscriptionId: activated.body.subscriptionId,
+      deviceHash
+    });
+    assert(
+      crossAccountBind.statusCode === 403,
+      "A membership bound to one account must not be transferable to another account."
+    );
+
+    const loggedOutValidation = await requestJson(port, "/v1/licenses/validate", {
+      token: activated.body.token,
+      subscriptionId: activated.body.subscriptionId,
+      deviceHash,
+      appVersion: "0.1.0",
+      channel: "test",
+      requireAccountBinding: true
+    });
+    assert(
+      loggedOutValidation.statusCode === 401 && loggedOutValidation.body.active === false,
+      "Validation should require the logged-in account when account binding is enforced."
+    );
+
+    const crossAccountValidation = await requestJson(port, "/v1/licenses/validate", {
+      token: activated.body.token,
+      subscriptionId: activated.body.subscriptionId,
+      deviceHash,
+      appVersion: "0.1.0",
+      channel: "test",
+      accountToken: secondAccount.body.token,
+      requireAccountBinding: true
+    });
+    assert(
+      crossAccountValidation.statusCode === 403 && crossAccountValidation.body.active === false,
+      "Validation should reject a membership bound to another account."
+    );
+
     const validated = await requestJson(port, "/v1/licenses/validate", {
       token: activated.body.token,
       subscriptionId: activated.body.subscriptionId,
       deviceHash,
       appVersion: "0.1.0",
-      channel: "test"
+      channel: "test",
+      accountToken: registeredAccount.body.token,
+      requireAccountBinding: true
     });
     assert(validated.statusCode === 200 && validated.body.active, "Validation failed.");
     assert(validated.body.token !== activated.body.token, "Validation should rotate token.");
@@ -1131,7 +1177,8 @@ async function main() {
       activationCode: completedRenewalOrder.body.order.activationCode,
       deviceHash,
       appVersion: "0.1.0",
-      channel: "test-renewal"
+      channel: "test-renewal",
+      accountToken: registeredAccount.body.token
     });
     assert(renewed.statusCode === 200 && renewed.body.active, "Renewal activation failed.");
     assert(renewed.body.subscriptionId === activated.body.subscriptionId, "Renewal should extend the existing subscription.");

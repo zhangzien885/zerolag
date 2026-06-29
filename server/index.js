@@ -241,6 +241,10 @@ function bindSubscriptionToAccount(state, account, subscription, actor = "client
   return true;
 }
 
+function subscriptionBoundToAnotherAccount(subscription, account) {
+  return Boolean(subscription && subscription.accountId && account && subscription.accountId !== account.accountId);
+}
+
 function createEmptyState() {
   return {
     version: 1,
@@ -1481,6 +1485,11 @@ async function bindAccountMembership(request, response, options = {}) {
     return;
   }
 
+  if (subscriptionBoundToAnotherAccount(subscription, account)) {
+    jsonResponse(response, 403, { ok: false, message: "Membership belongs to another account." });
+    return;
+  }
+
   bindSubscriptionToAccount(state, account, subscription);
   saveState(state, options);
   jsonResponse(response, 200, {
@@ -1519,6 +1528,11 @@ async function activateLicense(request, response, options = {}) {
 
   const existing = findExistingSubscriptionByCodeAndDevice(state, hash, deviceHash);
   if (existing) {
+    if (account && subscriptionBoundToAnotherAccount(existing, account)) {
+      jsonResponse(response, 403, { active: false, message: "Membership belongs to another account." });
+      return;
+    }
+
     const runtimeSession = rotateSubscriptionRuntimeSession(existing, { reason: "activation_reuse" }, options);
     const token = issueToken(state, existing, options);
     if (account) bindSubscriptionToAccount(state, account, existing);
@@ -1550,6 +1564,11 @@ async function activateLicense(request, response, options = {}) {
   const renewable = findRenewableSubscriptionByDevice(state, deviceHash, plan);
 
   if (renewable) {
+    if (account && subscriptionBoundToAnotherAccount(renewable, account)) {
+      jsonResponse(response, 403, { active: false, message: "Membership belongs to another account." });
+      return;
+    }
+
     const currentExpiry = new Date(renewable.expiresAt).getTime();
     const renewalBase = Number.isFinite(currentExpiry) && currentExpiry > Date.now()
       ? currentExpiry
@@ -1629,6 +1648,8 @@ async function validateLicense(request, response, options = {}) {
   const deviceHash = String(body.deviceHash || "").trim();
   const subscriptionId = String(body.subscriptionId || "").trim();
   const token = String(body.token || "").trim();
+  const requireAccountBinding = Boolean(body.requireAccountBinding);
+  const accountToken = String(body.accountToken || "").trim();
 
   if (!token || !subscriptionId || !validateDeviceHash(deviceHash)) {
     jsonResponse(response, 400, { active: false, message: "Invalid validation request." });
@@ -1636,6 +1657,12 @@ async function validateLicense(request, response, options = {}) {
   }
 
   const state = loadState(options);
+  const account = accountToken ? accountFromToken(state, accountToken, options) : null;
+  if (requireAccountBinding && !account) {
+    jsonResponse(response, 401, { active: false, message: "Please sign in before using membership." });
+    return;
+  }
+
   const tokenRecord = state.tokens[tokenHash(secret, token)];
   const subscription = state.subscriptions[subscriptionId];
 
@@ -1646,6 +1673,11 @@ async function validateLicense(request, response, options = {}) {
 
   if (tokenRecord.deviceHash !== deviceHash || subscription.deviceHash !== deviceHash) {
     jsonResponse(response, 403, { active: false, message: "Device binding mismatch." });
+    return;
+  }
+
+  if (requireAccountBinding && (!subscription.accountId || subscription.accountId !== account.accountId)) {
+    jsonResponse(response, 403, { active: false, message: "Membership is not bound to this account." });
     return;
   }
 

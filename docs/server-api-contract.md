@@ -189,6 +189,8 @@ The first account contract supports four providers: `wechat`, `qq`, `email`, and
 
 For WeChat and QQ, the current contract expects a verified provider identifier such as an OpenID or UnionID supplied by the future OAuth flow. Do not treat a raw nickname as proof of ownership in production. Email and phone registration should be paired with email/SMS verification before public paid release.
 
+Paid desktop builds should treat account sign-in as required for membership access. When a user signs out, the local account session is removed and Boost must stop treating the cached membership as active until the same bound account signs in again. Once a membership is bound, another account must not be able to claim it with a cached license token.
+
 Register or sign in an account:
 
 ```http
@@ -247,7 +249,7 @@ Request:
 }
 ```
 
-`POST /v1/licenses/activate` may also include `accountToken`; when present and valid, the activated or renewed subscription is linked to that account automatically.
+`POST /v1/licenses/activate` may also include `accountToken`; when present and valid, the activated or renewed subscription is linked to that account automatically. The paid desktop client should require this account token before activation so a membership is always tied to a customer account.
 
 ## POST `/v1/licenses/activate`
 
@@ -309,9 +311,13 @@ Request:
   "subscriptionId": "sub_123",
   "deviceHash": "sha256-device-id",
   "appVersion": "0.1.0",
-  "channel": "stable"
+  "channel": "stable",
+  "accountToken": "opaque-account-token",
+  "requireAccountBinding": true
 }
 ```
+
+When `requireAccountBinding` is true, validation must reject missing account sessions or subscriptions that are bound to another account. This is the server-side rule that makes signing out pause membership access on the desktop client.
 
 Success response:
 

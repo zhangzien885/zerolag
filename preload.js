@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld("zeroLag", {
   getAccountStatus: () => ipcRenderer.invoke("zerolag:get-account-status"),
   registerAccount: (input) => ipcRenderer.invoke("zerolag:register-account", input),
   bindAccountMembership: () => ipcRenderer.invoke("zerolag:bind-account-membership"),
+  logoutAccount: () => ipcRenderer.invoke("zerolag:logout-account"),
   getAppConfig: () => ipcRenderer.invoke("zerolag:get-app-config"),
   getUpdateStatus: () => ipcRenderer.invoke("zerolag:get-update-status"),
   createOrder: () => ipcRenderer.invoke("zerolag:create-order"),

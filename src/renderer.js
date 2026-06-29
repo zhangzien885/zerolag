@@ -76,6 +76,7 @@ const els = {
   accountProvider: document.querySelector("#accountProvider"),
   accountIdentifier: document.querySelector("#accountIdentifier"),
   accountBindButton: document.querySelector("#accountBindButton"),
+  accountLogoutButton: document.querySelector("#accountLogoutButton"),
   accountDetail: document.querySelector("#accountDetail"),
   renewButton: document.querySelector("#renewButton"),
   purchaseOverlay: document.querySelector("#purchaseOverlay"),
@@ -294,21 +295,24 @@ function renderAccountStatus(result) {
   if (!account.configured) {
     setText(els.accountState, "待上线");
     setText(els.accountDetail, "账号服务暂未连接。正式版接入服务器后，可绑定微信、QQ、邮箱或手机号。");
+    els.accountLogoutButton.disabled = true;
     return;
   }
 
   if (!account.active) {
-    setText(els.accountState, "未绑定");
-    setText(els.accountDetail, "绑定账号后，会员会归属到你的账号，换设备或联系客服时更容易核对。");
+    setText(els.accountState, "未登录");
+    setText(els.accountDetail, "请先登录或绑定账号。会员权益会跟随当前账号，退出账号后将暂停使用。");
+    els.accountLogoutButton.disabled = true;
     return;
   }
 
   const provider = accountProviderLabel(account.provider);
   const linked = Number(account.linkedMemberships || 0);
   setText(els.accountState, linked > 0 ? "已绑定会员" : "账号已绑定");
+  els.accountLogoutButton.disabled = false;
   setText(
     els.accountDetail,
-    `${provider} ${account.maskedIdentifier || "账号"} 已绑定。${linked > 0 ? `已关联 ${linked} 个会员。` : "激活或续费后会自动关联会员。"}`
+    `${provider} ${account.maskedIdentifier || "账号"} 已登录。${linked > 0 ? `已关联 ${linked} 个会员，退出账号后会员权益将暂停。` : "激活或续费后会自动关联会员。"}`
   );
 }
 
@@ -1172,6 +1176,27 @@ els.accountBindButton.addEventListener("click", async () => {
     addLog("账号绑定失败。", "warn");
   } finally {
     els.accountBindButton.disabled = false;
+  }
+});
+
+els.accountLogoutButton.addEventListener("click", async () => {
+  const confirmed = window.confirm("退出账号后，当前会员权益会暂停，需要重新登录账号后恢复。确定退出吗？");
+  if (!confirmed) return;
+
+  els.accountLogoutButton.disabled = true;
+  setText(els.accountState, "退出中");
+  setText(els.accountDetail, "正在退出账号，并暂停当前会员权益。");
+
+  try {
+    const result = await window.zeroLag.logoutAccount();
+    renderAccountStatus(result);
+    await refreshStatus();
+    addLog(result && result.ok ? "已退出账号，会员权益已暂停。" : "账号退出失败，请稍后重试。", result && result.ok ? "warn" : "fail");
+  } catch {
+    setText(els.accountState, "退出失败");
+    setText(els.accountDetail, "账号退出失败，请稍后重试。");
+    els.accountLogoutButton.disabled = false;
+    addLog("账号退出失败。", "fail");
   }
 });
 

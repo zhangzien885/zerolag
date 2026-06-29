@@ -197,7 +197,10 @@
           <div class="account-card">
             <div class="account-head">
               <span>账号绑定</span>
-              <strong id="accountState">未绑定</strong>
+              <div class="account-state-actions">
+                <strong id="accountState">未绑定</strong>
+                <button id="accountLogoutButton" type="button" disabled>退出</button>
+              </div>
             </div>
             <div class="account-row">
               <select id="accountProvider" aria-label="账号类型">

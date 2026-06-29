@@ -32,7 +32,7 @@ ZeroLag is a Windows extreme gaming performance optimizer.
 - Opens a configured official support page from the game toolbox with safe handoff feedback for customer help and diagnostics.
 - Prepares and copies a support handoff summary with case ID, membership, version, runtime, and readiness status before contacting support.
 - Shows membership expiry and renewal guidance before Pro access runs out.
-- Supports account binding foundations for WeChat, QQ, email, and phone accounts, with memberships linked to accounts when server validation is connected.
+- Supports account binding foundations for WeChat, QQ, email, and phone accounts, with memberships linked to the signed-in account and paused when the account is signed out.
 - Shows a production-style purchase flow with checkout handoff, official purchase fallback, order refresh, payment provider status, and activation-code copy only after payment completion.
 - Lets users copy paid order IDs for support when payment status needs checking.
 - Normalizes pasted activation codes so common whitespace, full-width, and copied label formats are easier to activate.

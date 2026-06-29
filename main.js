@@ -636,11 +636,24 @@ function readAccountSession() {
   }
 }
 
+function clearAccountSession() {
+  try {
+    if (fs.existsSync(accountPath())) {
+      fs.unlinkSync(accountPath());
+    }
+  } catch {
+    return false;
+  }
+
+  return true;
+}
+
 function publicAccountSession(record = readAccountSession()) {
   if (!record) {
     return {
       active: false,
       configured: serverLicensingConfigured(),
+      membershipRequired: accountMembershipRequired(),
       provider: "",
       maskedIdentifier: "",
       displayName: "",
@@ -651,6 +664,7 @@ function publicAccountSession(record = readAccountSession()) {
   return {
     active: true,
     configured: serverLicensingConfigured(),
+    membershipRequired: accountMembershipRequired(),
     accountId: record.accountId || "",
     provider: record.provider || "",
     maskedIdentifier: record.maskedIdentifier || "",
@@ -767,6 +781,46 @@ function localDemoLicensingAllowed() {
 
 function serverLicensingConfigured() {
   return Boolean(normalizeBaseUrl(readAppConfig().apiBaseUrl));
+}
+
+function accountMembershipRequired() {
+  return serverLicensingConfigured();
+}
+
+function accountSessionAllowsMembership(record = null) {
+  if (!accountMembershipRequired()) {
+    return {
+      ok: true,
+      session: null
+    };
+  }
+
+  const session = readAccountSession();
+  if (!session || !session.accountToken || !session.accountId) {
+    return {
+      ok: false,
+      reason: "请先登录账号，再使用会员权益"
+    };
+  }
+
+  if (record && !record.accountId) {
+    return {
+      ok: false,
+      reason: "请先将会员绑定到账号"
+    };
+  }
+
+  if (record && record.accountId && record.accountId !== session.accountId) {
+    return {
+      ok: false,
+      reason: "当前会员属于其他账号，请切换账号"
+    };
+  }
+
+  return {
+    ok: true,
+    session
+  };
 }
 
 function normalizeServerLicensePayload(data, machineHash) {
@@ -948,6 +1002,24 @@ async function getAccountStatus() {
   };
 }
 
+async function logoutAccount() {
+  const hadRuntimePowerPlan = Boolean(runtimePowerPlanGuid);
+  const cleared = clearAccountSession();
+  const cleanup = hadRuntimePowerPlan
+    ? await cleanupRuntimePowerPlan().catch((error) => ({
+      ok: false,
+      message: error && error.message ? error.message : "Runtime cleanup failed."
+    }))
+    : { ok: true, restored: false };
+
+  return {
+    ok: cleared,
+    account: cleared ? publicAccountSession(null) : publicAccountSession(),
+    runtimeStopped: hadRuntimePowerPlan && Boolean(cleanup && cleanup.ok),
+    reason: cleared ? "" : "ACCOUNT_LOGOUT_FAILED"
+  };
+}
+
 function licenseStatusFallback(machineHash, reason = "未激活") {
   return {
     active: false,
@@ -997,7 +1069,15 @@ function hasOfflineGrace(record) {
 async function activateLicenseWithServer(code, machineHash) {
   const config = readAppConfig();
   const endpoint = `${normalizeBaseUrl(config.apiBaseUrl)}/v1/licenses/activate`;
-  const accountSession = readAccountSession();
+  const accountGate = accountSessionAllowsMembership();
+  if (!accountGate.ok) {
+    return {
+      ok: false,
+      reason: accountGate.reason
+    };
+  }
+
+  const accountSession = accountGate.session;
   const response = await requestJson(endpoint, {
     body: {
       activationCode: code,
@@ -1034,13 +1114,20 @@ async function activateLicenseWithServer(code, machineHash) {
 async function validateLicenseWithServer(record, machineHash) {
   const config = readAppConfig();
   const endpoint = `${normalizeBaseUrl(config.apiBaseUrl)}/v1/licenses/validate`;
+  const accountGate = accountSessionAllowsMembership(record);
+  if (!accountGate.ok) {
+    return licenseStatusFromServerRecord(record, false, accountGate.reason);
+  }
+
   const response = await requestJson(endpoint, {
     body: {
       token: record.serverToken,
       subscriptionId: record.subscriptionId || "",
       deviceHash: machineHash,
       appVersion: app.getVersion(),
-      channel: config.releaseChannel
+      channel: config.releaseChannel,
+      accountToken: accountGate.session && accountGate.session.accountToken || "",
+      requireAccountBinding: true
     },
     timeoutMs: 5000
   });
@@ -2661,6 +2748,7 @@ app.whenReady().then(async () => {
   ipcMain.handle("zerolag:get-account-status", async () => getAccountStatus());
   ipcMain.handle("zerolag:register-account", async (_event, input) => registerAccountWithServer(input || {}));
   ipcMain.handle("zerolag:bind-account-membership", async () => bindCurrentMembershipToAccount());
+  ipcMain.handle("zerolag:logout-account", async () => logoutAccount());
   ipcMain.handle("zerolag:get-app-config", async () => {
     const config = readAppConfig();
     return {
