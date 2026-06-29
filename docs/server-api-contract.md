@@ -382,15 +382,15 @@ Copy only the generated snippet's public key into production `assets/app-config.
 
 ## POST `/v1/orders/create`
 
-Creates a pending payment order. The response uses the configured payment provider and checkout URL template. The MVP defaults to a manual-payment placeholder; production can replace this with WeChat Pay, Alipay, Stripe, or another provider.
+Creates a pending payment order for the signed-in account. Purchase is account-bound and does not depend on the device hash; device checks happen later when the account uses Boost on a machine. The response uses the configured payment provider and checkout URL template. The MVP defaults to a manual-payment placeholder; production can replace this with WeChat Pay, Alipay, Stripe, or another provider.
 
 Request:
 
 ```json
 {
   "plan": "ZeroLag Pro Monthly",
-  "deviceHash": "sha256-device-id",
-  "channel": "website"
+  "accountToken": "opaque-account-token",
+  "channel": "desktop"
 }
 ```
 
@@ -405,6 +405,8 @@ Response:
     "plan": "ZeroLag Pro Monthly",
     "amountCents": 3000,
     "currency": "CNY",
+    "accountLinked": true,
+    "accountProvider": "email",
     "activationCode": ""
   },
   "payment": {
@@ -417,7 +419,7 @@ Response:
 
 ## GET `/v1/orders/:orderId`
 
-Returns order status. Paid orders expose the generated activation code.
+Returns order status for the owning signed-in account. Paid orders expose the generated activation code only to that account.
 
 Response:
 

@@ -860,6 +860,27 @@ function renderPurchaseFallback(config = purchaseAppConfig) {
   els.copyActivationCodeButton.disabled = true;
 }
 
+function renderPurchaseLoginRequired() {
+  pendingPurchaseOrderId = "";
+  pendingPurchaseActivationCode = "";
+  pendingPaymentUrl = "";
+  pendingCheckoutMode = "disabled";
+  setText(els.paymentState, "需要登录");
+  setText(els.paymentTitle, "ZeroLag Pro 月度");
+  setText(els.paymentMessage, "请先登录或绑定账号，再购买会员。会员只绑定账号，不绑定机器码。");
+  setText(els.orderState, "未登录");
+  setText(els.paymentOrderId, "登录后创建");
+  setText(els.paymentProvider, "等待账号");
+  setText(els.orderCode, "支付后生成");
+  setText(els.paymentCheckoutButton, "先登录账号");
+  setText(els.paidButton, "刷新开通状态");
+  setText(els.copyOrderIdButton, "复制订单号");
+  setText(els.copyActivationCodeButton, "复制激活码");
+  els.paymentCheckoutButton.disabled = true;
+  els.copyOrderIdButton.disabled = true;
+  els.copyActivationCodeButton.disabled = true;
+}
+
 function paymentProviderLabel(provider) {
   const value = String(provider || "").toLowerCase();
   if (value === "wechat_pay") return "微信支付";
@@ -982,8 +1003,10 @@ async function openPurchaseOverlay() {
   setText(els.orderCode, "等待开通");
   setText(els.paymentCheckoutButton, "准备支付页");
   setText(els.paidButton, "刷新开通状态");
+  setText(els.copyOrderIdButton, "复制订单号");
   setText(els.copyActivationCodeButton, "复制激活码");
   els.paymentCheckoutButton.disabled = true;
+  els.copyOrderIdButton.disabled = true;
   els.copyActivationCodeButton.disabled = true;
 
   const configPromise = window.zeroLag.getAppConfig().catch(() => ({}));
@@ -992,6 +1015,12 @@ async function openPurchaseOverlay() {
     const result = await window.zeroLag.createOrder();
     const config = await configPromise;
     purchaseAppConfig = config || {};
+    if (result && result.reason === "ACCOUNT_SIGN_IN_REQUIRED") {
+      renderPurchaseLoginRequired();
+      addLog("请先登录账号，再购买会员。", "warn");
+      return;
+    }
+
     if (!result || !result.ok || !result.order) {
       renderPurchaseFallback(purchaseAppConfig);
       return;

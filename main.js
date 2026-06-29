@@ -1241,15 +1241,22 @@ async function createMembershipOrder() {
     };
   }
 
-  const machineHash = await getMachineFingerprint();
+  const accountGate = accountSessionAllowsMembership();
+  if (!accountGate.ok) {
+    return {
+      ok: false,
+      reason: "ACCOUNT_SIGN_IN_REQUIRED"
+    };
+  }
+
   const response = await requestJson(`${apiBaseUrl}/v1/orders/create`, {
     body: {
       plan: "ZeroLag Pro Monthly",
       durationDays: 30,
       amountCents: 3000,
       currency: "CNY",
-      deviceHash: machineHash,
-      channel: config.releaseChannel || "desktop"
+      channel: config.releaseChannel || "desktop",
+      accountToken: accountGate.session.accountToken
     },
     timeoutMs: 8000
   });
@@ -1278,8 +1285,19 @@ async function getMembershipOrderStatus(orderId) {
     };
   }
 
+  const accountGate = accountSessionAllowsMembership();
+  if (!accountGate.ok) {
+    return {
+      ok: false,
+      reason: "ACCOUNT_SIGN_IN_REQUIRED"
+    };
+  }
+
   const response = await requestJson(`${apiBaseUrl}/v1/orders/${encodeURIComponent(id)}`, {
     method: "GET",
+    headers: {
+      Authorization: `Bearer ${accountGate.session.accountToken}`
+    },
     timeoutMs: 8000
   });
 

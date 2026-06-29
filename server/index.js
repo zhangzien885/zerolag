@@ -633,7 +633,9 @@ function safeOrderRecord(order) {
     createdAt: order.createdAt || "",
     paidAt: order.paidAt || "",
     refundedAt: order.refundedAt || "",
-    paymentProvider: order.paymentProvider || ""
+    paymentProvider: order.paymentProvider || "",
+    accountLinked: Boolean(order.accountId),
+    accountProvider: order.accountProvider || ""
   };
 }
 
@@ -1747,11 +1749,16 @@ async function recordWebsiteEvent(request, response, options = {}) {
 async function createOrder(request, response, options = {}) {
   const body = await readRequestBody(request);
   const state = loadState(options);
+  const account = accountFromToken(state, accountTokenFromRequest(request, body), options);
+  if (!account) {
+    jsonResponse(response, 401, { ok: false, message: "Please sign in before purchasing membership." });
+    return;
+  }
+
   const plan = body.plan || "ZeroLag Pro Monthly";
   const durationDays = Number(body.durationDays || 30);
   const amountCents = Number(body.amountCents || 3000);
   const orderId = randomId("ord");
-  const deviceHash = validateDeviceHash(body.deviceHash) ? String(body.deviceHash).trim() : "";
   const paymentConfig = paymentConfigFromOptions(options);
   const order = {
     orderId,
@@ -1761,7 +1768,8 @@ async function createOrder(request, response, options = {}) {
     maxUses: 1,
     amountCents: Number.isFinite(amountCents) && amountCents > 0 ? amountCents : 3000,
     currency: body.currency || "CNY",
-    deviceHash,
+    accountId: account.accountId,
+    accountProvider: account.provider,
     channel: String(body.channel || ""),
     createdAt: nowIso(),
     paidAt: "",
@@ -1782,7 +1790,8 @@ async function createOrder(request, response, options = {}) {
       amountCents: order.amountCents,
       currency: order.currency,
       channel: order.channel,
-      device: maskDeviceHash(deviceHash)
+      accountId: account.accountId,
+      accountProvider: account.provider
     }
   });
   saveState(state, options);
@@ -1797,12 +1806,21 @@ async function createOrder(request, response, options = {}) {
   });
 }
 
-async function getOrderStatus(_request, response, options = {}, orderId = "") {
+async function getOrderStatus(request, response, options = {}, orderId = "") {
   const state = loadState(options);
   const order = state.orders[String(orderId || "")];
   if (!order) {
     jsonResponse(response, 404, { message: "Order not found." });
     return;
+  }
+
+  if (order.accountId) {
+    const account = accountFromToken(state, accountTokenFromRequest(request), options);
+    if (!account || account.accountId !== order.accountId) {
+      jsonResponse(response, 403, { ok: false, message: "Order belongs to another account." });
+      return;
+    }
+    saveState(state, options);
   }
 
   jsonResponse(response, 200, {

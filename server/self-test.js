@@ -46,6 +46,16 @@ function requestJson(port, pathname, body, headers = {}) {
   });
 }
 
+async function registerSelfTestAccount(port, identifier, provider = "email") {
+  const response = await requestJson(port, "/v1/accounts/register", {
+    provider,
+    identifier
+  });
+  assert(response.statusCode === 201 || response.statusCode === 200, "Self-test account registration failed.");
+  assert(response.body && response.body.ok && /^acctok_/.test(response.body.token || ""), "Self-test account token missing.");
+  return response;
+}
+
 function requestRaw(port, pathname, payload, headers = {}) {
   return new Promise((resolve, reject) => {
     const request = require("http").request({
@@ -846,10 +856,11 @@ async function main() {
     const paymentServer = createAppServer(paymentOptions);
     const paymentPort = await listen(paymentServer);
     try {
+      const paymentAccount = await registerSelfTestAccount(paymentPort, "payment-config@example.com");
       const configuredOrder = await requestJson(paymentPort, "/v1/orders/create", {
         plan: "ZeroLag Pro Monthly",
-        deviceHash,
-        channel: "payment-config"
+        channel: "payment-config",
+        accountToken: paymentAccount.body.token
       });
       assert(configuredOrder.statusCode === 201, "Configured payment order creation failed.");
       assert(configuredOrder.body.payment.provider === "wechat_pay", "Configured payment provider should be returned.");
@@ -943,17 +954,18 @@ async function main() {
     });
     const ratePort = await listen(rateServer);
     try {
+      const rateAccount = await registerSelfTestAccount(ratePort, "rate-limit@example.com");
       const firstLimitedOrder = await requestJson(ratePort, "/v1/orders/create", {
         plan: "ZeroLag Pro Monthly",
-        deviceHash,
-        channel: "rate-limit-test"
+        channel: "rate-limit-test",
+        accountToken: rateAccount.body.token
       });
       assert(firstLimitedOrder.statusCode === 201, "First limited request should pass.");
 
       const blockedLimitedOrder = await requestJson(ratePort, "/v1/orders/create", {
         plan: "ZeroLag Pro Monthly",
-        deviceHash,
-        channel: "rate-limit-test"
+        channel: "rate-limit-test",
+        accountToken: rateAccount.body.token
       }, {
         "X-Forwarded-For": "203.0.113.10"
       });
@@ -983,17 +995,40 @@ async function main() {
     });
     assert(summaryBefore.statusCode === 200 && summaryBefore.body.summary.activationCodes.total >= 2, "Admin summary failed.");
 
+    const rejectedGuestOrder = await requestJson(port, "/v1/orders/create", {
+      plan: "ZeroLag Pro Monthly",
+      channel: "guest-purchase"
+    });
+    assert(rejectedGuestOrder.statusCode === 401, "Order creation should require a signed-in account.");
+
+    const registeredAccount = await requestJson(port, "/v1/accounts/register", {
+      provider: "email",
+      identifier: " Player@Example.COM "
+    });
+    assert(registeredAccount.statusCode === 201 && registeredAccount.body.ok, "Account registration failed.");
+    assert(registeredAccount.body.account.provider === "email", "Account provider was not preserved.");
+    assert(!JSON.stringify(registeredAccount.body).includes("Player@Example.COM"), "Account response must not expose the raw identifier.");
+    assert(/^acctok_/.test(registeredAccount.body.token || ""), "Account registration should issue an account token.");
+
     const createdOrder = await requestJson(port, "/v1/orders/create", {
       plan: "ZeroLag Pro Monthly",
-      deviceHash,
-      channel: "test"
+      channel: "test",
+      accountToken: registeredAccount.body.token
     });
     assert(createdOrder.statusCode === 201 && createdOrder.body.order.status === "pending", "Order creation failed.");
+    assert(createdOrder.body.order.accountLinked === true, "Order creation should bind the order to the signed-in account.");
+    assert(createdOrder.body.order.accountProvider === "email", "Order creation should report the account provider.");
+    assert(!("deviceHash" in createdOrder.body.order), "Order creation must not expose or require a device hash.");
     assert(createdOrder.body.payment.provider === "manual", "Order creation should expose the configured payment provider.");
     assert(createdOrder.body.payment.paymentUrl.includes(createdOrder.body.order.orderId), "Order payment URL should include the order id.");
 
-    const orderStatusBefore = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`);
+    const orderStatusBefore = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`, null, {
+      Authorization: `Bearer ${registeredAccount.body.token}`
+    });
     assert(orderStatusBefore.statusCode === 200 && !orderStatusBefore.body.order.activationCode, "Pending order should not expose a code.");
+
+    const anonymousOrderStatus = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`);
+    assert(anonymousOrderStatus.statusCode === 403, "Order status should require the owning signed-in account.");
 
     const adminOrders = await requestJson(port, "/v1/admin/orders", null, {
       "X-ZeroLag-Admin-Secret": "self-test-admin"
@@ -1049,17 +1084,10 @@ async function main() {
       "Repeated webhook should return the original activation code."
     );
 
-    const orderStatusAfter = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`);
-    assert(orderStatusAfter.body.order.activationCode === completedOrder.body.order.activationCode, "Paid order status should return activation code.");
-
-    const registeredAccount = await requestJson(port, "/v1/accounts/register", {
-      provider: "email",
-      identifier: " Player@Example.COM "
+    const orderStatusAfter = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`, null, {
+      Authorization: `Bearer ${registeredAccount.body.token}`
     });
-    assert(registeredAccount.statusCode === 201 && registeredAccount.body.ok, "Account registration failed.");
-    assert(registeredAccount.body.account.provider === "email", "Account provider was not preserved.");
-    assert(!JSON.stringify(registeredAccount.body).includes("Player@Example.COM"), "Account response must not expose the raw identifier.");
-    assert(/^acctok_/.test(registeredAccount.body.token || ""), "Account registration should issue an account token.");
+    assert(orderStatusAfter.body.order.activationCode === completedOrder.body.order.activationCode, "Paid order status should return activation code.");
 
     const activated = await requestJson(port, "/v1/licenses/activate", {
       activationCode: completedOrder.body.order.activationCode,
@@ -1097,6 +1125,11 @@ async function main() {
       identifier: "100200300"
     });
     assert(secondAccount.statusCode === 201 && secondAccount.body.ok, "Second account registration failed.");
+
+    const crossAccountOrderStatus = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`, null, {
+      Authorization: `Bearer ${secondAccount.body.token}`
+    });
+    assert(crossAccountOrderStatus.statusCode === 403, "Order status should reject another signed-in account.");
 
     const crossAccountBind = await requestJson(port, "/v1/accounts/bind-membership", {
       accountToken: secondAccount.body.token,
@@ -1155,8 +1188,8 @@ async function main() {
 
     const renewalOrder = await requestJson(port, "/v1/orders/create", {
       plan: "ZeroLag Pro Monthly",
-      deviceHash,
-      channel: "test-renewal"
+      channel: "test-renewal",
+      accountToken: registeredAccount.body.token
     });
     assert(renewalOrder.statusCode === 201 && renewalOrder.body.order.status === "pending", "Renewal order creation failed.");
 
@@ -1254,7 +1287,9 @@ async function main() {
     assert(refundedOrder.statusCode === 200 && refundedOrder.body.order.status === "refunded", "Refund webhook failed.");
     assert(Boolean(refundedOrder.body.order.refundedAt), "Refunded order should include refundedAt.");
 
-    const orderStatusRefunded = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`);
+    const orderStatusRefunded = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`, null, {
+      Authorization: `Bearer ${registeredAccount.body.token}`
+    });
     assert(orderStatusRefunded.body.order.status === "refunded", "Refunded order status should be visible.");
     assert(!orderStatusRefunded.body.order.activationCode, "Refunded order should not expose activation code.");
 

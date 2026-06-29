@@ -36,6 +36,12 @@ function main() {
   assertIncludes(mainJs, "isConfiguredPublicUrl", "Main process must reject placeholder purchase targets.");
   assertIncludes(mainJs, "PURCHASE_URL_NOT_CONFIGURED", "Purchase fallback must fail safely when no official URL is configured.");
   assertIncludes(mainJs, "PURCHASE_URL_OPEN_FAILED", "Purchase fallback must fail safely if the browser handoff fails.");
+  assertIncludes(mainJs, "ACCOUNT_SIGN_IN_REQUIRED", "Order creation must require a signed-in account.");
+  assertIncludes(mainJs, "accountToken: accountGate.session.accountToken", "Order creation must use the current account token.");
+  assertOk(!mainJs.includes("deviceHash: machineHash,\n      channel: config.releaseChannel || \"desktop\""), "Order creation must not bind purchase requests to the machine hash.");
+  assertIncludes(serverIndex, "Please sign in before purchasing membership.", "Server order creation must reject signed-out customers.");
+  assertIncludes(serverIndex, "accountId: account.accountId", "Server orders must be linked to the signed-in account.");
+  assertIncludes(serverIndex, "Order belongs to another account.", "Order status must reject non-owner accounts.");
   assertIncludes(serverIndex, "paymentProvider: order.paymentProvider", "Order status must include the payment provider.");
   assertIncludes(indexHtml, 'id="paymentCheckoutButton"', "Purchase dialog must include a checkout button.");
   assertIncludes(indexHtml, 'autocapitalize="characters"', "Activation-code input should encourage uppercase entry.");
@@ -49,6 +55,7 @@ function main() {
   assertIncludes(rendererJs, 'licenseCode.addEventListener("paste"', "Renderer must normalize pasted activation codes after paste.");
   assertIncludes(rendererJs, "normalizeLicenseInputField", "Renderer must normalize the activation field before submit.");
   assertIncludes(rendererJs, "pendingCheckoutMode", "Renderer must track whether checkout opens payment or purchase fallback.");
+  assertIncludes(rendererJs, "renderPurchaseLoginRequired", "Renderer must show a sign-in-required purchase state.");
   assertIncludes(rendererJs, "purchaseFallbackAvailable", "Renderer must know when the official purchase fallback can be used.");
   assertIncludes(rendererJs, "前往官网购买", "Renderer must expose an official purchase fallback label.");
   assertIncludes(rendererJs, "renderPurchaseOrder(order, payment = null", "Renderer must render payment metadata.");
