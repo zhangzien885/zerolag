@@ -18,6 +18,8 @@ const protectedFiles = [
   "scripts/runtime-guard-service-smoke-test.js",
   "scripts/build-native-service-wrapper.js",
   "scripts/native-service-wrapper-smoke-test.js",
+  "scripts/check-release-workstation.js",
+  "scripts/release-workstation-smoke-test.js",
   "scripts/generate-runtime-session-keys.js",
   "scripts/runtime-session-keygen-smoke-test.js",
   "scripts/bootstrap-production-env.js",

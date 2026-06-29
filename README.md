@@ -68,6 +68,7 @@ npm run server:provision-local
 npm run server:secrets
 npm run release:preflight
 npm run release:preflight:strict
+npm run release:workstation
 npm run release:version -- --version 1.0.0 --write
 npm run signing:check:strict
 npm run app-config:snippet -- --snippet .\.secrets\update-app-config-snippet.json --write
@@ -88,6 +89,7 @@ npm run production:mode -- --mode production --write
 Server commands automatically load `.secrets/server.env` when it exists. Existing system environment variables stay higher priority, and `ZEROLAG_ENV_FILE` can point commands at another private env file for staging or deployment tests.
 
 `release:preflight` summarizes the remaining packaging, signing, update, and production-config gates. Use `release:preflight:strict` only when preparing a real public build. See `docs/release-checklist.md`.
+`release:workstation` checks whether the current PC can build and sign a paid release, including .NET SDK, native service wrapper exe, code-signing env, production URLs, update signing, private server env, and Git cleanliness.
 `release:version` synchronizes `package.json` and `assets/update.json` release versions; dry-run is default, and `--write` applies the change.
 `signing:check:strict` verifies that the installer signing certificate and password are configured without printing secret values.
 `app-config:snippet` safely applies public-key snippets to `assets/app-config.json` and rejects private key material.

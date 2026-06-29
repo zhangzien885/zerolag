@@ -219,6 +219,7 @@ npm run server:check:strict
 npm run server:smoke
 npm run release:report:smoke
 npm run release:gate:smoke
+npm run release:workstation
 npm run release:gate
 npm run release:preflight:strict
 npm run ci

@@ -12,6 +12,7 @@ npm run server:deployment-report:smoke
 npm run server:deployment-report
 npm run server:deployment-report:json
 npm run server:deployment-report:strict
+npm run release:workstation
 ```
 
 ## 1. Desktop Release Config
@@ -83,6 +84,7 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 - Generate or replace the Windows icon at `build/icon.ico`.
 - Run `npm run pack:dir` for an unpacked local build.
 - Run `npm run package:smoke` to verify the unpacked build contains the executable, app archive, icon, and unpacked runtime watchdog.
+- Run `npm run release:workstation` on the release build PC to review .NET SDK, native wrapper exe, code-signing env, production URLs, update signing, private env, and Git cleanliness in one redacted report.
 - Run `npm run installer:guard:smoke` to verify the NSIS guard hook is present, gated, uninstall-aware, and service-first before Task Scheduler fallback.
 - Run `npm run guard:service:smoke` to verify the Windows Service guard manifest, install script, uninstall script, and packaged resources.
 - Run `npm run guard:wrapper:smoke` to verify the native wrapper source, build command, and installer wiring before building.
