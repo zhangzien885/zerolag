@@ -41,6 +41,7 @@ npm run server:deployment-report:strict
 - Run `npm run server:deployment-report:strict` before a paid public release; it fails when production env, storage, payment, URLs, or runtime guards are not ready.
 - Keep `.secrets/server.env` private and outside Git.
 - If migrating existing JSON state, run `npm run server:migrate-sqlite -- --input <json> --output <sqlite>` before enabling SQLite mode.
+- Run `npm run server:sqlite-status -- --json-state <json> --sqlite <sqlite> --backup-dir <sqlite-backup-dir>` to review SQLite state, backup freshness, and the next safe command without exposing database contents.
 - After migration, run `npm run server:backup-sqlite -- --input <sqlite> --output <sqlite-backup>` and keep the backup private.
 - Run `npm run server:check-sqlite-backups -- --dir <sqlite-backup-dir> --max-age-hours 24` and confirm the newest backup is readable.
 - Keep the recovery command documented for incidents: `npm run server:restore-sqlite -- --input <sqlite-backup> --output <sqlite> --force`.

@@ -120,6 +120,8 @@ function main() {
   addIssue(issues, fileExists("scripts/runtime-session-keygen-smoke-test.js"), "Runtime session keygen smoke test is missing.");
   addIssue(issues, fileExists("scripts/bootstrap-production-env.js"), "Production server env bootstrap tool is missing.");
   addIssue(issues, fileExists("scripts/bootstrap-production-env-smoke-test.js"), "Production server env bootstrap smoke test is missing.");
+  addIssue(issues, fileExists("scripts/sqlite-storage-status.js"), "SQLite storage status tool is missing.");
+  addIssue(issues, fileExists("scripts/sqlite-storage-status-smoke-test.js"), "SQLite storage status smoke test is missing.");
 
   if (issues.length) {
     printResult({ issues, warnings, packageJson: {}, appConfig: {} });
@@ -134,7 +136,7 @@ function main() {
   const gitignore = readTextIfExists(".gitignore");
   const ciWorkflow = readTextIfExists(".github/workflows/ci.yml");
 
-  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:guard:smoke", "installer:verify", "release:artifacts", "release:report", "release:report:smoke", "release:version", "release:version:smoke", "signing:check", "signing:check:strict", "signing:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "runtime:keys", "runtime:keys:smoke", "app-config:snippet", "app-config:snippet:smoke", "server:bootstrap", "server:bootstrap:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "production:config", "production:config:smoke", "production:mode", "production:mode:smoke", "server:check", "server:smoke", "server:test", "server:env-check", "server:env-status", "server:env-status:smoke", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:prepare", "update:prepare:smoke", "update:sign", "update:smoke"].forEach((scriptName) => {
+  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:guard:smoke", "installer:verify", "release:artifacts", "release:report", "release:report:smoke", "release:version", "release:version:smoke", "signing:check", "signing:check:strict", "signing:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "runtime:keys", "runtime:keys:smoke", "app-config:snippet", "app-config:snippet:smoke", "server:bootstrap", "server:bootstrap:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "production:config", "production:config:smoke", "production:mode", "production:mode:smoke", "server:check", "server:smoke", "server:test", "server:env-check", "server:env-status", "server:env-status:smoke", "server:sqlite-status", "server:sqlite-status:smoke", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:prepare", "update:prepare:smoke", "update:sign", "update:smoke"].forEach((scriptName) => {
     addIssue(issues, hasScript(packageJson, scriptName), `package.json script is missing: ${scriptName}`);
   });
 
@@ -167,6 +169,7 @@ function main() {
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run app-config:snippet:smoke"), "npm run ci must verify public-key app-config snippet application.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run update:prepare:smoke"), "npm run ci must verify update manifest preparation.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run server:env-status:smoke"), "npm run ci must verify redacted server env status reporting.");
+  addIssue(issues, (packageJson.scripts.ci || "").includes("npm run server:sqlite-status:smoke"), "npm run ci must verify SQLite storage status reporting.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:verify", "release:gate", "website:release"), "release:verify must run release:gate before website:release.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:verify", "installer:guard:smoke", "installer:smoke"), "release:verify must check the NSIS guard hook before installer artifacts.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:build", "dist:win", "release:verify"), "release:build must build the installer before running release:verify.");

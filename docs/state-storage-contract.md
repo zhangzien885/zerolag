@@ -71,6 +71,16 @@ npm run server:check-sqlite-backups -- --dir D:\zerolag-backups --max-age-hours 
 
 Use `--all` when you want to verify every `.sqlite` backup in the folder instead of only the newest one.
 
+## SQLite Storage Status
+
+Use the read-only status command when you want one safe deployment summary before switching traffic or starting paid testing:
+
+```powershell
+npm run server:sqlite-status -- --json-state D:\zerolag-data\server-state.json --sqlite D:\zerolag-data\server-state.sqlite --backup-dir D:\zerolag-backups --max-age-hours 24
+```
+
+The command reports whether the SQLite state is readable, whether the latest backup is fresh, and what command to run next. It prints safe relative or external labels instead of full private paths and does not read or print activation codes, tokens, orders, or protected values.
+
 ## SQLite Restore
 
 Private recovery can restore a verified backup into a new or existing SQLite state file:

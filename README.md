@@ -52,6 +52,7 @@ npm run production:check:strict
 npm run server:check
 npm run server:check:strict
 npm run server:env-status
+npm run server:sqlite-status
 npm run server:smoke
 npm run server:secrets
 npm run release:preflight
@@ -66,6 +67,7 @@ npm run production:mode -- --mode production --write
 
 `production:check` validates desktop release config. `server:check` validates server deployment environment variables. Use the `:strict` variants before a real paid release.
 `server:env-status` prints a redacted private env readiness summary and next commands without exposing secrets.
+`server:sqlite-status` prints a read-only SQLite state and backup readiness summary with safe paths, freshness status, and next commands for migration, backup, or recovery.
 `server:smoke` starts a temporary local license server, checks public health, and verifies the admin readiness endpoint with the loaded server secret configuration.
 `server:secrets` prints strong private server secrets; use `npm run server:secrets -- --write` to save them under `.secrets/server.env`.
 
@@ -159,7 +161,7 @@ npm run check
 npm run ci
 ```
 
-`ci` runs the standard local verification set used by GitHub Actions: syntax checks, desktop production readiness, server readiness, server self-test, server smoke test, CI report-artifact smoke checks, Windows Service guard asset and worker checks, and integrity verification.
+`ci` runs the standard local verification set used by GitHub Actions: syntax checks, desktop production readiness, server readiness, SQLite storage-status smoke checks, server self-test, server smoke test, CI report-artifact smoke checks, Windows Service guard asset and worker checks, and integrity verification.
 It also runs the non-strict release preflight so release gaps stay visible during normal development.
 
 ## Continuous Integration

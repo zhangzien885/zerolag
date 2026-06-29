@@ -198,6 +198,7 @@
 - Added SQLite-aware production readiness checks that validate the configured database path, table, server state document, backup directory, and safe summary output.
 - Added latest SQLite backup validation to strict server production checks, including readable backup summary and freshness guardrails.
 - Hardened the server smoke test so SQLite deployments use an isolated temporary SQLite state by default instead of touching the configured live database.
+- Added a read-only SQLite storage status command with safe relative paths, latest-backup freshness review, recovery next steps, and CI smoke coverage.
 
 ## Known Boundaries
 
