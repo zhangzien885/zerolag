@@ -116,6 +116,7 @@
 - Added membership expiry and renewal guidance so users see remaining Pro time before access runs out.
 - Added a desktop toolbox version center for manual update checks and user-visible version/channel status.
 - Added automatic private server env-file loading for service startup, admin tools, activation-code creation, and production readiness checks.
+- Added a redacted server env status command that reports private env readiness and next setup commands without exposing secret values.
 - Added a safe server smoke-test command for checking health and admin readiness with isolated temporary state before deployment.
 - Added GitHub Actions CI for pushes and pull requests, including local verification plus strict server readiness against a temporary private env file.
 - Upgraded GitHub Actions strict server readiness to exercise SQLite state, SQLite backup validation, strict SQLite env checks, and isolated server smoke testing.

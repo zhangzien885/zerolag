@@ -51,6 +51,7 @@ npm run production:check
 npm run production:check:strict
 npm run server:check
 npm run server:check:strict
+npm run server:env-status
 npm run server:smoke
 npm run server:secrets
 npm run release:preflight
@@ -64,6 +65,7 @@ npm run production:mode -- --mode production --write
 ```
 
 `production:check` validates desktop release config. `server:check` validates server deployment environment variables. Use the `:strict` variants before a real paid release.
+`server:env-status` prints a redacted private env readiness summary and next commands without exposing secrets.
 `server:smoke` starts a temporary local license server, checks public health, and verifies the admin readiness endpoint with the loaded server secret configuration.
 `server:secrets` prints strong private server secrets; use `npm run server:secrets -- --write` to save them under `.secrets/server.env`.
 
