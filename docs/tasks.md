@@ -16,6 +16,7 @@
 - Startup orphan cleanup for stale runtime sessions.
 - Local monthly membership prototype with signed license and machine binding.
 - Membership purchase and activation UI.
+- Account binding foundation for WeChat, QQ, email, and phone identifiers, with server-backed memberships linked to accounts.
 - Production-style purchase flow with checkout handoff, official purchase fallback, order refresh, payment-provider status, and activation-code copy only after payment completion.
 - Copyable paid order IDs for customer support when payment status needs checking.
 - Activation-code paste normalization for common whitespace, full-width, label-prefixed, and lowercase input formats.
@@ -95,6 +96,7 @@
 
 - Added `assets/app-config.json` to separate development and production behavior.
 - Added server-backed license activation and validation seams for `/v1/licenses/activate` and `/v1/licenses/validate`.
+- Added server-backed account registration and membership binding seams for WeChat, QQ, email, and phone account identifiers.
 - Kept local demo activation available only for development mode.
 - Moved website opening to production config instead of a hard-coded renderer URL.
 - Added remote update manifest support while keeping local update JSON as development fallback.
@@ -216,6 +218,7 @@
 - Added formal payment-flow UI coverage for checkout handoff, official purchase fallback, order/provider display, post-payment activation-code copy, and removal of customer-visible demo-code behavior.
 - Added a copyable order-ID action in the purchase dialog so users can send payment references to support without copying activation codes.
 - Added activation-code paste normalization across desktop and server activation paths to reduce failed activations from copied formatting.
+- Added desktop account binding UI plus server account tokens so WeChat, QQ, email, and phone identifiers can own linked memberships.
 - Added official service-status UI coverage for website, purchase, account, update, and support channel readiness plus safe website handoff without exposing internal endpoint details.
 
 ## Known Boundaries

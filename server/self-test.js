@@ -1052,20 +1052,45 @@ async function main() {
     const orderStatusAfter = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`);
     assert(orderStatusAfter.body.order.activationCode === completedOrder.body.order.activationCode, "Paid order status should return activation code.");
 
+    const registeredAccount = await requestJson(port, "/v1/accounts/register", {
+      provider: "email",
+      identifier: " Player@Example.COM "
+    });
+    assert(registeredAccount.statusCode === 201 && registeredAccount.body.ok, "Account registration failed.");
+    assert(registeredAccount.body.account.provider === "email", "Account provider was not preserved.");
+    assert(!JSON.stringify(registeredAccount.body).includes("Player@Example.COM"), "Account response must not expose the raw identifier.");
+    assert(/^acctok_/.test(registeredAccount.body.token || ""), "Account registration should issue an account token.");
+
     const activated = await requestJson(port, "/v1/licenses/activate", {
       activationCode: completedOrder.body.order.activationCode,
       deviceHash,
       appVersion: "0.1.0",
-      channel: "test"
+      channel: "test",
+      accountToken: registeredAccount.body.token
     });
     assert(activated.statusCode === 200 && activated.body.active, "Activation failed.");
     assert(Boolean(activated.body.token), "Activation did not return a token.");
+    assert(activated.body.accountLinked === true, "Activation should bind membership to the registered account.");
+    assert(activated.body.accountProvider === "email", "Activation should report the bound account provider.");
     assert(/^rsess_/.test(activated.body.sessionId || ""), "Activation should return a server-issued runtime session id.");
     assert(activated.body.runtimeSessionKeyVersion === "runtime-session-v1", "Activation should return the runtime session key version.");
     assert(activated.body.runtimeSessionRevision === 1, "Activation should start runtime session revision tracking.");
     assert(/^sha256=[a-f0-9]{64}$/i.test(activated.body.runtimeSessionProof || ""), "Activation should return a server-issued runtime session proof.");
     assert(activated.body.runtimeSessionProofAlgorithm === "HMAC-SHA256", "Activation should return the runtime session proof algorithm.");
     const firstExpiresAt = new Date(activated.body.expiresAt).getTime();
+
+    const accountProfile = await requestJson(port, "/v1/accounts/me", null, {
+      Authorization: `Bearer ${registeredAccount.body.token}`
+    });
+    assert(accountProfile.statusCode === 200 && accountProfile.body.memberships.length === 1, "Account profile should include the linked membership.");
+
+    const reboundAccount = await requestJson(port, "/v1/accounts/bind-membership", {
+      accountToken: registeredAccount.body.token,
+      licenseToken: activated.body.token,
+      subscriptionId: activated.body.subscriptionId,
+      deviceHash
+    });
+    assert(reboundAccount.statusCode === 200 && reboundAccount.body.memberships.length === 1, "Account membership binding should be idempotent.");
 
     const validated = await requestJson(port, "/v1/licenses/validate", {
       token: activated.body.token,

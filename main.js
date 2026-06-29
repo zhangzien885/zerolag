@@ -14,6 +14,7 @@ const integrityManifestPath = path.join(__dirname, "assets", "integrity-manifest
 const updateManifestPath = path.join(__dirname, "assets", "update.json");
 const runtimePlanBaseName = "Windows Performance Session";
 const licenseSecret = "zerolag-local-license-prototype-v1";
+const accountSecret = "zerolag-local-account-prototype-v1";
 const integritySecret = "zerolag-integrity-prototype-v1";
 const templateProtectionSecret = "zerolag-template-protection-v1";
 const runtimeSessionSecret = "zerolag-runtime-session-prototype-v1";
@@ -224,6 +225,10 @@ function runtimeSessionPath() {
 
 function gameLibraryPath() {
   return path.join(app.getPath("userData"), "game-library.json");
+}
+
+function accountPath() {
+  return path.join(app.getPath("userData"), "account-session.json");
 }
 
 function supportLogPath() {
@@ -589,6 +594,72 @@ function signLicensePayload(payload) {
   return crypto.createHmac("sha256", licenseSecret).update(body).digest("hex");
 }
 
+function signAccountSession(payload) {
+  const body = JSON.stringify({
+    accountId: payload.accountId || "",
+    provider: payload.provider || "",
+    maskedIdentifier: payload.maskedIdentifier || "",
+    displayName: payload.displayName || "",
+    accountToken: payload.accountToken || ""
+  });
+  return crypto.createHmac("sha256", accountSecret).update(body).digest("hex");
+}
+
+function writeAccountSession(account, token) {
+  const payload = {
+    accountId: account.accountId || "",
+    provider: account.provider || "",
+    maskedIdentifier: account.maskedIdentifier || "",
+    displayName: account.displayName || "",
+    linkedMemberships: Number(account.linkedMemberships || 0),
+    accountToken: token || "",
+    updatedAt: new Date().toISOString()
+  };
+  const record = {
+    ...payload,
+    signature: signAccountSession(payload)
+  };
+  fs.mkdirSync(path.dirname(accountPath()), { recursive: true });
+  fs.writeFileSync(accountPath(), `${JSON.stringify(record, null, 2)}\n`, "utf8");
+  return record;
+}
+
+function readAccountSession() {
+  if (!fs.existsSync(accountPath())) return null;
+
+  try {
+    const record = JSON.parse(fs.readFileSync(accountPath(), "utf8"));
+    if (signAccountSession(record) !== record.signature) return null;
+    return record;
+  } catch {
+    return null;
+  }
+}
+
+function publicAccountSession(record = readAccountSession()) {
+  if (!record) {
+    return {
+      active: false,
+      configured: serverLicensingConfigured(),
+      provider: "",
+      maskedIdentifier: "",
+      displayName: "",
+      linkedMemberships: 0
+    };
+  }
+
+  return {
+    active: true,
+    configured: serverLicensingConfigured(),
+    accountId: record.accountId || "",
+    provider: record.provider || "",
+    maskedIdentifier: record.maskedIdentifier || "",
+    displayName: record.displayName || "",
+    linkedMemberships: Number(record.linkedMemberships || 0),
+    updatedAt: record.updatedAt || ""
+  };
+}
+
 function normalizeActivationCode(code) {
   const text = String(code || "")
     .normalize("NFKC")
@@ -718,12 +789,162 @@ function normalizeServerLicensePayload(data, machineHash) {
     runtimeSessionRevision: Number(data.runtimeSessionRevision || data.sessionRevision || 0),
     runtimeSessionProofAlgorithm: data.runtimeSessionProofAlgorithm || "",
     runtimeSessionProof: data.runtimeSessionProof || "",
+    accountLinked: Boolean(data.accountLinked || data.accountId),
+    accountId: data.accountId || "",
+    accountProvider: data.accountProvider || "",
     lastValidatedAt: new Date().toISOString()
   };
 
   return {
     ...payload,
     signature: signLicensePayload(payload)
+  };
+}
+
+async function bindCurrentMembershipToAccount(session = readAccountSession()) {
+  if (!serverLicensingConfigured()) {
+    return {
+      ok: false,
+      reason: "ACCOUNT_SERVER_NOT_CONFIGURED"
+    };
+  }
+
+  if (!session || !session.accountToken) {
+    return {
+      ok: false,
+      reason: "ACCOUNT_NOT_READY"
+    };
+  }
+
+  if (!fs.existsSync(licensePath())) {
+    return {
+      ok: false,
+      reason: "MEMBERSHIP_NOT_ACTIVE"
+    };
+  }
+
+  let license = null;
+  try {
+    license = JSON.parse(fs.readFileSync(licensePath(), "utf8"));
+  } catch {
+    return {
+      ok: false,
+      reason: "MEMBERSHIP_NOT_READABLE"
+    };
+  }
+
+  if (!license.serverToken || !license.subscriptionId) {
+    return {
+      ok: false,
+      reason: "SERVER_MEMBERSHIP_NOT_READY"
+    };
+  }
+
+  const config = readAppConfig();
+  const machineHash = await getMachineFingerprint();
+  const endpoint = `${normalizeBaseUrl(config.apiBaseUrl)}/v1/accounts/bind-membership`;
+  const response = await requestJson(endpoint, {
+    body: {
+      accountToken: session.accountToken,
+      licenseToken: license.serverToken,
+      subscriptionId: license.subscriptionId,
+      deviceHash: machineHash
+    },
+    timeoutMs: 6000
+  });
+
+  if (!response.ok || !response.data || !response.data.ok) {
+    return {
+      ok: false,
+      reason: response.data && response.data.message ? response.data.message : "ACCOUNT_BIND_FAILED"
+    };
+  }
+
+  const nextSession = writeAccountSession(response.data.account || session, session.accountToken);
+  return {
+    ok: true,
+    account: publicAccountSession(nextSession),
+    memberships: Array.isArray(response.data.memberships) ? response.data.memberships : []
+  };
+}
+
+async function registerAccountWithServer(input = {}) {
+  if (!serverLicensingConfigured()) {
+    return {
+      ok: false,
+      reason: "ACCOUNT_SERVER_NOT_CONFIGURED",
+      account: publicAccountSession()
+    };
+  }
+
+  const config = readAppConfig();
+  const endpoint = `${normalizeBaseUrl(config.apiBaseUrl)}/v1/accounts/register`;
+  const response = await requestJson(endpoint, {
+    body: {
+      provider: input.provider,
+      identifier: input.identifier,
+      displayName: input.displayName || ""
+    },
+    timeoutMs: 6000
+  });
+
+  if (!response.ok || !response.data || !response.data.ok || !response.data.token) {
+    return {
+      ok: false,
+      reason: response.data && response.data.message ? response.data.message : "ACCOUNT_REGISTER_FAILED",
+      account: publicAccountSession()
+    };
+  }
+
+  const session = writeAccountSession(response.data.account || {}, response.data.token);
+  const bind = await bindCurrentMembershipToAccount(session).catch((error) => ({
+    ok: false,
+    reason: error && error.message ? error.message : "ACCOUNT_BIND_FAILED"
+  }));
+
+  return {
+    ok: true,
+    account: bind.ok ? bind.account : publicAccountSession(session),
+    memberships: bind.ok ? bind.memberships : (Array.isArray(response.data.memberships) ? response.data.memberships : []),
+    bound: Boolean(bind.ok),
+    bindReason: bind.ok ? "" : bind.reason
+  };
+}
+
+async function getAccountStatus() {
+  const session = readAccountSession();
+  const publicSession = publicAccountSession(session);
+  if (!session || !session.accountToken || !serverLicensingConfigured()) {
+    return {
+      ok: true,
+      account: publicSession,
+      memberships: []
+    };
+  }
+
+  const config = readAppConfig();
+  const endpoint = `${normalizeBaseUrl(config.apiBaseUrl)}/v1/accounts/me`;
+  const response = await requestJson(endpoint, {
+    headers: {
+      Authorization: `Bearer ${session.accountToken}`
+    },
+    timeoutMs: 5000
+  });
+
+  if (!response.ok || !response.data || !response.data.ok) {
+    return {
+      ok: false,
+      account: publicSession,
+      memberships: [],
+      reason: response.data && response.data.message ? response.data.message : "ACCOUNT_STATUS_FAILED"
+    };
+  }
+
+  const nextSession = writeAccountSession(response.data.account || session, session.accountToken);
+  return {
+    ok: true,
+    account: publicAccountSession(nextSession),
+    memberships: Array.isArray(response.data.memberships) ? response.data.memberships : []
   };
 }
 
@@ -755,6 +976,9 @@ function licenseStatusFromServerRecord(record, active, reason) {
     runtimeSessionRevision: Number(record.runtimeSessionRevision || 0),
     runtimeSessionProofAlgorithm: record.runtimeSessionProofAlgorithm || "",
     runtimeSessionProof: record.runtimeSessionProof || "",
+    accountLinked: Boolean(record.accountLinked || record.accountId),
+    accountId: record.accountId || "",
+    accountProvider: record.accountProvider || "",
     serverBacked: true
   };
 }
@@ -773,12 +997,14 @@ function hasOfflineGrace(record) {
 async function activateLicenseWithServer(code, machineHash) {
   const config = readAppConfig();
   const endpoint = `${normalizeBaseUrl(config.apiBaseUrl)}/v1/licenses/activate`;
+  const accountSession = readAccountSession();
   const response = await requestJson(endpoint, {
     body: {
       activationCode: code,
       deviceHash: machineHash,
       appVersion: app.getVersion(),
-      channel: config.releaseChannel
+      channel: config.releaseChannel,
+      accountToken: accountSession && accountSession.accountToken || ""
     }
   });
 
@@ -2432,6 +2658,9 @@ app.whenReady().then(async () => {
   ipcMain.handle("zerolag:create-support-bundle", async () => createSupportBundle());
   ipcMain.handle("zerolag:reveal-support-bundle", async () => revealLastSupportBundle());
   ipcMain.handle("zerolag:record-support-log", async (_event, entry) => recordSupportLog(entry && entry.message, entry && entry.type));
+  ipcMain.handle("zerolag:get-account-status", async () => getAccountStatus());
+  ipcMain.handle("zerolag:register-account", async (_event, input) => registerAccountWithServer(input || {}));
+  ipcMain.handle("zerolag:bind-account-membership", async () => bindCurrentMembershipToAccount());
   ipcMain.handle("zerolag:get-app-config", async () => {
     const config = readAppConfig();
     return {

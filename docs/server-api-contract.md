@@ -183,6 +183,72 @@ npm run server:admin -- ops-csv .\zerolag-operations.csv
 
 These commands use existing admin-only summary, order, and subscription endpoints. They are intended for private revenue, refund, renewal, and expiry review. CSV output omits activation codes and tokens.
 
+## Account Registration And Membership Binding
+
+The first account contract supports four providers: `wechat`, `qq`, `email`, and `phone`.
+
+For WeChat and QQ, the current contract expects a verified provider identifier such as an OpenID or UnionID supplied by the future OAuth flow. Do not treat a raw nickname as proof of ownership in production. Email and phone registration should be paired with email/SMS verification before public paid release.
+
+Register or sign in an account:
+
+```http
+POST /v1/accounts/register
+```
+
+Request:
+
+```json
+{
+  "provider": "email",
+  "identifier": "player@example.com",
+  "displayName": "Player"
+}
+```
+
+Success response:
+
+```json
+{
+  "ok": true,
+  "created": true,
+  "account": {
+    "accountId": "acct_123",
+    "provider": "email",
+    "maskedIdentifier": "pl***@example.com",
+    "displayName": "Player",
+    "linkedMemberships": 0
+  },
+  "token": "opaque-account-token",
+  "memberships": []
+}
+```
+
+Read the current account profile:
+
+```http
+GET /v1/accounts/me
+Authorization: Bearer ACCOUNT_TOKEN
+```
+
+Bind an already-active membership to the account:
+
+```http
+POST /v1/accounts/bind-membership
+```
+
+Request:
+
+```json
+{
+  "accountToken": "opaque-account-token",
+  "licenseToken": "opaque-license-token",
+  "subscriptionId": "sub_123",
+  "deviceHash": "sha256-device-id"
+}
+```
+
+`POST /v1/licenses/activate` may also include `accountToken`; when present and valid, the activated or renewed subscription is linked to that account automatically.
+
 ## POST `/v1/licenses/activate`
 
 Exchanges a member code or payment-issued activation code for a server-backed device license.
@@ -196,7 +262,8 @@ Request:
   "activationCode": "USER-CODE",
   "deviceHash": "sha256-device-id",
   "appVersion": "0.1.0",
-  "channel": "stable"
+  "channel": "stable",
+  "accountToken": "optional-account-token"
 }
 ```
 
@@ -213,7 +280,9 @@ Success response:
   "runtimeSessionKeyVersion": "runtime-session-v1",
   "runtimeSessionRevision": 1,
   "runtimeSessionProofAlgorithm": "RSA-SHA256",
-  "runtimeSessionProof": "rsa-sha256=<server_runtime_session_proof>"
+  "runtimeSessionProof": "rsa-sha256=<server_runtime_session_proof>",
+  "accountLinked": true,
+  "accountProvider": "email"
 }
 ```
 

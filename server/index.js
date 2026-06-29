@@ -35,6 +35,7 @@ const defaultRateLimitByRoute = {
   "website:events": 240,
   "orders:create": 30,
   "orders:status": 240,
+  "accounts:auth": 60,
   "payments:webhook": 120,
   "licenses:activate": 20,
   "licenses:validate": 240,
@@ -93,11 +94,161 @@ function normalizeCode(code) {
   return normalized;
 }
 
+const accountProviders = new Set(["wechat", "qq", "email", "phone"]);
+
+function normalizeAccountProvider(provider) {
+  const value = String(provider || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "");
+  return accountProviders.has(value) ? value : "";
+}
+
+function normalizeAccountIdentifier(provider, identifier) {
+  const value = String(identifier || "").normalize("NFKC").trim();
+  if (provider === "email") {
+    return value.toLowerCase().replace(/\s+/g, "");
+  }
+
+  if (provider === "phone") {
+    const compact = value.replace(/[\s()\-_.]/g, "");
+    return compact.startsWith("+") ? `+${compact.slice(1).replace(/\D/g, "")}` : compact.replace(/\D/g, "");
+  }
+
+  return value.replace(/\s+/g, "").slice(0, 128);
+}
+
+function validateAccountIdentifier(provider, identifier) {
+  if (provider === "email") return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+  if (provider === "phone") return /^\+?\d{7,15}$/.test(identifier);
+  if (provider === "qq") return /^[a-zA-Z0-9_.-]{3,64}$/.test(identifier);
+  if (provider === "wechat") return /^[a-zA-Z0-9_.@-]{3,128}$/.test(identifier);
+  return false;
+}
+
+function maskAccountIdentifier(provider, identifier) {
+  const value = String(identifier || "");
+  if (!value) return "";
+  if (provider === "email") {
+    const [name, domain] = value.split("@");
+    return `${name.slice(0, 2)}***@${domain || "***"}`;
+  }
+
+  if (provider === "phone") {
+    return value.length > 7 ? `${value.slice(0, 3)}****${value.slice(-4)}` : `${value.slice(0, 2)}***`;
+  }
+
+  return value.length > 8 ? `${value.slice(0, 3)}***${value.slice(-3)}` : `${value.slice(0, 2)}***`;
+}
+
+function accountIdentityHash(secret, provider, identifier) {
+  return hmac(secret, `account:${provider}:${identifier}`);
+}
+
+function accountTokenHash(secret, token) {
+  return hmac(secret, `account-token:${token}`);
+}
+
+function safeAccountRecord(account = {}) {
+  return {
+    accountId: account.accountId || "",
+    provider: account.provider || "",
+    maskedIdentifier: account.maskedIdentifier || "",
+    displayName: account.displayName || "",
+    linkedMemberships: Array.isArray(account.subscriptionIds) ? account.subscriptionIds.length : 0,
+    createdAt: account.createdAt || "",
+    updatedAt: account.updatedAt || ""
+  };
+}
+
+function issueAccountToken(state, account, options = {}) {
+  state.accountTokens = state.accountTokens && typeof state.accountTokens === "object" ? state.accountTokens : {};
+  const secret = serverSecretFromOptions(options);
+  const token = randomId("acctok");
+  state.accountTokens[accountTokenHash(secret, token)] = {
+    accountId: account.accountId,
+    createdAt: nowIso(),
+    lastUsedAt: nowIso()
+  };
+  return token;
+}
+
+function accountFromToken(state, token, options = {}) {
+  const value = String(token || "").trim();
+  if (!value) return null;
+
+  state.accountTokens = state.accountTokens && typeof state.accountTokens === "object" ? state.accountTokens : {};
+  const secret = serverSecretFromOptions(options);
+  const record = state.accountTokens[accountTokenHash(secret, value)];
+  if (!record || !record.accountId) return null;
+
+  const account = state.accounts && state.accounts[record.accountId];
+  if (!account) return null;
+
+  record.lastUsedAt = nowIso();
+  return account;
+}
+
+function accountTokenFromRequest(request, body = {}) {
+  const auth = String(request.headers.authorization || "");
+  const bearer = auth.match(/^Bearer\s+(.+)$/i);
+  return String((bearer && bearer[1]) || request.headers["x-zerolag-account-token"] || body.accountToken || "").trim();
+}
+
+function subscriptionSummaryForAccount(subscription = {}) {
+  return {
+    subscriptionId: subscription.subscriptionId || "",
+    plan: subscription.plan || "",
+    status: subscription.status || "",
+    expiresAt: subscription.expiresAt || "",
+    deviceBound: Boolean(subscription.deviceHash),
+    accountLinkedAt: subscription.accountLinkedAt || ""
+  };
+}
+
+function accountMemberships(state, account = {}) {
+  const ids = Array.isArray(account.subscriptionIds) ? account.subscriptionIds : [];
+  return ids
+    .map((subscriptionId) => state.subscriptions && state.subscriptions[subscriptionId])
+    .filter(Boolean)
+    .map(subscriptionSummaryForAccount);
+}
+
+function bindSubscriptionToAccount(state, account, subscription, actor = "client") {
+  if (!account || !subscription) return false;
+
+  account.subscriptionIds = Array.isArray(account.subscriptionIds) ? account.subscriptionIds : [];
+  if (!account.subscriptionIds.includes(subscription.subscriptionId)) {
+    account.subscriptionIds.push(subscription.subscriptionId);
+  }
+
+  account.updatedAt = nowIso();
+  subscription.accountId = account.accountId;
+  subscription.accountProvider = account.provider;
+  subscription.accountLinkedAt = subscription.accountLinkedAt || nowIso();
+
+  appendAuditEvent(state, "account.membership_bound", {
+    actor,
+    targetType: "subscription",
+    targetId: subscription.subscriptionId,
+    metadata: {
+      accountId: account.accountId,
+      provider: account.provider,
+      plan: subscription.plan || "",
+      expiresAt: subscription.expiresAt || ""
+    }
+  });
+  return true;
+}
+
 function createEmptyState() {
   return {
     version: 1,
     createdAt: nowIso(),
     activationCodes: {},
+    accounts: {},
+    accountIdentities: {},
+    accountTokens: {},
     auditEvents: [],
     orders: {},
     paymentEvents: {},
@@ -584,9 +735,14 @@ function websiteEventsSummary(input = {}) {
 
 function stateSummary(state) {
   const activationCodes = Object.values(state.activationCodes || {});
+  const accounts = Object.values(state.accounts || {});
   const orders = Object.values(state.orders || {});
   const subscriptions = Object.values(state.subscriptions || {});
   return {
+    accounts: {
+      total: accounts.length,
+      linked: accounts.filter((account) => Array.isArray(account.subscriptionIds) && account.subscriptionIds.length > 0).length
+    },
     activationCodes: {
       total: activationCodes.length,
       enabled: activationCodes.filter((code) => code.enabled !== false).length,
@@ -1191,7 +1347,10 @@ function successLicensePayload(subscription, token) {
     runtimeSessionKeyVersion: subscription.runtimeSessionKeyVersion || defaultRuntimeSessionKeyVersion,
     runtimeSessionRevision: Number(subscription.runtimeSessionRevision || 0),
     runtimeSessionProofAlgorithm: subscription.runtimeSessionProofAlgorithm || defaultRuntimeSessionProofAlgorithm,
-    runtimeSessionProof: subscription.runtimeSessionProof || ""
+    runtimeSessionProof: subscription.runtimeSessionProof || "",
+    accountLinked: Boolean(subscription.accountId),
+    accountId: subscription.accountId || "",
+    accountProvider: subscription.accountProvider || ""
   };
 }
 
@@ -1215,6 +1374,122 @@ function validateDeviceHash(deviceHash) {
   return /^[a-f0-9]{64}$/i.test(String(deviceHash || ""));
 }
 
+async function registerAccount(request, response, options = {}) {
+  const body = await readRequestBody(request);
+  const provider = normalizeAccountProvider(body.provider);
+  const identifier = normalizeAccountIdentifier(provider, body.identifier);
+
+  if (!provider || !validateAccountIdentifier(provider, identifier)) {
+    jsonResponse(response, 400, { ok: false, message: "Invalid account registration request." });
+    return;
+  }
+
+  const state = loadState(options);
+  state.accounts = state.accounts && typeof state.accounts === "object" ? state.accounts : {};
+  state.accountIdentities = state.accountIdentities && typeof state.accountIdentities === "object" ? state.accountIdentities : {};
+
+  const secret = serverSecretFromOptions(options);
+  const identityHash = accountIdentityHash(secret, provider, identifier);
+  const existingId = state.accountIdentities[identityHash];
+  let account = existingId ? state.accounts[existingId] : null;
+  let created = false;
+
+  if (!account) {
+    account = {
+      accountId: randomId("acct"),
+      provider,
+      identifierHash: identityHash,
+      maskedIdentifier: maskAccountIdentifier(provider, identifier),
+      displayName: String(body.displayName || "").trim().slice(0, 48),
+      subscriptionIds: [],
+      createdAt: nowIso(),
+      updatedAt: nowIso()
+    };
+    state.accounts[account.accountId] = account;
+    state.accountIdentities[identityHash] = account.accountId;
+    created = true;
+  } else {
+    account.updatedAt = nowIso();
+    if (body.displayName) {
+      account.displayName = String(body.displayName || "").trim().slice(0, 48);
+    }
+  }
+
+  const token = issueAccountToken(state, account, options);
+  appendAuditEvent(state, created ? "account.registered" : "account.logged_in", {
+    actor: "client",
+    targetType: "account",
+    targetId: account.accountId,
+    metadata: {
+      provider,
+      linkedMemberships: Array.isArray(account.subscriptionIds) ? account.subscriptionIds.length : 0
+    }
+  });
+  saveState(state, options);
+
+  jsonResponse(response, created ? 201 : 200, {
+    ok: true,
+    created,
+    account: safeAccountRecord(account),
+    token,
+    memberships: accountMemberships(state, account)
+  });
+}
+
+async function getAccountProfile(request, response, options = {}) {
+  const state = loadState(options);
+  const token = accountTokenFromRequest(request);
+  const account = accountFromToken(state, token, options);
+
+  if (!account) {
+    jsonResponse(response, 401, { ok: false, message: "Account session is invalid." });
+    return;
+  }
+
+  saveState(state, options);
+  jsonResponse(response, 200, {
+    ok: true,
+    account: safeAccountRecord(account),
+    memberships: accountMemberships(state, account)
+  });
+}
+
+async function bindAccountMembership(request, response, options = {}) {
+  const body = await readRequestBody(request);
+  const state = loadState(options);
+  const account = accountFromToken(state, accountTokenFromRequest(request, body), options);
+
+  if (!account) {
+    jsonResponse(response, 401, { ok: false, message: "Account session is invalid." });
+    return;
+  }
+
+  const subscriptionId = String(body.subscriptionId || "").trim();
+  const licenseToken = String(body.licenseToken || body.token || "").trim();
+  const deviceHash = String(body.deviceHash || "").trim();
+  const secret = serverSecretFromOptions(options);
+  const subscription = state.subscriptions && state.subscriptions[subscriptionId];
+  const tokenRecord = licenseToken ? state.tokens[tokenHash(secret, licenseToken)] : null;
+
+  if (!subscription || !tokenRecord || tokenRecord.subscriptionId !== subscriptionId) {
+    jsonResponse(response, 403, { ok: false, message: "Membership session is invalid." });
+    return;
+  }
+
+  if (deviceHash && subscription.deviceHash !== deviceHash) {
+    jsonResponse(response, 403, { ok: false, message: "Device binding mismatch." });
+    return;
+  }
+
+  bindSubscriptionToAccount(state, account, subscription);
+  saveState(state, options);
+  jsonResponse(response, 200, {
+    ok: true,
+    account: safeAccountRecord(account),
+    memberships: accountMemberships(state, account)
+  });
+}
+
 async function activateLicense(request, response, options = {}) {
   const body = await readRequestBody(request);
   const activationCode = normalizeCode(body.activationCode);
@@ -1227,6 +1502,13 @@ async function activateLicense(request, response, options = {}) {
 
   const secret = serverSecretFromOptions(options);
   const state = loadState(options);
+  const accountToken = String(body.accountToken || "").trim();
+  const account = accountToken ? accountFromToken(state, accountToken, options) : null;
+  if (accountToken && !account) {
+    jsonResponse(response, 403, { active: false, message: "Account session is invalid." });
+    return;
+  }
+
   const hash = codeHash(secret, activationCode);
   const code = state.activationCodes[hash];
 
@@ -1239,6 +1521,7 @@ async function activateLicense(request, response, options = {}) {
   if (existing) {
     const runtimeSession = rotateSubscriptionRuntimeSession(existing, { reason: "activation_reuse" }, options);
     const token = issueToken(state, existing, options);
+    if (account) bindSubscriptionToAccount(state, account, existing);
     existing.lastValidatedAt = nowIso();
     appendAuditEvent(state, "license.reused", {
       actor: "client",
@@ -1283,6 +1566,7 @@ async function activateLicense(request, response, options = {}) {
 
     const runtimeSession = rotateSubscriptionRuntimeSession(renewable, { reason: "renewal" }, options);
     const token = issueToken(state, renewable, options);
+    if (account) bindSubscriptionToAccount(state, account, renewable);
     appendAuditEvent(state, "license.renewed", {
       actor: "client",
       targetType: "subscription",
@@ -1321,6 +1605,7 @@ async function activateLicense(request, response, options = {}) {
 
   const runtimeSession = rotateSubscriptionRuntimeSession(subscription, { reason: "activation" }, options);
   const token = issueToken(state, subscription, options);
+  if (account) bindSubscriptionToAccount(state, account, subscription);
   appendAuditEvent(state, "license.activated", {
     actor: "client",
     targetType: "subscription",
@@ -1929,6 +2214,24 @@ async function routeRequest(request, response, options = {}) {
     if (request.method === "GET" && orderStatusMatch) {
       if (!applyRateLimit(request, response, "orders:status", options)) return;
       await getOrderStatus(request, response, options, orderStatusMatch[1]);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/accounts/register") {
+      if (!applyRateLimit(request, response, "accounts:auth", options)) return;
+      await registerAccount(request, response, options);
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/v1/accounts/me") {
+      if (!applyRateLimit(request, response, "accounts:auth", options)) return;
+      await getAccountProfile(request, response, options);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/accounts/bind-membership") {
+      if (!applyRateLimit(request, response, "accounts:auth", options)) return;
+      await bindAccountMembership(request, response, options);
       return;
     }
 

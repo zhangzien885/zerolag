@@ -72,6 +72,11 @@ const els = {
   boostButtonHint: document.querySelector("#boostButtonHint"),
   licenseCode: document.querySelector("#licenseCode"),
   activateButton: document.querySelector("#activateButton"),
+  accountState: document.querySelector("#accountState"),
+  accountProvider: document.querySelector("#accountProvider"),
+  accountIdentifier: document.querySelector("#accountIdentifier"),
+  accountBindButton: document.querySelector("#accountBindButton"),
+  accountDetail: document.querySelector("#accountDetail"),
   renewButton: document.querySelector("#renewButton"),
   purchaseOverlay: document.querySelector("#purchaseOverlay"),
   closePurchaseButton: document.querySelector("#closePurchaseButton"),
@@ -252,6 +257,78 @@ function normalizeLicenseInputField() {
     els.licenseCode.value = normalized;
   }
   return normalized;
+}
+
+function accountProviderLabel(provider) {
+  if (provider === "wechat") return "微信";
+  if (provider === "qq") return "QQ";
+  if (provider === "email") return "邮箱";
+  if (provider === "phone") return "手机号";
+  return "账号";
+}
+
+function accountIdentifierPlaceholder(provider) {
+  if (provider === "email") return "输入邮箱地址";
+  if (provider === "phone") return "输入手机号";
+  if (provider === "qq") return "输入 QQ 号 / OpenID";
+  return "输入微信号 / OpenID";
+}
+
+function normalizeAccountIdentifierInput(provider, value) {
+  const text = String(value || "").normalize("NFKC").trim();
+  if (provider === "email") return text.toLowerCase().replace(/\s+/g, "");
+  if (provider === "phone") {
+    const compact = text.replace(/[\s()\-_.]/g, "");
+    return compact.startsWith("+") ? `+${compact.slice(1).replace(/\D/g, "")}` : compact.replace(/\D/g, "");
+  }
+  return text.replace(/\s+/g, "");
+}
+
+function updateAccountPlaceholder() {
+  const provider = els.accountProvider.value;
+  els.accountIdentifier.placeholder = accountIdentifierPlaceholder(provider);
+}
+
+function renderAccountStatus(result) {
+  const account = result && result.account ? result.account : {};
+  if (!account.configured) {
+    setText(els.accountState, "待上线");
+    setText(els.accountDetail, "账号服务暂未连接。正式版接入服务器后，可绑定微信、QQ、邮箱或手机号。");
+    return;
+  }
+
+  if (!account.active) {
+    setText(els.accountState, "未绑定");
+    setText(els.accountDetail, "绑定账号后，会员会归属到你的账号，换设备或联系客服时更容易核对。");
+    return;
+  }
+
+  const provider = accountProviderLabel(account.provider);
+  const linked = Number(account.linkedMemberships || 0);
+  setText(els.accountState, linked > 0 ? "已绑定会员" : "账号已绑定");
+  setText(
+    els.accountDetail,
+    `${provider} ${account.maskedIdentifier || "账号"} 已绑定。${linked > 0 ? `已关联 ${linked} 个会员。` : "激活或续费后会自动关联会员。"}`
+  );
+}
+
+function accountFailureMessage(reason) {
+  if (reason === "ACCOUNT_SERVER_NOT_CONFIGURED") return "账号服务暂未连接，正式版服务器上线后可绑定账号。";
+  if (reason === "MEMBERSHIP_NOT_ACTIVE") return "账号已绑定，开通会员后会自动关联。";
+  if (reason === "SERVER_MEMBERSHIP_NOT_READY") return "账号已绑定，服务器会员生效后会自动关联。";
+  return reason || "账号绑定失败。";
+}
+
+async function refreshAccountStatus() {
+  try {
+    const result = await window.zeroLag.getAccountStatus();
+    renderAccountStatus(result);
+    return result;
+  } catch {
+    setText(els.accountState, "读取失败");
+    setText(els.accountDetail, "账号状态暂时读取失败，请稍后重试。");
+    return null;
+  }
 }
 
 function shorten(value, maxLength = 30) {
@@ -631,6 +708,7 @@ async function refreshStatus() {
     setText(els.boostButtonHint, licenseActive ? "PERFORMANCE MODE + VBS OFF" : (integrityOk ? "UNLOCK PERFORMANCE MODE" : "CLIENT PROTECTION"));
     els.boostButton.disabled = !integrityOk || forceUpdateRequired;
     renderDiagnostics(status.diagnostics);
+    refreshAccountStatus();
 
     if (runtimeReady) {
       setText(els.boostSummary, "");
@@ -1053,6 +1131,50 @@ els.licenseCode.addEventListener("blur", () => {
   normalizeLicenseInputField();
 });
 
+els.accountProvider.addEventListener("change", () => {
+  updateAccountPlaceholder();
+});
+
+els.accountIdentifier.addEventListener("blur", () => {
+  els.accountIdentifier.value = normalizeAccountIdentifierInput(els.accountProvider.value, els.accountIdentifier.value);
+});
+
+els.accountBindButton.addEventListener("click", async () => {
+  const provider = els.accountProvider.value;
+  const identifier = normalizeAccountIdentifierInput(provider, els.accountIdentifier.value);
+  els.accountIdentifier.value = identifier;
+
+  if (!identifier) {
+    addLog("请输入要绑定的账号。", "warn");
+    return;
+  }
+
+  els.accountBindButton.disabled = true;
+  setText(els.accountState, "绑定中");
+  setText(els.accountDetail, "正在连接账号服务，并尝试把当前会员绑定到账号。");
+
+  try {
+    const result = await window.zeroLag.registerAccount({
+      provider,
+      identifier
+    });
+    renderAccountStatus(result);
+    if (result && result.ok) {
+      addLog(result.bound ? "账号已绑定，当前会员已关联。" : "账号已绑定，激活会员后会自动关联。", "good");
+      await refreshStatus();
+      return;
+    }
+
+    addLog(accountFailureMessage(result && result.reason), "warn");
+  } catch {
+    setText(els.accountState, "绑定失败");
+    setText(els.accountDetail, "账号绑定失败，请稍后重试。");
+    addLog("账号绑定失败。", "warn");
+  } finally {
+    els.accountBindButton.disabled = false;
+  }
+});
+
 els.activateButton.addEventListener("click", () => {
   const code = normalizeLicenseInputField();
   if (!code) {
@@ -1436,6 +1558,8 @@ els.installUpdateButton.addEventListener("click", async () => {
   addLog("已打开更新下载页面。", "good");
 });
 
+updateAccountPlaceholder();
+refreshAccountStatus();
 refreshStatus();
 refreshMemoryUsage();
 refreshGameLibrary();

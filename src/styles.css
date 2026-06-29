@@ -1446,6 +1446,73 @@ body.ready-mid .metric-rail {
   font-weight: 800;
 }
 
+.account-card {
+  border: 1px solid rgba(196, 255, 220, 0.1);
+  background:
+    linear-gradient(135deg, rgba(167, 255, 90, 0.055), transparent 58%),
+    rgba(0, 0, 0, 0.18);
+  margin-bottom: 8px;
+  padding: 10px;
+}
+
+.account-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.account-head span,
+.account-card p {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.account-head strong {
+  color: var(--green);
+  font-size: 12px;
+}
+
+.account-row {
+  display: grid;
+  grid-template-columns: 74px 1fr 64px;
+  gap: 7px;
+}
+
+.account-row select,
+.account-row input {
+  min-width: 0;
+  height: 34px;
+  border: 1px solid var(--line);
+  outline: 0;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.26);
+  padding: 0 8px;
+  font: inherit;
+  font-size: 11px;
+}
+
+.account-row button {
+  border: 1px solid rgba(167, 255, 90, 0.36);
+  color: var(--green);
+  background: rgba(167, 255, 90, 0.08);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.account-row button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.account-card p {
+  margin: 8px 0 0;
+  line-height: 1.45;
+}
+
 .renew-button {
   width: 100%;
   height: 38px;

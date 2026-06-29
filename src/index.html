@@ -194,6 +194,23 @@
             <input id="licenseCode" spellcheck="false" placeholder="输入会员码" autocomplete="off" autocapitalize="characters" />
             <button id="activateButton">激活</button>
           </div>
+          <div class="account-card">
+            <div class="account-head">
+              <span>账号绑定</span>
+              <strong id="accountState">未绑定</strong>
+            </div>
+            <div class="account-row">
+              <select id="accountProvider" aria-label="账号类型">
+                <option value="wechat">微信</option>
+                <option value="qq">QQ</option>
+                <option value="email">邮箱</option>
+                <option value="phone">手机号</option>
+              </select>
+              <input id="accountIdentifier" spellcheck="false" placeholder="输入微信号 / OpenID" autocomplete="off" />
+              <button id="accountBindButton">绑定</button>
+            </div>
+            <p id="accountDetail">绑定账号后，会员会归属到你的账号。正式版将接入微信、QQ、邮箱和手机号验证。</p>
+          </div>
           <button id="renewButton" class="renew-button">续费月度会员</button>
         </div>
       </section>
