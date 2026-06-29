@@ -29,6 +29,7 @@ ZeroLag is a Windows extreme gaming performance optimizer.
 - Exports a redacted support diagnostics bundle from the game toolbox for customer support.
 - Keeps a local redacted support log so diagnostics include recent user-facing events without activation codes, tokens, paths, or tuning details.
 - Opens a configured official support page from the game toolbox for customer help and diagnostics handoff.
+- Prepares a support handoff summary with case ID, membership, version, runtime, and readiness status before contacting support.
 - Shows membership expiry and renewal guidance before Pro access runs out.
 - Includes an official website button with a placeholder URL for the future ZeroLag site.
 - Writes VBS / HVCI / Credential Guard / Hypervisor disable configuration.
@@ -162,7 +163,7 @@ npm run check
 npm run ci
 ```
 
-`ci` runs the standard local verification set used by GitHub Actions: syntax checks, desktop production readiness, restore UI smoke checks, server readiness, SQLite storage-status smoke checks, server self-test, server smoke test, CI report-artifact smoke checks, Windows Service guard asset, uninstall cleanup, worker checks, and integrity verification.
+`ci` runs the standard local verification set used by GitHub Actions: syntax checks, desktop production readiness, restore/support UI smoke checks, server readiness, SQLite storage-status smoke checks, server self-test, server smoke test, CI report-artifact smoke checks, Windows Service guard asset, uninstall cleanup, worker checks, and integrity verification.
 It also runs the non-strict release preflight so release gaps stay visible during normal development.
 
 ## Continuous Integration

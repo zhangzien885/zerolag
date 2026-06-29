@@ -1013,6 +1013,72 @@ function supportUpdateSnapshot(update) {
   };
 }
 
+function supportCaseId(payload) {
+  const day = String(payload.createdAt || new Date().toISOString()).slice(0, 10).replace(/-/g, "");
+  const digest = crypto.createHash("sha256").update(JSON.stringify({
+    createdAt: payload.createdAt,
+    version: payload.app && payload.app.version,
+    licenseActive: payload.license && payload.license.active,
+    readinessScore: payload.diagnostics && payload.diagnostics.readinessScore,
+    boostActive: payload.runtime && payload.runtime.boostActive,
+    updateLatest: payload.update && payload.update.latest
+  })).digest("hex").slice(0, 8).toUpperCase();
+  return `ZL-${day}-${digest}`;
+}
+
+function supportHandoffSummary(payload) {
+  const update = payload.update || {};
+  const license = payload.license || {};
+  const runtime = payload.runtime || {};
+  const diagnostics = payload.diagnostics || {};
+  const supportConfigured = Boolean(payload.config && payload.config.supportConfigured);
+  const updateState = update.error
+    ? "check-limited"
+    : (update.updateAvailable ? (update.force ? "force-update" : "update-available") : "current");
+
+  return {
+    caseId: supportCaseId(payload),
+    createdAt: payload.createdAt,
+    supportConfigured,
+    app: {
+      version: payload.app && payload.app.version || "",
+      channel: payload.config && payload.config.releaseChannel || "",
+      packaged: Boolean(payload.app && payload.app.packaged)
+    },
+    membership: {
+      active: Boolean(license.active),
+      plan: license.plan || "",
+      expiresAt: license.expiresAt || "",
+      source: license.source || "none",
+      serverBacked: Boolean(license.serverBacked),
+      machineBound: Boolean(license.machineBound),
+      integrityOk: license.integrityOk !== false
+    },
+    runtime: {
+      boostActive: Boolean(runtime.boostActive),
+      errorCode: runtime.errorCode || ""
+    },
+    diagnostics: {
+      readinessScore: diagnostics.readinessScore ?? null,
+      admin: Boolean(payload.permissions && payload.permissions.admin),
+      gpuDetected: Boolean(diagnostics.gpu && diagnostics.gpu.length),
+      memoryUsedPercent: payload.memory && payload.memory.usedPercent ? payload.memory.usedPercent : null
+    },
+    update: {
+      state: updateState,
+      current: update.current || "",
+      latest: update.latest || "",
+      signed: Boolean(update.signed),
+      signatureValid: Boolean(update.signatureValid)
+    },
+    checklist: [
+      "1. Generate the diagnostic bundle.",
+      "2. Contact official support.",
+      "3. Send the case ID and diagnostic bundle to support."
+    ]
+  };
+}
+
 async function buildSupportDiagnosticPayload() {
   const config = readAppConfig();
   const vbs = await getVbsStatus().catch(() => ({ ok: false, enabled: false, status: null }));
@@ -1024,7 +1090,7 @@ async function buildSupportDiagnosticPayload() {
   await supportLogWriteQueue.catch(() => {});
   const supportLog = readSupportLog();
 
-  return {
+  const payload = {
     product: "ZeroLag",
     supportBundleVersion: 2,
     createdAt: new Date().toISOString(),
@@ -1063,6 +1129,17 @@ async function buildSupportDiagnosticPayload() {
       count: games.length
     }
   };
+
+  payload.supportHandoff = supportHandoffSummary(payload);
+  return payload;
+}
+
+async function getSupportHandoff() {
+  const payload = await buildSupportDiagnosticPayload();
+  return {
+    ok: true,
+    ...payload.supportHandoff
+  };
 }
 
 async function createSupportBundle() {
@@ -1094,7 +1171,8 @@ async function createSupportBundle() {
       admin: payload.permissions.admin,
       boostActive: payload.runtime.boostActive,
       readinessScore: payload.diagnostics ? payload.diagnostics.readinessScore : null,
-      supportLogCount: payload.supportLog.length
+      supportLogCount: payload.supportLog.length,
+      caseId: payload.supportHandoff.caseId
     }
   };
 }
@@ -2265,6 +2343,7 @@ app.whenReady().then(async () => {
   ipcMain.handle("zerolag:launch-game", async (_event, id) => launchGame(String(id || "")));
   ipcMain.handle("zerolag:get-network-diagnostics", async () => getNetworkDiagnostics());
   ipcMain.handle("zerolag:flush-dns", async () => flushDnsCache());
+  ipcMain.handle("zerolag:get-support-handoff", async () => getSupportHandoff());
   ipcMain.handle("zerolag:create-support-bundle", async () => createSupportBundle());
   ipcMain.handle("zerolag:record-support-log", async (_event, entry) => recordSupportLog(entry && entry.message, entry && entry.type));
   ipcMain.handle("zerolag:get-app-config", async () => {

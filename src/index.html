@@ -264,7 +264,26 @@
               <strong id="supportState">待生成</strong>
             </div>
             <p id="supportDetail">生成给客服排查用的诊断文件，不包含会员码、Token 或调校参数。</p>
-            <div class="tool-actions">
+            <div class="support-handoff" id="supportHandoff">
+              <div>
+                <span>售后编号</span>
+                <strong id="supportCaseId">待准备</strong>
+              </div>
+              <div>
+                <span>会员</span>
+                <strong id="supportMemberStatus">待读取</strong>
+              </div>
+              <div>
+                <span>版本</span>
+                <strong id="supportVersionStatus">待读取</strong>
+              </div>
+              <div>
+                <span>运行</span>
+                <strong id="supportRuntimeStatus">待读取</strong>
+              </div>
+            </div>
+            <div class="tool-actions support-actions">
+              <button id="supportPrepareButton">准备售后信息</button>
               <button id="supportBundleButton">生成诊断包</button>
               <button id="supportContactButton">联系支持</button>
             </div>

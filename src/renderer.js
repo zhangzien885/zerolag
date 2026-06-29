@@ -38,8 +38,13 @@ const els = {
   versionInstallButton: document.querySelector("#versionInstallButton"),
   supportState: document.querySelector("#supportState"),
   supportDetail: document.querySelector("#supportDetail"),
+  supportPrepareButton: document.querySelector("#supportPrepareButton"),
   supportBundleButton: document.querySelector("#supportBundleButton"),
   supportContactButton: document.querySelector("#supportContactButton"),
+  supportCaseId: document.querySelector("#supportCaseId"),
+  supportMemberStatus: document.querySelector("#supportMemberStatus"),
+  supportVersionStatus: document.querySelector("#supportVersionStatus"),
+  supportRuntimeStatus: document.querySelector("#supportRuntimeStatus"),
   toolboxOverlay: document.querySelector("#toolboxOverlay"),
   closeToolboxButton: document.querySelector("#closeToolboxButton"),
   resultState: document.querySelector("#resultState"),
@@ -338,6 +343,69 @@ function renderNetworkDiagnostics(result) {
 
   setText(els.networkState, result.summary || "已检测");
   setText(els.networkDetail, `${result.best.label} 延迟 ${result.best.average}ms，丢包 ${result.packetLoss || 0}%`);
+}
+
+function supportUpdateLabel(update) {
+  if (!update) return "待读取";
+  if (update.state === "force-update") return "必须更新";
+  if (update.state === "update-available") return "有新版本";
+  if (update.state === "check-limited") return "检查受限";
+  return update.current ? `当前 ${update.current}` : "已就绪";
+}
+
+function renderSupportHandoff(handoff) {
+  if (!handoff || !handoff.ok) {
+    setText(els.supportCaseId, "准备失败");
+    setText(els.supportMemberStatus, "未知");
+    setText(els.supportVersionStatus, "未知");
+    setText(els.supportRuntimeStatus, "未知");
+    return;
+  }
+
+  const membership = handoff.membership || {};
+  const runtime = handoff.runtime || {};
+  setText(els.supportCaseId, handoff.caseId || "已准备");
+  setText(els.supportMemberStatus, membership.active ? "Pro 有效" : (membership.integrityOk ? "未激活" : "授权异常"));
+  setText(els.supportVersionStatus, supportUpdateLabel(handoff.update));
+  setText(els.supportRuntimeStatus, runtime.boostActive ? "Boost 运行中" : (runtime.errorCode ? "需重试" : "日常待命"));
+  els.supportCaseId.title = handoff.caseId || "";
+}
+
+async function refreshSupportHandoff(manual = false) {
+  if (manual) {
+    els.supportPrepareButton.disabled = true;
+    setText(els.toolState, "准备售后信息");
+    setText(els.supportState, "准备中");
+    setText(els.supportDetail, "正在整理会员、版本、权限、运行状态和系统检测摘要。");
+  }
+
+  try {
+    const handoff = await window.zeroLag.getSupportHandoff();
+    renderSupportHandoff(handoff);
+    setText(els.supportState, handoff.supportConfigured ? "可联系" : "待配置");
+    setText(
+      els.supportDetail,
+      handoff.supportConfigured
+        ? `售后信息已准备，编号 ${handoff.caseId}。建议先生成诊断包，再联系支持。`
+        : `售后信息已准备，编号 ${handoff.caseId}。正式支持入口配置后可一键联系。`
+    );
+    if (manual) {
+      setText(els.toolState, "售后信息已准备");
+      addLog("售后信息已准备，可生成诊断包后联系支持。", "good");
+    }
+    return handoff;
+  } catch {
+    renderSupportHandoff(null);
+    setText(els.supportState, "准备失败");
+    setText(els.supportDetail, "售后信息准备失败，请重新扫描状态后再试。");
+    if (manual) {
+      setText(els.toolState, "准备失败");
+      addLog("售后信息准备失败。", "warn");
+    }
+    return null;
+  } finally {
+    if (manual) els.supportPrepareButton.disabled = false;
+  }
 }
 
 async function refreshMemoryUsage() {
@@ -764,6 +832,7 @@ els.toolboxButton.addEventListener("click", () => {
   els.toolboxOverlay.hidden = false;
   setText(els.toolState, "待命");
   refreshGameLibrary();
+  refreshSupportHandoff();
 });
 
 els.closeToolboxButton.addEventListener("click", () => {
@@ -855,6 +924,10 @@ els.versionInstallButton.addEventListener("click", async () => {
   addLog("已打开更新下载页面。", "good");
 });
 
+els.supportPrepareButton.addEventListener("click", async () => {
+  await refreshSupportHandoff(true);
+});
+
 els.supportBundleButton.addEventListener("click", async () => {
   els.supportBundleButton.disabled = true;
   setText(els.toolState, "生成诊断");
@@ -876,7 +949,8 @@ els.supportBundleButton.addEventListener("click", async () => {
 
     setText(els.toolState, "诊断完成");
     setText(els.supportState, "已生成");
-    setText(els.supportDetail, `诊断文件已保存：${result.fileName || "ZeroLag-support.json"}`);
+    if (result.summary && result.summary.caseId) setText(els.supportCaseId, result.summary.caseId);
+    setText(els.supportDetail, `诊断文件已保存：${result.fileName || "ZeroLag-support.json"}。售后编号：${result.summary && result.summary.caseId ? result.summary.caseId : "已生成"}`);
     addLog("支持诊断包已生成，可发送给客服排查。", "good");
   } catch {
     setText(els.toolState, "诊断失败");

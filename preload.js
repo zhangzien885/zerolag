@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld("zeroLag", {
   launchGame: (id) => ipcRenderer.invoke("zerolag:launch-game", id),
   getNetworkDiagnostics: () => ipcRenderer.invoke("zerolag:get-network-diagnostics"),
   flushDns: () => ipcRenderer.invoke("zerolag:flush-dns"),
+  getSupportHandoff: () => ipcRenderer.invoke("zerolag:get-support-handoff"),
   createSupportBundle: () => ipcRenderer.invoke("zerolag:create-support-bundle"),
   recordSupportLog: (message, type) => ipcRenderer.invoke("zerolag:record-support-log", { message, type }),
   getAppConfig: () => ipcRenderer.invoke("zerolag:get-app-config"),

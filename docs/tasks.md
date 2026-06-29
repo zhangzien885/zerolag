@@ -33,6 +33,7 @@
 - Support diagnostics export in the game toolbox for customer support, without exposing activation codes, tokens, protected tuning parameters, or game paths.
 - Redacted local support log included in diagnostics, limited to recent user-facing events and filtered for activation codes, tokens, URLs, paths, and GUIDs.
 - Official support/contact button in the game toolbox, driven by production `supportUrl` configuration.
+- Support handoff summary in the game toolbox with case ID, membership, version, runtime, and readiness status before contacting support.
 - System detection panel for CPU, discrete GPU preference, live memory usage, and Game Mode status.
 - Memory usage refresh every second with one decimal place.
 - Anti-tamper integrity manifest for protected files.
@@ -202,6 +203,7 @@
 - Added a read-only SQLite storage status command with safe relative paths, latest-backup freshness review, recovery next steps, and CI smoke coverage.
 - Added an installer uninstall cleanup coordinator that performs one final runtime restore pass, removes Task Scheduler fallback entries, removes the Windows Service guard, and is covered by CI smoke checks.
 - Added restore-assurance UI coverage for the manual recovery control, including a visible recovery status card, safer restore result payload, and CI smoke checks.
+- Added a customer-support handoff flow that prepares a redacted case ID, membership/version/runtime/readiness summary, writes the same case ID into diagnostics, and verifies the flow in CI.
 
 ## Known Boundaries
 

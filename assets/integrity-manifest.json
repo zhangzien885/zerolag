@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T04:36:28.889Z",
+  "generatedAt": "2026-06-29T04:47:56.836Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "5b81b1bd0f4f7992257bbca718443ca85607f190ab51ea61ea2c6d936219a4d6"
+      "sha256": "5d03acbbf826f8b5d6a52b8eff721c404485576c98f84ffd647cd82eea795306"
     },
     {
       "path": "main.js",
-      "sha256": "a8f6b7d7cad5e52c7d81c45eafc3544c97060b12110b141a06bd3955dbd880d1"
+      "sha256": "bccafe77f69d06e10b6589391307bc1276999ec093a45c9811fb7d201303cf6b"
     },
     {
       "path": "preload.js",
-      "sha256": "0f50778e901a338d409a29d5bc9ffffab8a200054e19564ab935f6ed32ab0ba4"
+      "sha256": "30c208bd48ad3cb5bc0b9cec33f4036399e6fc2b1826a6463a0b91a1c7c9dfb1"
     },
     {
       "path": "src/index.html",
-      "sha256": "20f188bee365afddaec222aafc2249e8fb40fb901dbe0c8819413919bcee1831"
+      "sha256": "34b532791a99dc8cae0c239bc9a494624ae9aebd3310a9581c344c6dac268364"
     },
     {
       "path": "src/splash.html",
@@ -24,11 +24,11 @@
     },
     {
       "path": "src/renderer.js",
-      "sha256": "aa41e31087475d98a3f8217471e53bffd790021a6d386b02309011af4f9a3fa3"
+      "sha256": "71b3b4edee9f279883a5fc8114f27c9d3523373f47768fde21f6078d3f9871a9"
     },
     {
       "path": "src/styles.css",
-      "sha256": "1ae18b662f33eb2b74d9808e02a376fbed47ba69740a8eb030d1439319e53c2c"
+      "sha256": "f6428f8aa1802e661681b4ec9d1ee56f06c101ec10169ff74cfbd9c4cb268473"
     },
     {
       "path": "scripts/runtime-guard-core.js",
@@ -136,7 +136,7 @@
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "85dd9fb0746f514d2b0980e21ea0987efec84b73e1df9daa0218e678e26d482b"
+      "sha256": "198b700fd6a4b1a313edc91d61b5cfa501c16b98261345503926fd8be936fec2"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -227,5 +227,5 @@
       "sha256": "32959ffda1c3a8acacbe1806248f89e439b1264bc5235bb98eab10bc167c2b5f"
     }
   ],
-  "signature": "e0f7c493feeee484762837ccfdf24c7465129b21d18aae310c1350f4c1da39e7"
+  "signature": "45ab81db649de9449ba73adf4fa15042deee5cef9a711cbeb123499d923f7812"
 }

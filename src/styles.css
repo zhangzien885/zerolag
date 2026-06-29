@@ -1040,6 +1040,10 @@ body.ready-mid .metric-rail {
   margin-top: 12px;
 }
 
+.support-actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .tool-actions.single {
   grid-template-columns: 1fr;
 }
@@ -1073,6 +1077,51 @@ body.ready-mid .metric-rail {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.45;
+}
+
+.support-handoff {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.support-handoff div {
+  border: 1px solid rgba(196, 255, 220, 0.11);
+  background:
+    linear-gradient(135deg, rgba(167, 255, 90, 0.055), transparent 54%),
+    rgba(0, 0, 0, 0.18);
+  padding: 8px 9px;
+  min-width: 0;
+}
+
+.support-handoff span,
+.support-handoff strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.support-handoff span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.support-handoff strong {
+  margin-top: 4px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.support-handoff div:first-child {
+  grid-column: 1 / -1;
+  border-color: rgba(167, 255, 90, 0.2);
+}
+
+.support-handoff div:first-child strong {
+  color: var(--green);
+  letter-spacing: 0.04em;
 }
 
 .toolbox-dialog {
