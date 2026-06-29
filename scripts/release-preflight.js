@@ -142,6 +142,8 @@ function main() {
   addIssue(issues, Array.isArray(build.files) && build.files.length > 0, "Installer packaging config must define build.files.");
   addIssue(issues, !JSON.stringify(build.files || []).includes("scripts/**/*.js"), "Installer packaging config must not ship every scripts/*.js helper.");
   addIssue(issues, !JSON.stringify(build.files || []).includes("scripts/**"), "Installer packaging config must not use broad scripts/** globs.");
+  addIssue(issues, !JSON.stringify(build.files || []).includes("server/"), "Installer packaging config must not ship server-side helpers.");
+  addIssue(issues, !JSON.stringify(build.files || []).includes("server/env.js"), "Installer packaging config must not ship server env helpers.");
   addIssue(issues, JSON.stringify(build.files || []).includes("scripts/runtime-guard-core.js"), "Installer packaging config must include runtime guard core in the app archive.");
   addIssue(issues, JSON.stringify(build.files || []).includes("scripts/runtime-guard-service.js"), "Installer packaging config must include runtime guard service worker in the app archive.");
   addIssue(issues, JSON.stringify(build.files || []).includes("scripts/runtime-watchdog.js"), "Installer packaging config must include runtime watchdog in the app archive.");

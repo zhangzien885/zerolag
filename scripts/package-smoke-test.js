@@ -113,7 +113,12 @@ function main() {
     "scripts/local-integration.js",
     "scripts/release-preflight.js",
     "scripts/server-smoke-test.js",
-    "scripts/package-smoke-test.js"
+    "scripts/package-smoke-test.js",
+    "server/env.js",
+    "server/index.js",
+    "server/admin-client.js",
+    "server/create-activation-code.js",
+    "server/self-test.js"
   ].forEach((relativePath) => {
     assertOk(!asarFiles.has(relativePath), `Packaged app archive must not include build/test helper: ${relativePath}`);
   });

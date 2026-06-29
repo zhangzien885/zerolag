@@ -83,8 +83,7 @@
       "assets/**/*",
       "scripts/runtime-guard-core.js",
       "scripts/runtime-guard-service.js",
-      "scripts/runtime-watchdog.js",
-      "server/env.js"
+      "scripts/runtime-watchdog.js"
     ],
     "asar": true,
     "asarUnpack": [

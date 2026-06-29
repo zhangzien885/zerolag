@@ -89,7 +89,12 @@ function buildPackageAudit(packageJson) {
     "scripts/local-integration.js",
     "scripts/release-preflight.js",
     "scripts/server-smoke-test.js",
-    "scripts/package-smoke-test.js"
+    "scripts/package-smoke-test.js",
+    "server/env.js",
+    "server/index.js",
+    "server/admin-client.js",
+    "server/create-activation-code.js",
+    "server/self-test.js"
   ];
   const broadScriptGlobs = ["scripts/**/*.js", "scripts/**"];
   const asarPath = path.join(rootDir, "dist", "win-unpacked", "resources", "app.asar");
