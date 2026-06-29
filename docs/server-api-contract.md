@@ -189,7 +189,7 @@ The first account contract supports four providers: `wechat`, `qq`, `email`, and
 
 For WeChat and QQ, the current contract expects a verified provider identifier such as an OpenID or UnionID supplied by the future OAuth flow. Do not treat a raw nickname as proof of ownership in production. Email and phone registration should be paired with email/SMS verification before public paid release.
 
-Paid desktop builds should treat account sign-in as required for membership access. When a user signs out, the local account session is removed and Boost must stop treating the cached membership as active until the same bound account signs in again. Once a membership is bound, another account must not be able to claim it with a cached license token.
+Paid desktop builds should treat account sign-in as required for membership access. When a user signs out, the local account session is removed and Boost must stop treating the cached membership as active until the same bound account signs in again. Once a membership is bound, another account must not be able to claim it with a cached license token. Membership ownership follows the account, so a customer can sign in on another computer and receive a new device-specific runtime session for that machine.
 
 Register or sign in an account:
 
@@ -232,6 +232,25 @@ GET /v1/accounts/me
 Authorization: Bearer ACCOUNT_TOKEN
 ```
 
+Issue a device-specific runtime session for an already-active account membership:
+
+```http
+POST /v1/accounts/activate-membership
+```
+
+Request:
+
+```json
+{
+  "accountToken": "opaque-account-token",
+  "deviceHash": "sha256-device-id",
+  "appVersion": "0.1.0",
+  "channel": "stable"
+}
+```
+
+This endpoint does not create a new membership. It checks the signed-in account, finds an active account membership, and returns a rotated license token plus runtime proof for the current computer. This is the cross-device path used when the same account signs in on another PC.
+
 Bind an already-active membership to the account:
 
 ```http
@@ -253,9 +272,9 @@ Request:
 
 ## POST `/v1/licenses/activate`
 
-Exchanges a member code or payment-issued activation code for a server-backed device license.
+Exchanges a member code or payment-issued activation code for an account-backed membership and a server-backed runtime session for the current device.
 
-If the same device already has an active subscription for the same plan, activating a new unused paid code extends the existing subscription and returns the same `subscriptionId` with a later `expiresAt`.
+If the same account already has an active subscription for the same plan, activating a new unused paid code extends the existing subscription and returns the same `subscriptionId` with a later `expiresAt`. The request still includes `deviceHash` so the returned token and runtime proof are valid for the current machine session.
 
 Request:
 

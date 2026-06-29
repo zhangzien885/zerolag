@@ -1186,6 +1186,38 @@ async function main() {
     assert(validated.body.runtimeSessionKeyVersion === activated.body.runtimeSessionKeyVersion, "Validation should keep the configured runtime session key version.");
     assert(validated.body.runtimeSessionProof !== activated.body.runtimeSessionProof, "Validation should rotate the runtime session proof.");
 
+    const portableSession = await requestJson(port, "/v1/accounts/activate-membership", {
+      accountToken: registeredAccount.body.token,
+      deviceHash: otherDeviceHash,
+      appVersion: "0.1.0",
+      channel: "portable-device"
+    });
+    assert(portableSession.statusCode === 200 && portableSession.body.active, "Account membership should activate on another device.");
+    assert(portableSession.body.subscriptionId === activated.body.subscriptionId, "Portable account membership should reuse the same subscription.");
+    assert(portableSession.body.token !== validated.body.token, "Portable device sessions should receive their own token.");
+
+    const portableValidation = await requestJson(port, "/v1/licenses/validate", {
+      token: portableSession.body.token,
+      subscriptionId: portableSession.body.subscriptionId,
+      deviceHash: otherDeviceHash,
+      appVersion: "0.1.0",
+      channel: "portable-device",
+      accountToken: registeredAccount.body.token,
+      requireAccountBinding: true
+    });
+    assert(portableValidation.statusCode === 200 && portableValidation.body.active, "Another device should validate with its own account-issued token.");
+
+    const copiedTokenValidation = await requestJson(port, "/v1/licenses/validate", {
+      token: validated.body.token,
+      subscriptionId: validated.body.subscriptionId,
+      deviceHash: otherDeviceHash,
+      appVersion: "0.1.0",
+      channel: "copied-token",
+      accountToken: registeredAccount.body.token,
+      requireAccountBinding: true
+    });
+    assert(copiedTokenValidation.statusCode === 403, "Copied device tokens must not work on another device.");
+
     const renewalOrder = await requestJson(port, "/v1/orders/create", {
       plan: "ZeroLag Pro Monthly",
       channel: "test-renewal",

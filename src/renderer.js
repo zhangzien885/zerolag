@@ -301,7 +301,7 @@ function renderAccountStatus(result) {
 
   if (!account.active) {
     setText(els.accountState, "未登录");
-    setText(els.accountDetail, "请先登录或绑定账号。会员权益会跟随当前账号，退出账号后将暂停使用。");
+    setText(els.accountDetail, "请先登录或绑定账号。会员跟随账号，换电脑登录同一账号也可继续使用。");
     els.accountLogoutButton.disabled = true;
     return;
   }
@@ -312,7 +312,7 @@ function renderAccountStatus(result) {
   els.accountLogoutButton.disabled = false;
   setText(
     els.accountDetail,
-    `${provider} ${account.maskedIdentifier || "账号"} 已登录。${linked > 0 ? `已关联 ${linked} 个会员，退出账号后会员权益将暂停。` : "激活或续费后会自动关联会员。"}`
+    `${provider} ${account.maskedIdentifier || "账号"} 已登录。${linked > 0 ? `已关联 ${linked} 个会员，可在其他电脑登录同一账号继续使用。` : "激活或续费后会自动关联会员。"}`
   );
 }
 

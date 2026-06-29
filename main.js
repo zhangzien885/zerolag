@@ -1002,6 +1002,50 @@ async function getAccountStatus() {
   };
 }
 
+async function activateAccountMembershipWithServer(machineHash) {
+  const config = readAppConfig();
+  const accountGate = accountSessionAllowsMembership();
+  if (!accountGate.ok) {
+    return {
+      ok: false,
+      reason: accountGate.reason
+    };
+  }
+
+  const endpoint = `${normalizeBaseUrl(config.apiBaseUrl)}/v1/accounts/activate-membership`;
+  const response = await requestJson(endpoint, {
+    body: {
+      accountToken: accountGate.session.accountToken,
+      deviceHash: machineHash,
+      appVersion: app.getVersion(),
+      channel: config.releaseChannel
+    },
+    timeoutMs: 6000
+  });
+
+  if (!response.ok || !response.data || response.data.active === false) {
+    return {
+      ok: false,
+      reason: response.data && response.data.message ? response.data.message : "ACCOUNT_MEMBERSHIP_NOT_ACTIVE"
+    };
+  }
+
+  const record = normalizeServerLicensePayload(response.data, machineHash);
+  if (!record) {
+    return {
+      ok: false,
+      reason: "服务器会员信息不完整"
+    };
+  }
+
+  fs.mkdirSync(path.dirname(licensePath()), { recursive: true });
+  fs.writeFileSync(licensePath(), `${JSON.stringify(record, null, 2)}\n`, "utf8");
+  return {
+    ok: true,
+    record
+  };
+}
+
 async function logoutAccount() {
   const hadRuntimePowerPlan = Boolean(runtimePowerPlanGuid);
   const cleared = clearAccountSession();
@@ -1139,6 +1183,11 @@ async function validateLicenseWithServer(record, machineHash) {
   }
 
   if (response.data.active === false) {
+    const restored = await activateAccountMembershipWithServer(machineHash).catch(() => null);
+    if (restored && restored.ok) {
+      return licenseStatusFromServerRecord(restored.record, true, "订阅有效");
+    }
+
     return licenseStatusFromServerRecord(record, false, response.data.message || "订阅已失效");
   }
 
@@ -1165,6 +1214,16 @@ async function readLicenseStatusV2() {
   }
 
   if (!fs.existsSync(licensePath())) {
+    if (serverLicensingConfigured() && readAccountSession()) {
+      const restored = await activateAccountMembershipWithServer(machineHash).catch((error) => ({
+        ok: false,
+        reason: error && error.message ? error.message : "ACCOUNT_MEMBERSHIP_RESTORE_FAILED"
+      }));
+      if (restored.ok) {
+        return licenseStatusFromServerRecord(restored.record, true, "订阅有效");
+      }
+    }
+
     return fallback;
   }
 
@@ -1172,7 +1231,17 @@ async function readLicenseStatusV2() {
     const license = JSON.parse(fs.readFileSync(licensePath(), "utf8"));
     const machineBound = license.machineHash === machineHash;
     if (!machineBound) {
-      return { ...fallback, reason: "设备绑定异常" };
+      if (serverLicensingConfigured() && readAccountSession()) {
+        const restored = await activateAccountMembershipWithServer(machineHash).catch((error) => ({
+          ok: false,
+          reason: error && error.message ? error.message : "ACCOUNT_MEMBERSHIP_RESTORE_FAILED"
+        }));
+        if (restored.ok) {
+          return licenseStatusFromServerRecord(restored.record, true, "订阅有效");
+        }
+      }
+
+      return { ...fallback, reason: "请登录账号以在本机使用会员" };
     }
 
     if (license.source === "server" || license.serverToken) {

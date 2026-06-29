@@ -27,21 +27,27 @@ function main() {
 
   assertIncludes(serverIndex, "/v1/accounts/register", "Server must expose account registration.");
   assertIncludes(serverIndex, "/v1/accounts/me", "Server must expose account profile reads.");
+  assertIncludes(serverIndex, "/v1/accounts/activate-membership", "Server must expose account-based device session activation.");
   assertIncludes(serverIndex, "/v1/accounts/bind-membership", "Server must expose account membership binding.");
   assertIncludes(serverIndex, "const accountProviders = new Set([\"wechat\", \"qq\", \"email\", \"phone\"])", "Server must support WeChat, QQ, email, and phone account providers.");
   assertIncludes(serverIndex, "const accountToken = String(body.accountToken || \"\").trim()", "Server activation path must accept account tokens.");
   assertIncludes(serverIndex, "const requireAccountBinding = Boolean(body.requireAccountBinding)", "Server validation must support account-bound membership enforcement.");
   assertIncludes(serverIndex, "Membership is not bound to this account.", "Server validation must reject memberships bound to another account.");
   assertIncludes(serverIndex, "subscriptionBoundToAnotherAccount", "Server must prevent account-bound memberships from being transferred.");
+  assertIncludes(serverIndex, "findActiveAccountSubscription", "Server must find active memberships by account.");
+  assertIncludes(serverIndex, "account_device_session", "Server must issue portable account membership sessions.");
   assertIncludes(serverIndex, "bindSubscriptionToAccount", "Server must bind memberships to accounts.");
   assertIncludes(serverIndex, "safeAccountRecord", "Server must return redacted account records.");
   assertIncludes(serverSelfTest, "Account registration failed", "Server self-test must cover account registration.");
   assertIncludes(serverSelfTest, "Activation should bind membership to the registered account", "Server self-test must cover membership binding.");
   assertIncludes(serverSelfTest, "Validation should require the logged-in account when account binding is enforced.", "Server self-test must cover logged-out validation blocking.");
   assertIncludes(serverSelfTest, "A membership bound to one account must not be transferable to another account.", "Server self-test must cover cross-account transfer blocking.");
+  assertIncludes(serverSelfTest, "Account membership should activate on another device.", "Server self-test must cover portable account membership sessions.");
+  assertIncludes(serverSelfTest, "Copied device tokens must not work on another device.", "Server self-test must keep copied device tokens blocked.");
 
   assertIncludes(mainJs, "registerAccountWithServer", "Main process must register accounts through the server.");
   assertIncludes(mainJs, "bindCurrentMembershipToAccount", "Main process must bind active memberships to accounts.");
+  assertIncludes(mainJs, "activateAccountMembershipWithServer", "Main process must restore account memberships on a new device.");
   assertIncludes(mainJs, "accountSessionAllowsMembership", "Main process must require the current account before granting membership.");
   assertIncludes(mainJs, "requireAccountBinding: true", "Main process must request account-bound validation from the server.");
   assertIncludes(mainJs, "logoutAccount", "Main process must support account logout.");

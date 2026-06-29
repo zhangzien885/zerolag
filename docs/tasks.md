@@ -99,6 +99,7 @@
 - Added server-backed account registration and membership binding seams for WeChat, QQ, email, and phone account identifiers.
 - Added account-required membership validation so signing out pauses Pro access and Boost until the bound account signs in again.
 - Changed membership purchase to require a signed-in account, with orders bound to accounts instead of machine hashes.
+- Added account-portable membership sessions so logging in on another computer can issue a fresh device runtime token without repurchasing.
 - Kept local demo activation available only for development mode.
 - Moved website opening to production config instead of a hard-coded renderer URL.
 - Added remote update manifest support while keeping local update JSON as development fallback.

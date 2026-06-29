@@ -201,7 +201,8 @@ function subscriptionSummaryForAccount(subscription = {}) {
     plan: subscription.plan || "",
     status: subscription.status || "",
     expiresAt: subscription.expiresAt || "",
-    deviceBound: Boolean(subscription.deviceHash),
+    deviceBound: false,
+    deviceCount: Array.isArray(subscription.deviceHashes) ? subscription.deviceHashes.length : Number(Boolean(subscription.lastDeviceHash || subscription.deviceHash)),
     accountLinkedAt: subscription.accountLinkedAt || ""
   };
 }
@@ -667,7 +668,8 @@ function safeSubscriptionRecord(subscription) {
     activationCount: Array.isArray(subscription.activationCodeHashes)
       ? subscription.activationCodeHashes.length
       : Number(Boolean(subscription.activationCodeHash)),
-    device: maskDeviceHash(subscription.deviceHash),
+    device: maskDeviceHash(subscription.lastDeviceHash || subscription.deviceHash),
+    deviceCount: Array.isArray(subscription.deviceHashes) ? subscription.deviceHashes.length : Number(Boolean(subscription.lastDeviceHash || subscription.deviceHash)),
     appVersion: subscription.appVersion || "",
     channel: subscription.channel || "",
     lastValidatedAt: subscription.lastValidatedAt || "",
@@ -1246,14 +1248,42 @@ function subscriptionActivationHashes(subscription) {
   ].filter(Boolean)));
 }
 
+function rememberSubscriptionDevice(subscription, deviceHash) {
+  const value = validateDeviceHash(deviceHash) ? String(deviceHash).trim() : "";
+  if (!value) return "";
+
+  subscription.lastDeviceHash = value;
+  subscription.deviceHashes = Array.isArray(subscription.deviceHashes) ? subscription.deviceHashes : [];
+  if (!subscription.deviceHashes.includes(value)) {
+    subscription.deviceHashes.push(value);
+  }
+
+  if (subscription.deviceHashes.length > 12) {
+    subscription.deviceHashes = subscription.deviceHashes.slice(-12);
+  }
+
+  return value;
+}
+
+function subscriptionRuntimeDeviceHash(subscription, input = {}) {
+  return String(
+    input.deviceHash
+    || subscription.runtimeSessionDeviceHash
+    || subscription.lastDeviceHash
+    || subscription.deviceHash
+    || ""
+  ).trim();
+}
+
 function issueToken(state, subscription, options = {}) {
   const secret = serverSecretFromOptions(options);
   const token = `zl_${crypto.randomBytes(32).toString("base64url")}`;
   const hash = tokenHash(secret, token);
+  const deviceHash = subscriptionRuntimeDeviceHash(subscription);
   state.tokens[hash] = {
     tokenHash: hash,
     subscriptionId: subscription.subscriptionId,
-    deviceHash: subscription.deviceHash,
+    deviceHash,
     expiresAt: subscription.expiresAt,
     createdAt: nowIso(),
     lastUsedAt: nowIso()
@@ -1264,7 +1294,9 @@ function issueToken(state, subscription, options = {}) {
 function rotateSubscriptionRuntimeSession(subscription, input = {}, options = {}) {
   const now = nowIso();
   const proofConfig = runtimeSessionProofConfigFromOptions(options);
+  const deviceHash = rememberSubscriptionDevice(subscription, input.deviceHash || subscriptionRuntimeDeviceHash(subscription));
   subscription.runtimeSessionId = randomId("rsess");
+  subscription.runtimeSessionDeviceHash = deviceHash;
   subscription.runtimeSessionIssuedAt = now;
   subscription.runtimeSessionRotatedAt = now;
   subscription.runtimeSessionRotateReason = String(input.reason || "validation").slice(0, 64);
@@ -1284,7 +1316,7 @@ function rotateSubscriptionRuntimeSession(subscription, input = {}, options = {}
 function runtimeSessionProofBody(subscription) {
   return JSON.stringify({
     subscriptionId: subscription.subscriptionId || "",
-    deviceHash: subscription.deviceHash || "",
+    deviceHash: subscriptionRuntimeDeviceHash(subscription),
     expiresAt: subscription.expiresAt || "",
     sessionId: subscription.runtimeSessionId || "",
     keyVersion: subscription.runtimeSessionKeyVersion || defaultRuntimeSessionKeyVersion,
@@ -1368,12 +1400,37 @@ function findExistingSubscriptionByCodeAndDevice(state, hash, deviceHash) {
   ));
 }
 
+function findExistingSubscriptionByCodeAndAccount(state, hash, account) {
+  if (!account || !account.accountId) return null;
+  return Object.values(state.subscriptions).find((subscription) => (
+    subscriptionUsesActivationHash(subscription, hash)
+    && subscription.accountId === account.accountId
+    && activeSubscription(subscription)
+  ));
+}
+
 function findRenewableSubscriptionByDevice(state, deviceHash, plan) {
   return Object.values(state.subscriptions).find((subscription) => (
     subscription.deviceHash === deviceHash
     && subscription.plan === plan
     && activeSubscription(subscription)
   ));
+}
+
+function findRenewableSubscriptionByAccount(state, account, plan) {
+  if (!account || !account.accountId) return null;
+  return Object.values(state.subscriptions).find((subscription) => (
+    subscription.accountId === account.accountId
+    && subscription.plan === plan
+    && activeSubscription(subscription)
+  ));
+}
+
+function findActiveAccountSubscription(state, account) {
+  const ids = Array.isArray(account && account.subscriptionIds) ? account.subscriptionIds : [];
+  return ids
+    .map((subscriptionId) => state.subscriptions && state.subscriptions[subscriptionId])
+    .find(activeSubscription) || null;
 }
 
 function validateDeviceHash(deviceHash) {
@@ -1460,6 +1517,49 @@ async function getAccountProfile(request, response, options = {}) {
   });
 }
 
+async function activateAccountMembership(request, response, options = {}) {
+  const body = await readRequestBody(request);
+  const deviceHash = String(body.deviceHash || "").trim();
+  if (!validateDeviceHash(deviceHash)) {
+    jsonResponse(response, 400, { active: false, message: "Invalid device request." });
+    return;
+  }
+
+  const state = loadState(options);
+  const account = accountFromToken(state, accountTokenFromRequest(request, body), options);
+  if (!account) {
+    jsonResponse(response, 401, { active: false, message: "Account session is invalid." });
+    return;
+  }
+
+  const subscription = findActiveAccountSubscription(state, account);
+  if (!subscription) {
+    jsonResponse(response, 403, { active: false, message: "No active membership for this account." });
+    return;
+  }
+
+  subscription.lastValidatedAt = nowIso();
+  subscription.appVersion = String(body.appVersion || subscription.appVersion || "");
+  subscription.channel = String(body.channel || subscription.channel || "");
+  const runtimeSession = rotateSubscriptionRuntimeSession(subscription, { reason: "account_device_session", deviceHash }, options);
+  const token = issueToken(state, subscription, options);
+  appendAuditEvent(state, "account.membership_session_issued", {
+    actor: "client",
+    targetType: "subscription",
+    targetId: subscription.subscriptionId,
+    metadata: {
+      accountId: account.accountId,
+      provider: account.provider,
+      device: maskDeviceHash(deviceHash),
+      channel: String(body.channel || ""),
+      appVersion: String(body.appVersion || ""),
+      runtimeSessionRevision: runtimeSession.revision
+    }
+  });
+  saveState(state, options);
+  jsonResponse(response, 200, successLicensePayload(subscription, token));
+}
+
 async function bindAccountMembership(request, response, options = {}) {
   const body = await readRequestBody(request);
   const state = loadState(options);
@@ -1482,7 +1582,7 @@ async function bindAccountMembership(request, response, options = {}) {
     return;
   }
 
-  if (deviceHash && subscription.deviceHash !== deviceHash) {
+  if (deviceHash && tokenRecord.deviceHash && tokenRecord.deviceHash !== deviceHash) {
     jsonResponse(response, 403, { ok: false, message: "Device binding mismatch." });
     return;
   }
@@ -1528,14 +1628,16 @@ async function activateLicense(request, response, options = {}) {
     return;
   }
 
-  const existing = findExistingSubscriptionByCodeAndDevice(state, hash, deviceHash);
+  const existing = account
+    ? findExistingSubscriptionByCodeAndAccount(state, hash, account)
+    : findExistingSubscriptionByCodeAndDevice(state, hash, deviceHash);
   if (existing) {
     if (account && subscriptionBoundToAnotherAccount(existing, account)) {
       jsonResponse(response, 403, { active: false, message: "Membership belongs to another account." });
       return;
     }
 
-    const runtimeSession = rotateSubscriptionRuntimeSession(existing, { reason: "activation_reuse" }, options);
+    const runtimeSession = rotateSubscriptionRuntimeSession(existing, { reason: "activation_reuse", deviceHash }, options);
     const token = issueToken(state, existing, options);
     if (account) bindSubscriptionToAccount(state, account, existing);
     existing.lastValidatedAt = nowIso();
@@ -1563,7 +1665,9 @@ async function activateLicense(request, response, options = {}) {
 
   const durationMs = Math.max(1, Number(code.durationDays || 30)) * 24 * 60 * 60 * 1000;
   const plan = code.plan || "ZeroLag Pro Monthly";
-  const renewable = findRenewableSubscriptionByDevice(state, deviceHash, plan);
+  const renewable = account
+    ? findRenewableSubscriptionByAccount(state, account, plan)
+    : findRenewableSubscriptionByDevice(state, deviceHash, plan);
 
   if (renewable) {
     if (account && subscriptionBoundToAnotherAccount(renewable, account)) {
@@ -1585,7 +1689,7 @@ async function activateLicense(request, response, options = {}) {
     code.useCount = Number(code.useCount || 0) + 1;
     code.updatedAt = nowIso();
 
-    const runtimeSession = rotateSubscriptionRuntimeSession(renewable, { reason: "renewal" }, options);
+    const runtimeSession = rotateSubscriptionRuntimeSession(renewable, { reason: "renewal", deviceHash }, options);
     const token = issueToken(state, renewable, options);
     if (account) bindSubscriptionToAccount(state, account, renewable);
     appendAuditEvent(state, "license.renewed", {
@@ -1612,6 +1716,8 @@ async function activateLicense(request, response, options = {}) {
     activationCodeHash: hash,
     activationCodeHashes: [hash],
     deviceHash,
+    lastDeviceHash: deviceHash,
+    deviceHashes: [deviceHash],
     plan,
     status: "active",
     createdAt: nowIso(),
@@ -1624,7 +1730,7 @@ async function activateLicense(request, response, options = {}) {
   code.useCount = Number(code.useCount || 0) + 1;
   code.updatedAt = nowIso();
 
-  const runtimeSession = rotateSubscriptionRuntimeSession(subscription, { reason: "activation" }, options);
+  const runtimeSession = rotateSubscriptionRuntimeSession(subscription, { reason: "activation", deviceHash }, options);
   const token = issueToken(state, subscription, options);
   if (account) bindSubscriptionToAccount(state, account, subscription);
   appendAuditEvent(state, "license.activated", {
@@ -1673,7 +1779,7 @@ async function validateLicense(request, response, options = {}) {
     return;
   }
 
-  if (tokenRecord.deviceHash !== deviceHash || subscription.deviceHash !== deviceHash) {
+  if (tokenRecord.deviceHash !== deviceHash) {
     jsonResponse(response, 403, { active: false, message: "Device binding mismatch." });
     return;
   }
@@ -1704,7 +1810,7 @@ async function validateLicense(request, response, options = {}) {
 
   delete state.tokens[tokenHash(secret, token)];
   subscription.lastValidatedAt = nowIso();
-  rotateSubscriptionRuntimeSession(subscription, { reason: "validation" }, options);
+  rotateSubscriptionRuntimeSession(subscription, { reason: "validation", deviceHash }, options);
   const nextToken = issueToken(state, subscription, options);
   saveState(state, options);
   jsonResponse(response, 200, successLicensePayload(subscription, nextToken));
@@ -2276,6 +2382,12 @@ async function routeRequest(request, response, options = {}) {
     if (request.method === "GET" && url.pathname === "/v1/accounts/me") {
       if (!applyRateLimit(request, response, "accounts:auth", options)) return;
       await getAccountProfile(request, response, options);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/accounts/activate-membership") {
+      if (!applyRateLimit(request, response, "accounts:auth", options)) return;
+      await activateAccountMembership(request, response, options);
       return;
     }
 
