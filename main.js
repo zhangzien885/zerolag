@@ -933,11 +933,13 @@ async function registerAccountWithServer(input = {}) {
 
   const config = readAppConfig();
   const endpoint = `${normalizeBaseUrl(config.apiBaseUrl)}/v1/accounts/register`;
+  const machineHash = await getMachineFingerprint();
   const response = await requestJson(endpoint, {
     body: {
       provider: input.provider,
       identifier: input.identifier,
-      displayName: input.displayName || ""
+      displayName: input.displayName || "",
+      deviceHash: machineHash
     },
     timeoutMs: 6000
   });
@@ -978,14 +980,26 @@ async function getAccountStatus() {
 
   const config = readAppConfig();
   const endpoint = `${normalizeBaseUrl(config.apiBaseUrl)}/v1/accounts/me`;
+  const machineHash = await getMachineFingerprint();
   const response = await requestJson(endpoint, {
     headers: {
-      Authorization: `Bearer ${session.accountToken}`
+      Authorization: `Bearer ${session.accountToken}`,
+      "X-ZeroLag-Device-Hash": machineHash
     },
     timeoutMs: 5000
   });
 
   if (!response.ok || !response.data || !response.data.ok) {
+    if (response.statusCode === 401) {
+      clearAccountSession();
+      return {
+        ok: false,
+        account: publicAccountSession(null),
+        memberships: [],
+        reason: "ACCOUNT_SESSION_REPLACED"
+      };
+    }
+
     return {
       ok: false,
       account: publicSession,
@@ -1024,6 +1038,10 @@ async function activateAccountMembershipWithServer(machineHash) {
   });
 
   if (!response.ok || !response.data || response.data.active === false) {
+    if (response.statusCode === 401) {
+      clearAccountSession();
+    }
+
     return {
       ok: false,
       reason: response.data && response.data.message ? response.data.message : "ACCOUNT_MEMBERSHIP_NOT_ACTIVE"
@@ -1318,6 +1336,7 @@ async function createMembershipOrder() {
     };
   }
 
+  const machineHash = await getMachineFingerprint();
   const response = await requestJson(`${apiBaseUrl}/v1/orders/create`, {
     body: {
       plan: "ZeroLag Pro Monthly",
@@ -1326,6 +1345,9 @@ async function createMembershipOrder() {
       currency: "CNY",
       channel: config.releaseChannel || "desktop",
       accountToken: accountGate.session.accountToken
+    },
+    headers: {
+      "X-ZeroLag-Device-Hash": machineHash
     },
     timeoutMs: 8000
   });
@@ -1362,10 +1384,12 @@ async function getMembershipOrderStatus(orderId) {
     };
   }
 
+  const machineHash = await getMachineFingerprint();
   const response = await requestJson(`${apiBaseUrl}/v1/orders/${encodeURIComponent(id)}`, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${accountGate.session.accountToken}`
+      Authorization: `Bearer ${accountGate.session.accountToken}`,
+      "X-ZeroLag-Device-Hash": machineHash
     },
     timeoutMs: 8000
   });

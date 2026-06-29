@@ -156,34 +156,66 @@ function safeAccountRecord(account = {}) {
     maskedIdentifier: account.maskedIdentifier || "",
     displayName: account.displayName || "",
     linkedMemberships: Array.isArray(account.subscriptionIds) ? account.subscriptionIds.length : 0,
+    activeDevice: Boolean(account.activeDeviceHash),
     createdAt: account.createdAt || "",
     updatedAt: account.updatedAt || ""
   };
 }
 
-function issueAccountToken(state, account, options = {}) {
+function revokeAccountTokensForAccount(state, accountId) {
   state.accountTokens = state.accountTokens && typeof state.accountTokens === "object" ? state.accountTokens : {};
+  Object.entries(state.accountTokens).forEach(([hash, record]) => {
+    if (record && record.accountId === accountId) {
+      delete state.accountTokens[hash];
+    }
+  });
+}
+
+function issueAccountToken(state, account, options = {}, deviceHash = "") {
+  state.accountTokens = state.accountTokens && typeof state.accountTokens === "object" ? state.accountTokens : {};
+  revokeAccountTokensForAccount(state, account.accountId);
   const secret = serverSecretFromOptions(options);
   const token = randomId("acctok");
-  state.accountTokens[accountTokenHash(secret, token)] = {
+  const hash = accountTokenHash(secret, token);
+  state.accountTokens[hash] = {
+    tokenHash: hash,
     accountId: account.accountId,
+    deviceHash,
     createdAt: nowIso(),
     lastUsedAt: nowIso()
   };
+  account.activeAccountTokenHash = hash;
+  account.activeDeviceHash = deviceHash;
+  account.lastLoginAt = nowIso();
+  account.updatedAt = nowIso();
   return token;
 }
 
-function accountFromToken(state, token, options = {}) {
+function accountFromToken(state, token, options = {}, deviceHash = "") {
   const value = String(token || "").trim();
   if (!value) return null;
 
   state.accountTokens = state.accountTokens && typeof state.accountTokens === "object" ? state.accountTokens : {};
   const secret = serverSecretFromOptions(options);
-  const record = state.accountTokens[accountTokenHash(secret, value)];
+  const hash = accountTokenHash(secret, value);
+  const record = state.accountTokens[hash];
   if (!record || !record.accountId) return null;
 
   const account = state.accounts && state.accounts[record.accountId];
   if (!account) return null;
+  if (!account.activeAccountTokenHash) {
+    account.activeAccountTokenHash = hash;
+    account.activeDeviceHash = validateDeviceHash(record.deviceHash) ? record.deviceHash : validateDeviceHash(deviceHash) ? deviceHash : "";
+    account.updatedAt = nowIso();
+  }
+  if (account.activeAccountTokenHash && account.activeAccountTokenHash !== hash) return null;
+  const expectedDeviceHash = record.deviceHash || account.activeDeviceHash || "";
+  if (expectedDeviceHash && (!validateDeviceHash(deviceHash) || expectedDeviceHash !== deviceHash)) return null;
+  if (!record.deviceHash && validateDeviceHash(deviceHash)) {
+    record.deviceHash = deviceHash;
+    account.activeDeviceHash = account.activeDeviceHash || deviceHash;
+    account.updatedAt = nowIso();
+  }
 
   record.lastUsedAt = nowIso();
   return account;
@@ -193,6 +225,10 @@ function accountTokenFromRequest(request, body = {}) {
   const auth = String(request.headers.authorization || "");
   const bearer = auth.match(/^Bearer\s+(.+)$/i);
   return String((bearer && bearer[1]) || request.headers["x-zerolag-account-token"] || body.accountToken || "").trim();
+}
+
+function accountDeviceHashFromRequest(request, body = {}) {
+  return String(request.headers["x-zerolag-device-hash"] || body.accountDeviceHash || body.loginDeviceHash || body.deviceHash || "").trim();
 }
 
 function subscriptionSummaryForAccount(subscription = {}) {
@@ -1441,9 +1477,15 @@ async function registerAccount(request, response, options = {}) {
   const body = await readRequestBody(request);
   const provider = normalizeAccountProvider(body.provider);
   const identifier = normalizeAccountIdentifier(provider, body.identifier);
+  const deviceHash = accountDeviceHashFromRequest(request, body);
 
   if (!provider || !validateAccountIdentifier(provider, identifier)) {
     jsonResponse(response, 400, { ok: false, message: "Invalid account registration request." });
+    return;
+  }
+
+  if (!validateDeviceHash(deviceHash)) {
+    jsonResponse(response, 400, { ok: false, message: "Invalid account device request." });
     return;
   }
 
@@ -1456,6 +1498,7 @@ async function registerAccount(request, response, options = {}) {
   const existingId = state.accountIdentities[identityHash];
   let account = existingId ? state.accounts[existingId] : null;
   let created = false;
+  const previousDeviceHash = account && account.activeDeviceHash ? account.activeDeviceHash : "";
 
   if (!account) {
     account = {
@@ -1478,13 +1521,15 @@ async function registerAccount(request, response, options = {}) {
     }
   }
 
-  const token = issueAccountToken(state, account, options);
+  const token = issueAccountToken(state, account, options, deviceHash);
   appendAuditEvent(state, created ? "account.registered" : "account.logged_in", {
     actor: "client",
     targetType: "account",
     targetId: account.accountId,
     metadata: {
       provider,
+      device: maskDeviceHash(deviceHash),
+      replacedPreviousDevice: Boolean(previousDeviceHash && previousDeviceHash !== deviceHash),
       linkedMemberships: Array.isArray(account.subscriptionIds) ? account.subscriptionIds.length : 0
     }
   });
@@ -1502,7 +1547,7 @@ async function registerAccount(request, response, options = {}) {
 async function getAccountProfile(request, response, options = {}) {
   const state = loadState(options);
   const token = accountTokenFromRequest(request);
-  const account = accountFromToken(state, token, options);
+  const account = accountFromToken(state, token, options, accountDeviceHashFromRequest(request));
 
   if (!account) {
     jsonResponse(response, 401, { ok: false, message: "Account session is invalid." });
@@ -1526,7 +1571,7 @@ async function activateAccountMembership(request, response, options = {}) {
   }
 
   const state = loadState(options);
-  const account = accountFromToken(state, accountTokenFromRequest(request, body), options);
+  const account = accountFromToken(state, accountTokenFromRequest(request, body), options, deviceHash);
   if (!account) {
     jsonResponse(response, 401, { active: false, message: "Account session is invalid." });
     return;
@@ -1563,7 +1608,7 @@ async function activateAccountMembership(request, response, options = {}) {
 async function bindAccountMembership(request, response, options = {}) {
   const body = await readRequestBody(request);
   const state = loadState(options);
-  const account = accountFromToken(state, accountTokenFromRequest(request, body), options);
+  const account = accountFromToken(state, accountTokenFromRequest(request, body), options, accountDeviceHashFromRequest(request, body));
 
   if (!account) {
     jsonResponse(response, 401, { ok: false, message: "Account session is invalid." });
@@ -1614,7 +1659,7 @@ async function activateLicense(request, response, options = {}) {
   const secret = serverSecretFromOptions(options);
   const state = loadState(options);
   const accountToken = String(body.accountToken || "").trim();
-  const account = accountToken ? accountFromToken(state, accountToken, options) : null;
+  const account = accountToken ? accountFromToken(state, accountToken, options, deviceHash) : null;
   if (accountToken && !account) {
     jsonResponse(response, 403, { active: false, message: "Account session is invalid." });
     return;
@@ -1765,7 +1810,7 @@ async function validateLicense(request, response, options = {}) {
   }
 
   const state = loadState(options);
-  const account = accountToken ? accountFromToken(state, accountToken, options) : null;
+  const account = accountToken ? accountFromToken(state, accountToken, options, deviceHash) : null;
   if (requireAccountBinding && !account) {
     jsonResponse(response, 401, { active: false, message: "Please sign in before using membership." });
     return;
@@ -1855,7 +1900,7 @@ async function recordWebsiteEvent(request, response, options = {}) {
 async function createOrder(request, response, options = {}) {
   const body = await readRequestBody(request);
   const state = loadState(options);
-  const account = accountFromToken(state, accountTokenFromRequest(request, body), options);
+  const account = accountFromToken(state, accountTokenFromRequest(request, body), options, accountDeviceHashFromRequest(request, body));
   if (!account) {
     jsonResponse(response, 401, { ok: false, message: "Please sign in before purchasing membership." });
     return;
@@ -1921,7 +1966,7 @@ async function getOrderStatus(request, response, options = {}, orderId = "") {
   }
 
   if (order.accountId) {
-    const account = accountFromToken(state, accountTokenFromRequest(request), options);
+    const account = accountFromToken(state, accountTokenFromRequest(request), options, accountDeviceHashFromRequest(request));
     if (!account || account.accountId !== order.accountId) {
       jsonResponse(response, 403, { ok: false, message: "Order belongs to another account." });
       return;

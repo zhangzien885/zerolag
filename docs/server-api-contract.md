@@ -189,7 +189,9 @@ The first account contract supports four providers: `wechat`, `qq`, `email`, and
 
 For WeChat and QQ, the current contract expects a verified provider identifier such as an OpenID or UnionID supplied by the future OAuth flow. Do not treat a raw nickname as proof of ownership in production. Email and phone registration should be paired with email/SMS verification before public paid release.
 
-Paid desktop builds should treat account sign-in as required for membership access. When a user signs out, the local account session is removed and Boost must stop treating the cached membership as active until the same bound account signs in again. Once a membership is bound, another account must not be able to claim it with a cached license token. Membership ownership follows the account, so a customer can sign in on another computer and receive a new device-specific runtime session for that machine.
+Paid desktop builds should treat account sign-in as required for membership access. When a user signs out, the local account session is removed and Boost must stop treating the cached membership as active until the same bound account signs in again. Once a membership is bound, another account must not be able to claim it with a cached license token.
+
+Membership ownership follows the account, but each account can have only one active computer session at a time. Registering or signing in requires the current login `deviceHash`; a later login for the same account invalidates the older account token and makes the new computer the only active account session. This allows customers to move their membership to another computer without repurchasing, while preventing simultaneous use from copied local account files.
 
 Register or sign in an account:
 
@@ -203,7 +205,8 @@ Request:
 {
   "provider": "email",
   "identifier": "player@example.com",
-  "displayName": "Player"
+  "displayName": "Player",
+  "deviceHash": "sha256-login-device-id"
 }
 ```
 
@@ -218,7 +221,8 @@ Success response:
     "provider": "email",
     "maskedIdentifier": "pl***@example.com",
     "displayName": "Player",
-    "linkedMemberships": 0
+    "linkedMemberships": 0,
+    "activeDevice": true
   },
   "token": "opaque-account-token",
   "memberships": []
@@ -230,7 +234,10 @@ Read the current account profile:
 ```http
 GET /v1/accounts/me
 Authorization: Bearer ACCOUNT_TOKEN
+X-ZeroLag-Device-Hash: sha256-login-device-id
 ```
+
+If the same account has logged in on another computer after this token was issued, this endpoint returns `401` and the desktop client should clear the local account session.
 
 Issue a device-specific runtime session for an already-active account membership:
 
@@ -250,6 +257,8 @@ Request:
 ```
 
 This endpoint does not create a new membership. It checks the signed-in account, finds an active account membership, and returns a rotated license token plus runtime proof for the current computer. This is the cross-device path used when the same account signs in on another PC.
+
+The `accountToken` must belong to the latest login for the same `deviceHash`. A copied account token from an older or different computer is rejected.
 
 Bind an already-active membership to the account:
 
@@ -401,7 +410,13 @@ Copy only the generated snippet's public key into production `assets/app-config.
 
 ## POST `/v1/orders/create`
 
-Creates a pending payment order for the signed-in account. Purchase is account-bound and does not depend on the device hash; device checks happen later when the account uses Boost on a machine. The response uses the configured payment provider and checkout URL template. The MVP defaults to a manual-payment placeholder; production can replace this with WeChat Pay, Alipay, Stripe, or another provider.
+Creates a pending payment order for the signed-in account. Purchase is account-bound and the order itself is not tied to a machine hash; the `X-ZeroLag-Device-Hash` header only proves that the request comes from the account's current active login device. The response uses the configured payment provider and checkout URL template. The MVP defaults to a manual-payment placeholder; production can replace this with WeChat Pay, Alipay, Stripe, or another provider.
+
+Headers:
+
+```http
+X-ZeroLag-Device-Hash: sha256-login-device-id
+```
 
 Request:
 
@@ -438,7 +453,14 @@ Response:
 
 ## GET `/v1/orders/:orderId`
 
-Returns order status for the owning signed-in account. Paid orders expose the generated activation code only to that account.
+Returns order status for the owning signed-in account. Paid orders expose the generated activation code only to that account's current active login device.
+
+Headers:
+
+```http
+Authorization: Bearer ACCOUNT_TOKEN
+X-ZeroLag-Device-Hash: sha256-login-device-id
+```
 
 Response:
 

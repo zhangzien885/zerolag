@@ -301,7 +301,12 @@ function renderAccountStatus(result) {
 
   if (!account.active) {
     setText(els.accountState, "未登录");
-    setText(els.accountDetail, "请先登录或绑定账号。会员跟随账号，换电脑登录同一账号也可继续使用。");
+    setText(
+      els.accountDetail,
+      result && result.reason === "ACCOUNT_SESSION_REPLACED"
+        ? "账号已在另一台电脑登录，本机已自动退出。"
+        : "请先登录或绑定账号。会员跟随账号，换电脑登录同一账号也可继续使用。"
+    );
     els.accountLogoutButton.disabled = true;
     return;
   }
@@ -318,6 +323,7 @@ function renderAccountStatus(result) {
 
 function accountFailureMessage(reason) {
   if (reason === "ACCOUNT_SERVER_NOT_CONFIGURED") return "账号服务暂未连接，正式版服务器上线后可绑定账号。";
+  if (reason === "ACCOUNT_SESSION_REPLACED") return "账号已在另一台电脑登录，本机已退出。";
   if (reason === "MEMBERSHIP_NOT_ACTIVE") return "账号已绑定，开通会员后会自动关联。";
   if (reason === "SERVER_MEMBERSHIP_NOT_READY") return "账号已绑定，服务器会员生效后会自动关联。";
   return reason || "账号绑定失败。";

@@ -38,11 +38,16 @@ function main() {
   assertIncludes(serverIndex, "account_device_session", "Server must issue portable account membership sessions.");
   assertIncludes(serverIndex, "bindSubscriptionToAccount", "Server must bind memberships to accounts.");
   assertIncludes(serverIndex, "safeAccountRecord", "Server must return redacted account records.");
+  assertIncludes(serverIndex, "revokeAccountTokensForAccount", "Server must revoke old account sessions when an account logs in elsewhere.");
+  assertIncludes(serverIndex, "activeAccountTokenHash", "Server must track the current active account session.");
+  assertIncludes(serverIndex, "accountDeviceHashFromRequest", "Server must bind account sessions to the current login device.");
   assertIncludes(serverSelfTest, "Account registration failed", "Server self-test must cover account registration.");
   assertIncludes(serverSelfTest, "Activation should bind membership to the registered account", "Server self-test must cover membership binding.");
   assertIncludes(serverSelfTest, "Validation should require the logged-in account when account binding is enforced.", "Server self-test must cover logged-out validation blocking.");
   assertIncludes(serverSelfTest, "A membership bound to one account must not be transferable to another account.", "Server self-test must cover cross-account transfer blocking.");
-  assertIncludes(serverSelfTest, "Account membership should activate on another device.", "Server self-test must cover portable account membership sessions.");
+  assertIncludes(serverSelfTest, "New device login should invalidate the old account session.", "Server self-test must cover single-device account session replacement.");
+  assertIncludes(serverSelfTest, "New device login should continue the account membership.", "Server self-test must cover account membership handoff to the newest login device.");
+  assertIncludes(serverSelfTest, "Copied account tokens must not activate another device.", "Server self-test must block copied account tokens on another device.");
   assertIncludes(serverSelfTest, "Copied device tokens must not work on another device.", "Server self-test must keep copied device tokens blocked.");
 
   assertIncludes(mainJs, "registerAccountWithServer", "Main process must register accounts through the server.");
@@ -52,6 +57,7 @@ function main() {
   assertIncludes(mainJs, "requireAccountBinding: true", "Main process must request account-bound validation from the server.");
   assertIncludes(mainJs, "logoutAccount", "Main process must support account logout.");
   assertIncludes(mainJs, "account-session.json", "Main process must persist a signed local account session.");
+  assertIncludes(mainJs, "X-ZeroLag-Device-Hash", "Main process must send the login device hash with account-authenticated requests.");
   assertIncludes(mainJs, "activateLicenseV2(normalizeActivationCode(code))", "License activation IPC must stay normalized.");
   assertIncludes(mainJs, "accountToken: accountSession && accountSession.accountToken || \"\"", "Activation should include account tokens when available.");
   assertIncludes(mainJs, "zerolag:register-account", "Main process must expose account registration IPC.");
@@ -77,6 +83,7 @@ function main() {
   assertIncludes(rendererJs, "refreshAccountStatus", "Renderer must refresh account status.");
   assertIncludes(rendererJs, "accountProviderLabel", "Renderer must label account providers for users.");
   assertIncludes(rendererJs, "normalizeAccountIdentifierInput", "Renderer must normalize account identifiers.");
+  assertIncludes(rendererJs, "ACCOUNT_SESSION_REPLACED", "Renderer must explain when another computer has replaced this account session.");
   assertIncludes(stylesCss, ".account-card", "Account binding card must have dedicated styling.");
   assertIncludes(stylesCss, ".account-state-actions", "Account logout action must have dedicated styling.");
   assertIncludes(stylesCss, ".account-row", "Account binding controls must have dedicated layout.");

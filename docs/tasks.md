@@ -16,7 +16,7 @@
 - Startup orphan cleanup for stale runtime sessions.
 - Local monthly membership prototype with signed license and machine binding.
 - Membership purchase and activation UI.
-- Account binding foundation for WeChat, QQ, email, and phone identifiers, with server-backed memberships linked to accounts.
+- Account binding foundation for WeChat, QQ, email, and phone identifiers, with server-backed memberships linked to accounts and limited to the newest active computer login.
 - Production-style purchase flow with checkout handoff, official purchase fallback, order refresh, payment-provider status, and activation-code copy only after payment completion.
 - Copyable paid order IDs for customer support when payment status needs checking.
 - Activation-code paste normalization for common whitespace, full-width, label-prefixed, and lowercase input formats.
@@ -99,7 +99,7 @@
 - Added server-backed account registration and membership binding seams for WeChat, QQ, email, and phone account identifiers.
 - Added account-required membership validation so signing out pauses Pro access and Boost until the bound account signs in again.
 - Changed membership purchase to require a signed-in account, with orders bound to accounts instead of machine hashes.
-- Added account-portable membership sessions so logging in on another computer can issue a fresh device runtime token without repurchasing.
+- Added account-portable membership sessions so logging in on another computer can issue a fresh device runtime token without repurchasing, while replacing the old computer's account session.
 - Kept local demo activation available only for development mode.
 - Moved website opening to production config instead of a hard-coded renderer URL.
 - Added remote update manifest support while keeping local update JSON as development fallback.
@@ -222,6 +222,7 @@
 - Added a copyable order-ID action in the purchase dialog so users can send payment references to support without copying activation codes.
 - Added activation-code paste normalization across desktop and server activation paths to reduce failed activations from copied formatting.
 - Added desktop account binding UI plus server account tokens so WeChat, QQ, email, and phone identifiers can own linked memberships.
+- Added single-active-computer account sessions so the newest login device replaces older account tokens and copied account sessions cannot keep using membership elsewhere.
 - Added official service-status UI coverage for website, purchase, account, update, and support channel readiness plus safe website handoff without exposing internal endpoint details.
 
 ## Known Boundaries

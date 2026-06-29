@@ -46,13 +46,16 @@ function requestJson(port, pathname, body, headers = {}) {
   });
 }
 
-async function registerSelfTestAccount(port, identifier, provider = "email") {
+async function registerSelfTestAccount(port, identifier, provider = "email", deviceHash = "") {
+  const loginDeviceHash = deviceHash || crypto.createHash("sha256").update(`account-device:${identifier}`).digest("hex");
   const response = await requestJson(port, "/v1/accounts/register", {
     provider,
-    identifier
+    identifier,
+    deviceHash: loginDeviceHash
   });
   assert(response.statusCode === 201 || response.statusCode === 200, "Self-test account registration failed.");
   assert(response.body && response.body.ok && /^acctok_/.test(response.body.token || ""), "Self-test account token missing.");
+  response.deviceHash = loginDeviceHash;
   return response;
 }
 
@@ -245,10 +248,13 @@ async function main() {
   const adminCode = "ZL-PRO-ADMIN-TEST";
   const revokeCode = "ZL-PRO-REVOKE-TEST";
   const cleanupCode = "ZL-PRO-CLEANUP-TEST";
+  const singleLoginCode = "ZL-PRO-SINGLE-LOGIN";
   const deviceHash = crypto.createHash("sha256").update("device-a").digest("hex");
   const otherDeviceHash = crypto.createHash("sha256").update("device-b").digest("hex");
   const revokeDeviceHash = crypto.createHash("sha256").update("device-c").digest("hex");
   const cleanupDeviceHash = crypto.createHash("sha256").update("device-d").digest("hex");
+  const singleLoginDeviceA = crypto.createHash("sha256").update("single-login-device-a").digest("hex");
+  const singleLoginDeviceB = crypto.createHash("sha256").update("single-login-device-b").digest("hex");
 
   addActivationCode(code, { durationDays: 30, maxUses: 1 }, options);
   const server = createAppServer(options);
@@ -861,6 +867,8 @@ async function main() {
         plan: "ZeroLag Pro Monthly",
         channel: "payment-config",
         accountToken: paymentAccount.body.token
+      }, {
+        "X-ZeroLag-Device-Hash": paymentAccount.deviceHash
       });
       assert(configuredOrder.statusCode === 201, "Configured payment order creation failed.");
       assert(configuredOrder.body.payment.provider === "wechat_pay", "Configured payment provider should be returned.");
@@ -959,6 +967,8 @@ async function main() {
         plan: "ZeroLag Pro Monthly",
         channel: "rate-limit-test",
         accountToken: rateAccount.body.token
+      }, {
+        "X-ZeroLag-Device-Hash": rateAccount.deviceHash
       });
       assert(firstLimitedOrder.statusCode === 201, "First limited request should pass.");
 
@@ -967,6 +977,7 @@ async function main() {
         channel: "rate-limit-test",
         accountToken: rateAccount.body.token
       }, {
+        "X-ZeroLag-Device-Hash": rateAccount.deviceHash,
         "X-Forwarded-For": "203.0.113.10"
       });
       assert(blockedLimitedOrder.statusCode === 429, "Repeated limited request should be blocked.");
@@ -974,6 +985,73 @@ async function main() {
     } finally {
       rateServer.close();
       fs.rmSync(rateTempDir, { recursive: true, force: true });
+    }
+
+    const singleLoginTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-single-login-test-"));
+    const singleLoginOptions = {
+      statePath: path.join(singleLoginTempDir, "server-state.json"),
+      serverSecret: "single-login-secret",
+      adminSecret: "single-login-admin",
+      paymentWebhookSecret: "single-login-payment"
+    };
+    addActivationCode(singleLoginCode, { durationDays: 30, maxUses: 1 }, singleLoginOptions);
+    const singleLoginServer = createAppServer(singleLoginOptions);
+    const singleLoginPort = await listen(singleLoginServer);
+    try {
+      const singleLoginFirst = await requestJson(singleLoginPort, "/v1/accounts/register", {
+        provider: "email",
+        identifier: "single-login@example.com",
+        deviceHash: singleLoginDeviceA
+      });
+      assert(singleLoginFirst.statusCode === 201 && singleLoginFirst.body.ok, "Single-login account registration failed.");
+
+      const singleLoginActivation = await requestJson(singleLoginPort, "/v1/licenses/activate", {
+        activationCode: singleLoginCode,
+        deviceHash: singleLoginDeviceA,
+        appVersion: "0.1.0",
+        channel: "single-login-a",
+        accountToken: singleLoginFirst.body.token
+      });
+      assert(singleLoginActivation.statusCode === 200 && singleLoginActivation.body.active, "Single-login membership activation failed.");
+
+      const singleLoginSecond = await requestJson(singleLoginPort, "/v1/accounts/register", {
+        provider: "email",
+        identifier: "single-login@example.com",
+        deviceHash: singleLoginDeviceB
+      });
+      assert(singleLoginSecond.statusCode === 200 && singleLoginSecond.body.ok, "Existing account login on a new device failed.");
+
+      const oldAccountProfile = await requestJson(singleLoginPort, "/v1/accounts/me", null, {
+        Authorization: `Bearer ${singleLoginFirst.body.token}`,
+        "X-ZeroLag-Device-Hash": singleLoginDeviceA
+      });
+      assert(oldAccountProfile.statusCode === 401, "New device login should invalidate the old account session.");
+
+      const newAccountProfile = await requestJson(singleLoginPort, "/v1/accounts/me", null, {
+        Authorization: `Bearer ${singleLoginSecond.body.token}`,
+        "X-ZeroLag-Device-Hash": singleLoginDeviceB
+      });
+      assert(newAccountProfile.statusCode === 200 && newAccountProfile.body.memberships.length === 1, "New device should own the active account session.");
+
+      const kickedMembership = await requestJson(singleLoginPort, "/v1/accounts/activate-membership", {
+        accountToken: singleLoginSecond.body.token,
+        deviceHash: singleLoginDeviceB,
+        appVersion: "0.1.0",
+        channel: "single-login-b"
+      });
+      assert(kickedMembership.statusCode === 200 && kickedMembership.body.active, "New device login should continue the account membership.");
+      assert(kickedMembership.body.subscriptionId === singleLoginActivation.body.subscriptionId, "New device login should reuse the account membership.");
+
+      const oldDeviceMembership = await requestJson(singleLoginPort, "/v1/accounts/activate-membership", {
+        accountToken: singleLoginFirst.body.token,
+        deviceHash: singleLoginDeviceA,
+        appVersion: "0.1.0",
+        channel: "single-login-a"
+      });
+      assert(oldDeviceMembership.statusCode === 401, "Old device account token should be kicked after a new device logs in.");
+    } finally {
+      singleLoginServer.close();
+      fs.rmSync(singleLoginTempDir, { recursive: true, force: true });
     }
 
     const deniedAdmin = await requestJson(port, "/v1/admin/activation-codes", {
@@ -1003,7 +1081,8 @@ async function main() {
 
     const registeredAccount = await requestJson(port, "/v1/accounts/register", {
       provider: "email",
-      identifier: " Player@Example.COM "
+      identifier: " Player@Example.COM ",
+      deviceHash
     });
     assert(registeredAccount.statusCode === 201 && registeredAccount.body.ok, "Account registration failed.");
     assert(registeredAccount.body.account.provider === "email", "Account provider was not preserved.");
@@ -1014,6 +1093,8 @@ async function main() {
       plan: "ZeroLag Pro Monthly",
       channel: "test",
       accountToken: registeredAccount.body.token
+    }, {
+      "X-ZeroLag-Device-Hash": deviceHash
     });
     assert(createdOrder.statusCode === 201 && createdOrder.body.order.status === "pending", "Order creation failed.");
     assert(createdOrder.body.order.accountLinked === true, "Order creation should bind the order to the signed-in account.");
@@ -1023,7 +1104,8 @@ async function main() {
     assert(createdOrder.body.payment.paymentUrl.includes(createdOrder.body.order.orderId), "Order payment URL should include the order id.");
 
     const orderStatusBefore = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`, null, {
-      Authorization: `Bearer ${registeredAccount.body.token}`
+      Authorization: `Bearer ${registeredAccount.body.token}`,
+      "X-ZeroLag-Device-Hash": deviceHash
     });
     assert(orderStatusBefore.statusCode === 200 && !orderStatusBefore.body.order.activationCode, "Pending order should not expose a code.");
 
@@ -1085,7 +1167,8 @@ async function main() {
     );
 
     const orderStatusAfter = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`, null, {
-      Authorization: `Bearer ${registeredAccount.body.token}`
+      Authorization: `Bearer ${registeredAccount.body.token}`,
+      "X-ZeroLag-Device-Hash": deviceHash
     });
     assert(orderStatusAfter.body.order.activationCode === completedOrder.body.order.activationCode, "Paid order status should return activation code.");
 
@@ -1108,7 +1191,8 @@ async function main() {
     const firstExpiresAt = new Date(activated.body.expiresAt).getTime();
 
     const accountProfile = await requestJson(port, "/v1/accounts/me", null, {
-      Authorization: `Bearer ${registeredAccount.body.token}`
+      Authorization: `Bearer ${registeredAccount.body.token}`,
+      "X-ZeroLag-Device-Hash": deviceHash
     });
     assert(accountProfile.statusCode === 200 && accountProfile.body.memberships.length === 1, "Account profile should include the linked membership.");
 
@@ -1122,12 +1206,14 @@ async function main() {
 
     const secondAccount = await requestJson(port, "/v1/accounts/register", {
       provider: "qq",
-      identifier: "100200300"
+      identifier: "100200300",
+      deviceHash
     });
     assert(secondAccount.statusCode === 201 && secondAccount.body.ok, "Second account registration failed.");
 
     const crossAccountOrderStatus = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`, null, {
-      Authorization: `Bearer ${secondAccount.body.token}`
+      Authorization: `Bearer ${secondAccount.body.token}`,
+      "X-ZeroLag-Device-Hash": deviceHash
     });
     assert(crossAccountOrderStatus.statusCode === 403, "Order status should reject another signed-in account.");
 
@@ -1186,35 +1272,20 @@ async function main() {
     assert(validated.body.runtimeSessionKeyVersion === activated.body.runtimeSessionKeyVersion, "Validation should keep the configured runtime session key version.");
     assert(validated.body.runtimeSessionProof !== activated.body.runtimeSessionProof, "Validation should rotate the runtime session proof.");
 
-    const portableSession = await requestJson(port, "/v1/accounts/activate-membership", {
+    const copiedAccountSession = await requestJson(port, "/v1/accounts/activate-membership", {
       accountToken: registeredAccount.body.token,
       deviceHash: otherDeviceHash,
       appVersion: "0.1.0",
-      channel: "portable-device"
+      channel: "copied-account-token"
     });
-    assert(portableSession.statusCode === 200 && portableSession.body.active, "Account membership should activate on another device.");
-    assert(portableSession.body.subscriptionId === activated.body.subscriptionId, "Portable account membership should reuse the same subscription.");
-    assert(portableSession.body.token !== validated.body.token, "Portable device sessions should receive their own token.");
-
-    const portableValidation = await requestJson(port, "/v1/licenses/validate", {
-      token: portableSession.body.token,
-      subscriptionId: portableSession.body.subscriptionId,
-      deviceHash: otherDeviceHash,
-      appVersion: "0.1.0",
-      channel: "portable-device",
-      accountToken: registeredAccount.body.token,
-      requireAccountBinding: true
-    });
-    assert(portableValidation.statusCode === 200 && portableValidation.body.active, "Another device should validate with its own account-issued token.");
+    assert(copiedAccountSession.statusCode === 401, "Copied account tokens must not activate another device.");
 
     const copiedTokenValidation = await requestJson(port, "/v1/licenses/validate", {
       token: validated.body.token,
       subscriptionId: validated.body.subscriptionId,
       deviceHash: otherDeviceHash,
       appVersion: "0.1.0",
-      channel: "copied-token",
-      accountToken: registeredAccount.body.token,
-      requireAccountBinding: true
+      channel: "copied-token"
     });
     assert(copiedTokenValidation.statusCode === 403, "Copied device tokens must not work on another device.");
 
@@ -1222,6 +1293,8 @@ async function main() {
       plan: "ZeroLag Pro Monthly",
       channel: "test-renewal",
       accountToken: registeredAccount.body.token
+    }, {
+      "X-ZeroLag-Device-Hash": deviceHash
     });
     assert(renewalOrder.statusCode === 201 && renewalOrder.body.order.status === "pending", "Renewal order creation failed.");
 
@@ -1320,7 +1393,8 @@ async function main() {
     assert(Boolean(refundedOrder.body.order.refundedAt), "Refunded order should include refundedAt.");
 
     const orderStatusRefunded = await requestJson(port, `/v1/orders/${createdOrder.body.order.orderId}`, null, {
-      Authorization: `Bearer ${registeredAccount.body.token}`
+      Authorization: `Bearer ${registeredAccount.body.token}`,
+      "X-ZeroLag-Device-Hash": deviceHash
     });
     assert(orderStatusRefunded.body.order.status === "refunded", "Refunded order status should be visible.");
     assert(!orderStatusRefunded.body.order.activationCode, "Refunded order should not expose activation code.");
