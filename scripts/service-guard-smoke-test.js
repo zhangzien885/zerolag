@@ -97,8 +97,8 @@ function main() {
   assertOk(manifest.startupType === "Automatic", "Service guard should start automatically after install.");
   assertOk(manifest.serviceBinary === "ZeroLag.RuntimeGuard.Service.exe", "Manifest should use the native service wrapper as the Windows Service binary.");
   assertOk(manifest.desktopWorkerBinary === "ZeroLag.exe", "Manifest should keep the installed ZeroLag executable as the worker binary.");
-  assertOk(manifest.serviceBinaryStatus === "native-wrapper-source", "Manifest should mark the native wrapper source readiness state.");
-  assertOk(manifest.nativeServiceWrapperStatus === "source-ready", "Manifest should keep the native service wrapper status explicit.");
+  assertOk(manifest.serviceBinaryStatus === "native-wrapper-exe", "Manifest should mark the native wrapper executable readiness state.");
+  assertOk(manifest.nativeServiceWrapperStatus === "implemented", "Manifest should keep the native service wrapper status explicit.");
   assertOk(manifest.nativeServiceWrapperBuildScript === "scripts/build-native-service-wrapper.js", "Manifest native wrapper build script path is wrong.");
   assertOk(manifest.nativeServiceWrapperOutput === "build/native-service/dist/ZeroLag.RuntimeGuard.Service.exe", "Manifest native wrapper output path is wrong.");
   assertOk(manifest.installerRegistrationStatus === "explicit-private-validation-only", "Manifest should make service registration opt-in until the native wrapper exists.");
@@ -152,6 +152,7 @@ function main() {
   assertNoForbiddenText(taskUninstallScript, "Task fallback uninstall script");
 
   assertOk(targets.includes("build/service-guard.json->service-guard/service-guard.json"), "Service guard manifest must be packaged as an extra resource.");
+  assertOk(targets.includes("build/native-service/dist/ZeroLag.RuntimeGuard.Service.exe->service-guard/ZeroLag.RuntimeGuard.Service.exe"), "Native service wrapper exe must be packaged as an extra resource.");
   assertOk(targets.includes("build/install-runtime-guard-service.ps1->service-guard/install-runtime-guard-service.ps1"), "Install script must be packaged as an extra resource.");
   assertOk(targets.includes("build/uninstall-runtime-guard-service.ps1->service-guard/uninstall-runtime-guard-service.ps1"), "Uninstall script must be packaged as an extra resource.");
   assertOk(targets.includes("build/install-runtime-guard-task.ps1->service-guard/install-runtime-guard-task.ps1"), "Task fallback install script must be packaged as an extra resource.");

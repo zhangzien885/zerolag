@@ -64,10 +64,10 @@ function main() {
   const packageJson = JSON.parse(readText(packageJsonPath));
   const dryRun = runBuildScriptDryRun();
 
-  assertOk(manifest.nativeServiceWrapperStatus === "source-ready", "Manifest must mark the native service wrapper source as ready.");
+  assertOk(manifest.nativeServiceWrapperStatus === "implemented", "Manifest must mark the native service wrapper as implemented after local validation.");
   assertOk(manifest.serviceBinary === "ZeroLag.RuntimeGuard.Service.exe", "Manifest must use the native service wrapper as the service binary.");
   assertOk(manifest.desktopWorkerBinary === "ZeroLag.exe", "Manifest must keep the desktop worker binary explicit.");
-  assertOk(manifest.serviceBinaryStatus === "native-wrapper-source", "Manifest must distinguish wrapper source readiness from a built binary.");
+  assertOk(manifest.serviceBinaryStatus === "native-wrapper-exe", "Manifest must use the native wrapper executable status.");
   assertOk(manifest.nativeServiceWrapperSource === "build/native-service", "Manifest must point to wrapper source.");
   assertOk(manifest.nativeServiceWrapperBuildScript === "scripts/build-native-service-wrapper.js", "Manifest must point to wrapper build script.");
   assertOk(manifest.nativeServiceWrapperOutput === "build/native-service/dist/ZeroLag.RuntimeGuard.Service.exe", "Manifest must point to wrapper build output.");
@@ -95,6 +95,8 @@ function main() {
 
   assertOk(packageJson.scripts && packageJson.scripts["guard:wrapper:build"], "guard:wrapper:build script is missing.");
   assertOk(packageJson.scripts && packageJson.scripts["guard:wrapper:smoke"], "guard:wrapper:smoke script is missing.");
+  assertOk(JSON.stringify(packageJson.build && packageJson.build.extraResources || []).includes("build/native-service/dist/ZeroLag.RuntimeGuard.Service.exe"), "Native wrapper exe must be packaged as an extra resource.");
+  assertOk(JSON.stringify(packageJson.build && packageJson.build.extraResources || []).includes("service-guard/ZeroLag.RuntimeGuard.Service.exe"), "Native wrapper exe must land under service-guard resources.");
   assertOk((packageJson.scripts.check || "").includes("scripts/build-native-service-wrapper.js"), "npm run check must syntax-check the wrapper build script.");
   assertOk((packageJson.scripts.check || "").includes("scripts/native-service-wrapper-smoke-test.js"), "npm run check must syntax-check the wrapper smoke test.");
   assertOk((packageJson.scripts.ci || "").includes("npm run guard:wrapper:smoke"), "npm run ci must include native wrapper smoke coverage.");

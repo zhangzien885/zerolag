@@ -14,6 +14,8 @@ server/data/*.sqlite-wal
 server/data/*.sqlite-shm
 server/data/backups/
 .secrets/
+build/native-service/bin/
+build/native-service/obj/
 *.private.pem
 zerolag-state-export-*.json
 ZeroLag-support-*.json

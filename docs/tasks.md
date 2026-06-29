@@ -76,7 +76,7 @@
 ## Production Must Have
 
 - Replace local demo license with server-side account, device, and subscription validation. First client contract and client-side integration seam are in place.
-- Build and privately validate the native Windows Service wrapper executable as the primary runtime tuning cleanup layer. Native wrapper source/build tooling, Electron worker mode, service manifest, service worker, install/uninstall scripts, packaging resources, and smoke checks are in place.
+- Privately validate the native Windows Service wrapper inside the signed installer as the primary runtime tuning cleanup layer. Native wrapper source/build tooling, local executable validation, Electron worker mode, service manifest, service worker, install/uninstall scripts, packaging resources, and smoke checks are in place.
 - Wire the installer to invoke the Task Scheduler fallback after a real service-install failure. Fallback scripts, manifest entries, packaging resources, gated NSIS hook, and smoke checks are in place.
 - Harden signed runtime sessions with server-issued session IDs and key rotation. Server-issued runtime session IDs, key-version labels, HMAC proofs, configurable server-side RSA proofs, runtime guard public-key verification, and RSA key-generation tooling are in place; native wrapper key embedding and full operational key-rotation scheduling are still required.
 - Clean runtime tuning after app force kill, crash, logout, restart, subscription expiry, integrity failure, or server authorization failure.
@@ -233,6 +233,6 @@
 ## Known Boundaries
 
 - A determined user with administrator access may still inspect Windows runtime state while tuning is active.
-- The prototype watchdog, Electron worker mode, and temporary task guard improve cleanup, but production still requires building and privately validating the native Windows Service wrapper executable.
+- The prototype watchdog, Electron worker mode, and temporary task guard improve cleanup, but production still requires signed-installer validation of the native Windows Service wrapper executable.
 - Local-only license protection is not enough for paid release.
 - Current prototype makes aggressive performance changes and may require reboot for full effect.

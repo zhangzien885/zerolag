@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T10:31:41.370Z",
+  "generatedAt": "2026-06-29T11:01:55.658Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "fe0a08d1a261601076d93ae31b6a6dc70452ad9a477270e0cd70ef2e959793ed"
+      "sha256": "bf66baa396b5d345289c99d2f62dac5ba6b6a26d75c95195e33d31fa11087eb4"
     },
     {
       "path": "main.js",
@@ -48,7 +48,7 @@
     },
     {
       "path": "scripts/native-service-wrapper-smoke-test.js",
-      "sha256": "18b23bb572ecb2bae5821c6a2ea244d9e3045976f878ac3a78acbb15db9b4b05"
+      "sha256": "f8abef66300b9572b65a073288022ba8006fa915c131938161f651fe47eec36d"
     },
     {
       "path": "scripts/check-release-workstation.js",
@@ -88,7 +88,7 @@
     },
     {
       "path": "scripts/package-smoke-test.js",
-      "sha256": "eb7d6167f29fad43c1b1f3354b408285ef1febeb6d23db2b75dea42de63ac590"
+      "sha256": "796c1f172eeb1dc839256610036d6aa51733f62d24d81f97e03cee4b84e51aba"
     },
     {
       "path": "scripts/installer-smoke-test.js",
@@ -100,7 +100,7 @@
     },
     {
       "path": "scripts/service-guard-smoke-test.js",
-      "sha256": "f237935733930e1000f406004c792d1a3b51108b74c3ebc2ce99e36a36d98b3e"
+      "sha256": "06aa57ee7773a121443e2eec261d88c94df3db02ac396246dd7d827b9901cfd6"
     },
     {
       "path": "scripts/service-install-script-smoke-test.js",
@@ -152,7 +152,7 @@
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "a501cff258b56002fdc52dd716991769e56fb70aba088fa651e0acf46815783a"
+      "sha256": "7b0861e2cc9fc280dea8140993189b68720f572d058a7d1af8eeaa6fad87030f"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -220,7 +220,7 @@
     },
     {
       "path": "build/service-guard.json",
-      "sha256": "d28f9b4f923fab7a3d5cbeb026724571a4e6bb44db6a867d0cfb6e36de2fc0bf"
+      "sha256": "8b25529fff2453c3097f9793a121ed33bece042e95f4de38f0ab7a5a20f10cac"
     },
     {
       "path": "build/install-runtime-guard-service.ps1",
@@ -251,5 +251,5 @@
       "sha256": "88e790f4e8a56c15098dff7234e769dae7d04718745d0b839b471f55bd0ae571"
     }
   ],
-  "signature": "62d4e2f7131ecb242fd10c4dda7b6989d85a504f42d298dc52f5bf62a8ba9779"
+  "signature": "5882c96a88541d7d0716955c6e1fc30773a9a78d9c744366c5705cbdbe06b30a"
 }

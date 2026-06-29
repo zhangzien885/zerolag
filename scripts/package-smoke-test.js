@@ -38,6 +38,7 @@ function main() {
   const unpackedGuardCorePath = path.join(appDir, "resources", "app.asar.unpacked", "scripts", "runtime-guard-core.js");
   const unpackedWatchdogPath = path.join(appDir, "resources", "app.asar.unpacked", "scripts", "runtime-watchdog.js");
   const serviceGuardPath = path.join(appDir, "resources", "service-guard", "service-guard.json");
+  const serviceGuardWrapperPath = path.join(appDir, "resources", "service-guard", "ZeroLag.RuntimeGuard.Service.exe");
   const serviceGuardInstallPath = path.join(appDir, "resources", "service-guard", "install-runtime-guard-service.ps1");
   const serviceGuardUninstallPath = path.join(appDir, "resources", "service-guard", "uninstall-runtime-guard-service.ps1");
   const taskFallbackInstallPath = path.join(appDir, "resources", "service-guard", "install-runtime-guard-task.ps1");
@@ -52,6 +53,7 @@ function main() {
   const unpackedGuardCore = fileInfo(unpackedGuardCorePath);
   const unpackedWatchdog = fileInfo(unpackedWatchdogPath);
   const serviceGuard = fileInfo(serviceGuardPath);
+  const serviceGuardWrapper = fileInfo(serviceGuardWrapperPath);
   fileInfo(serviceGuardInstallPath);
   fileInfo(serviceGuardUninstallPath);
   fileInfo(taskFallbackInstallPath);
@@ -129,6 +131,7 @@ function main() {
   assertOk(sha256File(unpackedGuardCorePath) === sha256File(path.join(rootDir, "scripts", "runtime-guard-core.js")), "Unpacked runtime guard core differs from source.");
   assertOk(sha256File(unpackedWatchdogPath) === sha256File(path.join(rootDir, "scripts", "runtime-watchdog.js")), "Unpacked watchdog differs from source.");
   assertOk(sha256File(serviceGuardPath) === sha256File(path.join(rootDir, "build", "service-guard.json")), "Packaged service guard manifest differs from source.");
+  assertOk(sha256File(serviceGuardWrapperPath) === sha256File(path.join(rootDir, "build", "native-service", "dist", "ZeroLag.RuntimeGuard.Service.exe")), "Packaged native service wrapper differs from source.");
   assertOk(sha256File(serviceGuardCorePath) === sha256File(path.join(rootDir, "scripts", "runtime-guard-core.js")), "Packaged service guard core differs from source.");
   assertOk(sha256File(serviceGuardWorkerPath) === sha256File(path.join(rootDir, "scripts", "runtime-guard-service.js")), "Packaged service guard worker differs from source.");
 
@@ -138,6 +141,7 @@ function main() {
   console.log(`Unpacked guard core: ${path.relative(rootDir, unpackedGuardCorePath)} (${unpackedGuardCore.size} bytes)`);
   console.log(`Unpacked watchdog: ${path.relative(rootDir, unpackedWatchdogPath)} (${unpackedWatchdog.size} bytes)`);
   console.log(`Service guard resources: ${path.relative(rootDir, serviceGuardPath)} (${serviceGuard.size} bytes)`);
+  console.log(`Service wrapper: ${path.relative(rootDir, serviceGuardWrapperPath)} (${serviceGuardWrapper.size} bytes)`);
   console.log(`Icon: ${path.relative(rootDir, iconPath)} (${icon.size} bytes)`);
 }
 

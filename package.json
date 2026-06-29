@@ -132,6 +132,10 @@
         "to": "service-guard/service-guard.json"
       },
       {
+        "from": "build/native-service/dist/ZeroLag.RuntimeGuard.Service.exe",
+        "to": "service-guard/ZeroLag.RuntimeGuard.Service.exe"
+      },
+      {
         "from": "build/install-runtime-guard-service.ps1",
         "to": "service-guard/install-runtime-guard-service.ps1"
       },

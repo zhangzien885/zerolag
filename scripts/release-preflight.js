@@ -204,6 +204,7 @@ function main() {
   addIssue(issues, JSON.stringify(build.files || []).includes("scripts/runtime-guard-service.js"), "Installer packaging config must include runtime guard service worker in the app archive.");
   addIssue(issues, JSON.stringify(build.files || []).includes("scripts/runtime-watchdog.js"), "Installer packaging config must include runtime watchdog in the app archive.");
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/service-guard.json"), "Installer packaging config must include the service guard manifest as an extra resource.");
+  addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/ZeroLag.RuntimeGuard.Service.exe"), "Installer packaging config must include the native Windows Service wrapper exe as an extra resource.");
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/install-runtime-guard-service.ps1"), "Installer packaging config must include the service guard install script as an extra resource.");
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/uninstall-runtime-guard-service.ps1"), "Installer packaging config must include the service guard uninstall script as an extra resource.");
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/install-runtime-guard-task.ps1"), "Installer packaging config must include the Task Scheduler fallback install script as an extra resource.");
@@ -217,7 +218,7 @@ function main() {
   addIssue(issues, serviceGuard.serviceName === "ZeroLagRuntimeGuard", "Windows Service guard manifest must use the ZeroLagRuntimeGuard service name.");
   addIssue(issues, serviceGuard.serviceBinary === "ZeroLag.RuntimeGuard.Service.exe", "Windows Service guard manifest must use the native service wrapper binary.");
   addIssue(issues, serviceGuard.desktopWorkerBinary === "ZeroLag.exe", "Windows Service guard manifest must keep the installed ZeroLag executable as the worker binary.");
-  addIssue(issues, serviceGuard.serviceBinaryStatus === "native-wrapper-source", "Windows Service guard manifest must mark the native wrapper source readiness state.");
+  addIssue(issues, serviceGuard.serviceBinaryStatus === "native-wrapper-exe", "Windows Service guard manifest must mark the native wrapper executable readiness state.");
   addIssue(issues, serviceGuard.nativeServiceWrapperSource === "build/native-service", "Windows Service guard manifest must point to native wrapper source.");
   addIssue(issues, serviceGuard.nativeServiceWrapperBuildScript === "scripts/build-native-service-wrapper.js", "Windows Service guard manifest must point to the native wrapper build script.");
   addIssue(issues, serviceGuard.nativeServiceWrapperOutput === "build/native-service/dist/ZeroLag.RuntimeGuard.Service.exe", "Windows Service guard manifest must point to the native wrapper build output.");
