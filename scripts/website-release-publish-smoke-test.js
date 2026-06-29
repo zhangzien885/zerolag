@@ -93,6 +93,8 @@ function testAvailableRelease(tempDir) {
       "Startup feels smoother",
       "",
       42,
+      "Internal watchdog cleanup improved",
+      "\u4fdd\u62a4\u7b56\u7565\u5df2\u8c03\u6574",
       "Checksum info updated",
       "x".repeat(180)
     ]
@@ -122,6 +124,8 @@ function testAvailableRelease(tempDir) {
   assertOk(output.releaseNotes[0] === "Startup feels smoother", "First release note was not preserved.");
   assertOk(output.releaseNotes[1] === "Checksum info updated", "Second release note was not preserved.");
   assertOk(output.releaseNotes[2].length === 160 && output.releaseNotes[2].endsWith("..."), "Long release notes should be truncated.");
+  assertOk(!JSON.stringify(output.releaseNotes).toLowerCase().includes("watchdog"), "Internal watchdog release notes must be filtered.");
+  assertOk(!JSON.stringify(output.releaseNotes).includes("\u4fdd\u62a4\u7b56\u7565"), "Internal protection-strategy release notes must be filtered.");
 }
 
 function testPreparingRelease(tempDir) {

@@ -42,11 +42,37 @@ function readinessSummary(report) {
 
 function publicReleaseNotes(notes) {
   if (!Array.isArray(notes)) return [];
+  const forbiddenPublicTerms = [
+    "subscription control",
+    "protection strategy",
+    "permanent config",
+    "watchdog",
+    "task scheduler",
+    "windows service",
+    "anti-crack",
+    "reverse engineering",
+    "private key",
+    "server env",
+    "forbidden helper",
+    "\u53cd\u7834\u89e3",
+    "\u6c38\u4e45\u7559\u5b58",
+    "\u8ba2\u9605\u63a7\u5236",
+    "\u4fdd\u62a4\u7b56\u7565",
+    "\u5f3a\u6740\u515c\u5e95",
+    "\u79c1\u94a5",
+    "\u670d\u52a1\u7aef\u73af\u5883"
+  ];
+
+  function isPublicSafe(note) {
+    const lowered = String(note || "").toLowerCase();
+    return !forbiddenPublicTerms.some((term) => lowered.includes(term.toLowerCase()));
+  }
 
   return notes
     .filter((note) => typeof note === "string")
     .map((note) => note.trim())
     .filter(Boolean)
+    .filter(isPublicSafe)
     .slice(0, 6)
     .map((note) => (note.length > 160 ? `${note.slice(0, 157)}...` : note));
 }
