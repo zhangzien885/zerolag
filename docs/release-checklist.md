@@ -19,7 +19,8 @@ npm run server:deployment-report:strict
 - Use `npm run production:config -- --domain your-domain.example --write` to generate the production URL fields, then review them before building.
 - Set `allowLocalDemoLicense` to `false`.
 - Generate the runtime-session RSA keypair with `npm run runtime:keys -- --output-dir .secrets\runtime-session --key-version runtime-session-v1`.
-- Add the production update public key to `updatePublicKeyPem`.
+- Generate the update-signing keypair with `npm run update:sign -- --generate-keypair .secrets\update-private.pem .secrets\update-public.pem --app-config-snippet .secrets\update-app-config-snippet.json`.
+- Add the generated update public-key snippet to `updatePublicKeyPem`; never ship or commit the matching private key.
 - Copy only the generated app config snippet public key to `runtimeSessionPublicKeyPem`; never ship the matching private key.
 
 ## 2. Server Readiness
@@ -59,6 +60,7 @@ npm run server:deployment-report:strict
 - Verify the manifest with the public key.
 
 ```powershell
+npm run update:sign -- --generate-keypair .\.secrets\update-private.pem .\.secrets\update-public.pem --app-config-snippet .\.secrets\update-app-config-snippet.json
 npm run update:sign -- assets\update.json .\.secrets\update-private.pem
 npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 ```

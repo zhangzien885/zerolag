@@ -51,17 +51,31 @@ function main() {
   const manifestPath = path.join(tempRoot, "update.json");
   const privateKeyPath = path.join(tempRoot, "update-private.pem");
   const publicKeyPath = path.join(tempRoot, "update-public.pem");
+  const appConfigSnippetPath = path.join(tempRoot, "update-app-config-snippet.json");
 
   try {
     fs.copyFileSync(sourceManifestPath, manifestPath);
 
-    runNode([signingScriptPath, "--generate-keypair", privateKeyPath, publicKeyPath]);
+    const generated = runNode([
+      signingScriptPath,
+      "--generate-keypair",
+      privateKeyPath,
+      publicKeyPath,
+      "--app-config-snippet",
+      appConfigSnippetPath
+    ]);
+    assertOk(!generated.stdout.includes("PRIVATE KEY"), "Key generation output must not print private key material.");
     runNode([signingScriptPath, manifestPath, privateKeyPath]);
     runNode([signingScriptPath, "--verify", manifestPath, publicKeyPath]);
 
     const signedManifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    const appConfigSnippet = JSON.parse(fs.readFileSync(appConfigSnippetPath, "utf8"));
     assertOk(signedManifest.signatureAlgorithm === "RSA-SHA256", "Signed manifest is missing RSA-SHA256 algorithm.");
     assertOk(Boolean(signedManifest.signature), "Signed manifest is missing signature.");
+    assertOk(
+      /^-----BEGIN PUBLIC KEY-----[\s\S]+-----END PUBLIC KEY-----\s*$/.test(appConfigSnippet.updatePublicKeyPem || ""),
+      "App config snippet should contain only the update public key."
+    );
 
     fs.writeFileSync(manifestPath, `${JSON.stringify({
       ...signedManifest,

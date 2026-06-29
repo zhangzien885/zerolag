@@ -293,7 +293,7 @@ Production builds should sign update metadata and configure `updatePublicKeyPem`
 Generate and store keys privately:
 
 ```powershell
-npm run update:sign -- --generate-keypair .\.secrets\update-private.pem .\.secrets\update-public.pem
+npm run update:sign -- --generate-keypair .\.secrets\update-private.pem .\.secrets\update-public.pem --app-config-snippet .\.secrets\update-app-config-snippet.json
 ```
 
 Sign the manifest before upload:
@@ -303,7 +303,7 @@ npm run update:sign -- assets\update.json .\.secrets\update-private.pem
 npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 ```
 
-Copy only the public key into production `assets/app-config.json` as `updatePublicKeyPem`. Never ship or commit the private key.
+Copy only the generated snippet's public key into production `assets/app-config.json` as `updatePublicKeyPem`. Never ship or commit the private key.
 
 ## POST `/v1/orders/create`
 

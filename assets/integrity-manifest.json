@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T03:04:16.191Z",
+  "generatedAt": "2026-06-29T03:09:41.921Z",
   "files": [
     {
       "path": "package.json",
@@ -184,7 +184,7 @@
     },
     {
       "path": "scripts/update-signing-smoke-test.js",
-      "sha256": "2375ac8be355c685d0610cce644c9b91665319b3b20f47d46176589512038f38"
+      "sha256": "0b38e5250617b73d8e597d59c2627085a36b84ef7b90bf8fb11a451a0c8196d2"
     },
     {
       "path": "server/env.js",
@@ -227,5 +227,5 @@
       "sha256": "4c2f2e026519154d9549d810f6ecbd0cc2028d2aeb09ff35c37c03869cb70a67"
     }
   ],
-  "signature": "fff52ef077e2b6344cdcdd4686f38fadbe5b9c6144da67acef6586e6b3dad0b5"
+  "signature": "5a02c28b0255d6785e3c51456bb5ae9e72fa090cee8cbee57d1fedfee50d845f"
 }

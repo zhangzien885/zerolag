@@ -70,13 +70,13 @@ Server commands automatically load `.secrets/server.env` when it exists. Existin
 Production update prompts should use signed metadata:
 
 ```powershell
-npm run update:sign -- --generate-keypair .\.secrets\update-private.pem .\.secrets\update-public.pem
+npm run update:sign -- --generate-keypair .\.secrets\update-private.pem .\.secrets\update-public.pem --app-config-snippet .\.secrets\update-app-config-snippet.json
 npm run update:sign -- assets\update.json .\.secrets\update-private.pem
 npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 npm run update:smoke
 ```
 
-Keep the private key outside Git. Put only the public key into `assets/app-config.json` as `updatePublicKeyPem` for production builds.
+Keep the private key outside Git. Put only the generated snippet's `updatePublicKeyPem` public key into `assets/app-config.json` for production builds.
 `update:smoke` uses temporary keys and a copied manifest to verify the signing toolchain without touching real release keys or `assets/update.json`.
 
 ## License server MVP

@@ -4,9 +4,16 @@ const crypto = require("crypto");
 
 function usage() {
   console.log("Usage:");
-  console.log("  node scripts/sign-update-manifest.js --generate-keypair <privateKeyPem> <publicKeyPem>");
+  console.log("  node scripts/sign-update-manifest.js --generate-keypair <privateKeyPem> <publicKeyPem> [--app-config-snippet file]");
   console.log("  node scripts/sign-update-manifest.js <manifestJson> <privateKeyPem>");
   console.log("  node scripts/sign-update-manifest.js --verify <manifestJson> <publicKeyPem>");
+}
+
+function argValue(name, fallback = "") {
+  const equalsArg = process.argv.find((arg) => arg.startsWith(`${name}=`));
+  if (equalsArg) return equalsArg.slice(name.length + 1);
+  const index = process.argv.indexOf(name);
+  return index >= 0 && process.argv[index + 1] ? process.argv[index + 1] : fallback;
 }
 
 function stableStringify(value) {
@@ -43,7 +50,7 @@ function writeText(filePath, content) {
   fs.writeFileSync(filePath, content, "utf8");
 }
 
-function generateKeypair(privateKeyPath, publicKeyPath) {
+function generateKeypair(privateKeyPath, publicKeyPath, appConfigSnippetPath = "") {
   const keypair = crypto.generateKeyPairSync("rsa", {
     modulusLength: 3072,
     publicKeyEncoding: {
@@ -58,10 +65,17 @@ function generateKeypair(privateKeyPath, publicKeyPath) {
 
   writeText(privateKeyPath, keypair.privateKey);
   writeText(publicKeyPath, keypair.publicKey);
+  if (appConfigSnippetPath) {
+    writeText(appConfigSnippetPath, `${JSON.stringify({
+      updatePublicKeyPem: keypair.publicKey
+    }, null, 2)}\n`);
+  }
+
   console.log(JSON.stringify({
     ok: true,
     privateKeyPath: path.resolve(privateKeyPath),
-    publicKeyPath: path.resolve(publicKeyPath)
+    publicKeyPath: path.resolve(publicKeyPath),
+    appConfigSnippetPath: appConfigSnippetPath ? path.resolve(appConfigSnippetPath) : ""
   }, null, 2));
 }
 
@@ -119,7 +133,7 @@ function main() {
       return;
     }
 
-    generateKeypair(privateKeyPath, publicKeyPath);
+    generateKeypair(privateKeyPath, publicKeyPath, argValue("--app-config-snippet"));
     return;
   }
 
