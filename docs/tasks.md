@@ -199,6 +199,7 @@
 - Added latest SQLite backup validation to strict server production checks, including readable backup summary and freshness guardrails.
 - Hardened the server smoke test so SQLite deployments use an isolated temporary SQLite state by default instead of touching the configured live database.
 - Added a read-only SQLite storage status command with safe relative paths, latest-backup freshness review, recovery next steps, and CI smoke coverage.
+- Added an installer uninstall cleanup coordinator that performs one final runtime restore pass, removes Task Scheduler fallback entries, removes the Windows Service guard, and is covered by CI smoke checks.
 
 ## Known Boundaries
 

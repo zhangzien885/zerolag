@@ -161,7 +161,7 @@ npm run check
 npm run ci
 ```
 
-`ci` runs the standard local verification set used by GitHub Actions: syntax checks, desktop production readiness, server readiness, SQLite storage-status smoke checks, server self-test, server smoke test, CI report-artifact smoke checks, Windows Service guard asset and worker checks, and integrity verification.
+`ci` runs the standard local verification set used by GitHub Actions: syntax checks, desktop production readiness, server readiness, SQLite storage-status smoke checks, server self-test, server smoke test, CI report-artifact smoke checks, Windows Service guard asset, uninstall cleanup, worker checks, and integrity verification.
 It also runs the non-strict release preflight so release gaps stay visible during normal development.
 
 ## Continuous Integration

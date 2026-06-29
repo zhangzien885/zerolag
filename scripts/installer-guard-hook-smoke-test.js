@@ -38,8 +38,7 @@ function main() {
   assertIncludes(hook, "ZEROLAG_ENABLE_GUARD_REGISTRATION", "Installer guard hook must stay gated behind an explicit build define.");
   assertIncludes(hook, "install-runtime-guard-service.ps1", "Installer guard hook must attempt service installation first.");
   assertIncludes(hook, "install-runtime-guard-task.ps1", "Installer guard hook must fall back to Task Scheduler registration.");
-  assertIncludes(hook, "uninstall-runtime-guard-task.ps1", "Installer guard hook must remove the task fallback during uninstall.");
-  assertIncludes(hook, "uninstall-runtime-guard-service.ps1", "Installer guard hook must remove the service during uninstall.");
+  assertIncludes(hook, "uninstall-runtime-cleanup.ps1", "Installer guard hook must coordinate runtime restore and guard removal during uninstall.");
   assertIncludes(hook, "-AllowElectronWorkerService", "Service registration must require the explicit private validation switch.");
   assertIncludes(hook, "-AllowTaskFallbackRegistration", "Task fallback registration must require the explicit private validation switch.");
   assertOk(
@@ -47,8 +46,8 @@ function main() {
     "Installer guard hook must try service registration before task fallback registration."
   );
   assertOk(
-    hook.indexOf("uninstall-runtime-guard-task.ps1") < hook.indexOf("uninstall-runtime-guard-service.ps1"),
-    "Installer guard hook must remove the task fallback before removing the service."
+    hook.indexOf("uninstall-runtime-cleanup.ps1") > hook.indexOf("!macro customUnInstall"),
+    "Installer guard hook must run uninstall cleanup from customUnInstall."
   );
   assertNoForbiddenText(hook);
 

@@ -113,6 +113,7 @@ function main() {
   addIssue(issues, fileExists("build/uninstall-runtime-guard-service.ps1"), "Windows Service guard uninstall script is missing.");
   addIssue(issues, fileExists("build/install-runtime-guard-task.ps1"), "Task Scheduler fallback install script is missing.");
   addIssue(issues, fileExists("build/uninstall-runtime-guard-task.ps1"), "Task Scheduler fallback uninstall script is missing.");
+  addIssue(issues, fileExists("build/uninstall-runtime-cleanup.ps1"), "Runtime uninstall cleanup coordinator is missing.");
   addIssue(issues, fileExists("build/installer-guard.nsh"), "NSIS installer guard hook is missing.");
   addIssue(issues, fileExists("scripts/runtime-guard-core.js"), "Runtime guard core worker is missing.");
   addIssue(issues, fileExists("scripts/runtime-guard-service.js"), "Runtime guard service worker is missing.");
@@ -136,7 +137,7 @@ function main() {
   const gitignore = readTextIfExists(".gitignore");
   const ciWorkflow = readTextIfExists(".github/workflows/ci.yml");
 
-  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:guard:smoke", "installer:verify", "release:artifacts", "release:report", "release:report:smoke", "release:version", "release:version:smoke", "signing:check", "signing:check:strict", "signing:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "runtime:keys", "runtime:keys:smoke", "app-config:snippet", "app-config:snippet:smoke", "server:bootstrap", "server:bootstrap:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "production:config", "production:config:smoke", "production:mode", "production:mode:smoke", "server:check", "server:smoke", "server:test", "server:env-check", "server:env-status", "server:env-status:smoke", "server:sqlite-status", "server:sqlite-status:smoke", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:prepare", "update:prepare:smoke", "update:sign", "update:smoke"].forEach((scriptName) => {
+  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:guard:smoke", "installer:verify", "release:artifacts", "release:report", "release:report:smoke", "release:version", "release:version:smoke", "signing:check", "signing:check:strict", "signing:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "guard:uninstall:smoke", "runtime:keys", "runtime:keys:smoke", "app-config:snippet", "app-config:snippet:smoke", "server:bootstrap", "server:bootstrap:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "production:config", "production:config:smoke", "production:mode", "production:mode:smoke", "server:check", "server:smoke", "server:test", "server:env-check", "server:env-status", "server:env-status:smoke", "server:sqlite-status", "server:sqlite-status:smoke", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:prepare", "update:prepare:smoke", "update:sign", "update:smoke"].forEach((scriptName) => {
     addIssue(issues, hasScript(packageJson, scriptName), `package.json script is missing: ${scriptName}`);
   });
 
@@ -160,6 +161,7 @@ function main() {
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:install:smoke"), "npm run ci must verify Windows Service install-script gating.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:task:smoke"), "npm run ci must verify Task Scheduler fallback gating.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:runtime:smoke"), "npm run ci must verify the runtime guard service worker.");
+  addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:uninstall:smoke"), "npm run ci must verify uninstall cleanup coordination.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run runtime:keys:smoke"), "npm run ci must verify runtime session key generation.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run server:bootstrap:smoke"), "npm run ci must verify production server env bootstrap.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run production:config:smoke"), "npm run ci must verify production URL config generation.");
@@ -194,6 +196,7 @@ function main() {
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/uninstall-runtime-guard-service.ps1"), "Installer packaging config must include the service guard uninstall script as an extra resource.");
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/install-runtime-guard-task.ps1"), "Installer packaging config must include the Task Scheduler fallback install script as an extra resource.");
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/uninstall-runtime-guard-task.ps1"), "Installer packaging config must include the Task Scheduler fallback uninstall script as an extra resource.");
+  addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/uninstall-runtime-cleanup.ps1"), "Installer packaging config must include the uninstall cleanup coordinator as an extra resource.");
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/runtime-guard-core.js"), "Installer packaging config must include the runtime guard core as an extra resource.");
   addIssue(issues, JSON.stringify(build.extraResources || []).includes("service-guard/runtime-guard-service.js"), "Installer packaging config must include the runtime guard service worker as an extra resource.");
   addIssue(issues, hasWindowsNsisTarget(build), "Installer packaging config must target Windows NSIS.");
@@ -209,6 +212,7 @@ function main() {
   addIssue(issues, serviceGuard.taskSchedulerFallback && serviceGuard.taskSchedulerFallback.uninstallScript === "build/uninstall-runtime-guard-task.ps1", "Task Scheduler fallback uninstall script path is wrong.");
   addIssue(issues, serviceGuard.serviceWorker === "service-guard/runtime-guard-service.js", "Windows Service guard manifest must point to the runtime guard service worker.");
   addIssue(issues, serviceGuard.serviceCore === "service-guard/runtime-guard-core.js", "Windows Service guard manifest must point to the runtime guard core.");
+  addIssue(issues, serviceGuard.uninstallCoordinator === "build/uninstall-runtime-cleanup.ps1", "Windows Service guard manifest must point to the uninstall cleanup coordinator.");
   addIssue(issues, mainJs.includes("--runtime-guard-service"), "main.js must expose the runtime guard service mode before normal app startup.");
   addIssue(issues, serviceGuard.visibleInWindowsServices === true, "Windows Service guard must remain visible in Windows service tools.");
   addIssue(issues, Array.isArray(serviceGuard.prohibitedBehaviors) && serviceGuard.prohibitedBehaviors.includes("block Task Manager"), "Windows Service guard manifest must forbid blocking Task Manager.");

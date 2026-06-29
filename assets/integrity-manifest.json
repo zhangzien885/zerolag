@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T04:20:57.417Z",
+  "generatedAt": "2026-06-29T04:29:01.442Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "b12f14289142e975429df90e69478441df6c150caeb4e41e37ff55538ebaa70e"
+      "sha256": "a98fd0db743d421c063ed810f666bd5e8e70886b1d3406b773f6bdf755b75c4a"
     },
     {
       "path": "main.js",
@@ -80,11 +80,11 @@
     },
     {
       "path": "scripts/installer-guard-hook-smoke-test.js",
-      "sha256": "a58a0a8adab357b3555e5a644c05bb87aac95f11a9da65d52a4f6aefaffa61e8"
+      "sha256": "ecafb1c92f1fe9e3432edeb87eef9028a4a37d22295ae513a93ea51a3120dce3"
     },
     {
       "path": "scripts/service-guard-smoke-test.js",
-      "sha256": "2b5d33d94b9c143c216609bdee36b700896ee7a18a793508155a617c192ac812"
+      "sha256": "7bcff98e6bf3b7c96aa017434a1353e5ceda3acc3d6e228237e0a5b722b9a471"
     },
     {
       "path": "scripts/service-install-script-smoke-test.js",
@@ -136,7 +136,7 @@
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "4b3d0bbee7a1b7656da5018618998eb86e5e7db6fae7edd48934eb469460ba32"
+      "sha256": "5b21b4781cce6ad2e7d4c1db4ce46c2e8a1b3664a37ebc7ecc76dd22b2c0bb2d"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -204,7 +204,7 @@
     },
     {
       "path": "build/service-guard.json",
-      "sha256": "d312b6ea30897576758aa458b7aac448296f055c8d208c5fecef0f192fb02849"
+      "sha256": "fffeafefbb502082048a9885e645f2dc59482737ba8595777159db310d8832d5"
     },
     {
       "path": "build/install-runtime-guard-service.ps1",
@@ -224,8 +224,8 @@
     },
     {
       "path": "build/installer-guard.nsh",
-      "sha256": "4c2f2e026519154d9549d810f6ecbd0cc2028d2aeb09ff35c37c03869cb70a67"
+      "sha256": "32959ffda1c3a8acacbe1806248f89e439b1264bc5235bb98eab10bc167c2b5f"
     }
   ],
-  "signature": "9359e433f5c1832896c47bfeea465493abe901cefbb6ffb7fe943e72cdea2992"
+  "signature": "3ac49974531948a34290d39c79e70ab3b608dfb447192c60b64a0a202df2dac0"
 }

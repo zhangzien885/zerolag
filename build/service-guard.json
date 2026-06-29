@@ -16,6 +16,7 @@
   "watchdogScript": "scripts/runtime-watchdog.js",
   "installScript": "build/install-runtime-guard-service.ps1",
   "uninstallScript": "build/uninstall-runtime-guard-service.ps1",
+  "uninstallCoordinator": "build/uninstall-runtime-cleanup.ps1",
   "taskSchedulerFallback": {
     "taskName": "ZeroLagRuntimeGuardFallback",
     "enabledWhenServiceInstallFails": true,
