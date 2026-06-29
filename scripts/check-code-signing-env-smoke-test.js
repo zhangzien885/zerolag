@@ -42,7 +42,9 @@ function cleanEnv() {
     "CSC_KEY_PASSWORD",
     "WIN_CSC_KEY_PASSWORD",
     "WINDOWS_CODESIGN_PASSWORD",
-    "ZEROLAG_CODESIGN_PASSWORD"
+    "ZEROLAG_CODESIGN_PASSWORD",
+    "ZEROLAG_CODESIGN_PROFILE",
+    "ZEROLAG_CODESIGN_ENV_FILE"
   ].forEach((key) => delete env[key]);
   return env;
 }
@@ -51,7 +53,7 @@ function main() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-codesign-smoke-"));
 
   try {
-    const missing = inspectSigningEnv(cleanEnv());
+    const missing = inspectSigningEnv(cleanEnv(), { loadEnvFile: false });
     assertOk(missing.ok === false, "Missing signing env should not be ready.");
     assertOk(missing.issues.some((issue) => issue.includes("certificate")), "Missing env should report missing certificate.");
 
@@ -62,8 +64,9 @@ function main() {
       WIN_CSC_LINK: certPath,
       WIN_CSC_KEY_PASSWORD: "secret-password"
     };
-    const external = inspectSigningEnv(externalEnv);
+    const external = inspectSigningEnv(externalEnv, { loadEnvFile: false });
     assertOk(external.ok === true, "External certificate path with password should pass.");
+    assertOk(external.productionReady === true, "External production-profile certificate should be production ready.");
     assertOk(external.certificateSource === "external-file", "External certificate source should be redacted.");
 
     const externalCli = runNode(externalEnv, 0);
@@ -77,7 +80,7 @@ function main() {
       ...cleanEnv(),
       WIN_CSC_LINK: repoCertPath,
       WIN_CSC_KEY_PASSWORD: "secret-password"
-    });
+    }, { loadEnvFile: false });
     assertOk(repo.ok === false, "Repository certificate path should be rejected.");
     fs.rmSync(repoCertPath, { force: true });
 
@@ -86,7 +89,7 @@ function main() {
       WIN_CSC_LINK: "https://secrets.example.invalid/certificate.p12",
       WIN_CSC_KEY_PASSWORD: "secret-password"
     };
-    const remote = inspectSigningEnv(remoteEnv);
+    const remote = inspectSigningEnv(remoteEnv, { loadEnvFile: false });
     assertOk(remote.ok === true, "Remote certificate URL with password should pass readiness.");
     assertOk(remote.certificateSource === "remote-url", "Remote certificate source should be summarized.");
 
@@ -95,9 +98,18 @@ function main() {
       CSC_LINK: "a".repeat(180),
       CSC_KEY_PASSWORD: "secret-password"
     };
-    const base64 = inspectSigningEnv(base64Env);
+    const base64 = inspectSigningEnv(base64Env, { loadEnvFile: false });
     assertOk(base64.ok === true, "Base64 certificate with password should pass readiness.");
     assertOk(base64.certificateSource === "base64", "Base64 certificate source should be summarized.");
+
+    const testProfile = inspectSigningEnv({
+      ...cleanEnv(),
+      CSC_LINK: certPath,
+      CSC_KEY_PASSWORD: "secret-password",
+      ZEROLAG_CODESIGN_PROFILE: "test"
+    }, { loadEnvFile: false });
+    assertOk(testProfile.ok === true, "Test-profile certificate should pass development readiness.");
+    assertOk(testProfile.productionReady === false, "Test-profile certificate must not be production ready.");
 
     console.log("ZeroLag code signing env smoke test passed.");
   } finally {

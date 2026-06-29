@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T11:01:55.658Z",
+  "generatedAt": "2026-06-29T11:47:25.713Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "bf66baa396b5d345289c99d2f62dac5ba6b6a26d75c95195e33d31fa11087eb4"
+      "sha256": "151cd3845b32137deaf348e82f300070ddaa756d019ad6c3528ed28a3d67dfcb"
     },
     {
       "path": "main.js",
@@ -44,19 +44,27 @@
     },
     {
       "path": "scripts/build-native-service-wrapper.js",
-      "sha256": "7c8457d71ed8ecefe6a6b39a3050a63387cf00f693b2e34bb2a0f7f30fd5e1bb"
+      "sha256": "d3ad33504086612bb7af5b296ee495f25f8d195a2a0e2febd3ca297d9a7bffc5"
     },
     {
       "path": "scripts/native-service-wrapper-smoke-test.js",
-      "sha256": "f8abef66300b9572b65a073288022ba8006fa915c131938161f651fe47eec36d"
+      "sha256": "3d72e70b95d140ffef15762dc0324cb14c5bd2d89e953124506e2c70f6d716d6"
     },
     {
       "path": "scripts/check-release-workstation.js",
-      "sha256": "ec7fa3cc7e55b34a64538e565cc40cc390669387f8c8b98accbd86c2c079210b"
+      "sha256": "12d2947925dd1946be920840ea8e826b0c3550c55adc07f0802216ddce9bbacd"
     },
     {
       "path": "scripts/release-workstation-smoke-test.js",
       "sha256": "e4b3e179a291f7d8ad38afead45d7016ad503b0b35068879b9bac43bcddb66a2"
+    },
+    {
+      "path": "scripts/generate-test-code-signing-cert.js",
+      "sha256": "fadd738b7694cc5f6f3a6a6df35db430c5c429f2a7f2a4f50a733fe0e26a038a"
+    },
+    {
+      "path": "scripts/test-code-signing-cert-smoke-test.js",
+      "sha256": "d7bc71b4c3b23afb49eddf17b453dcd25924e3dda9936bb2f7c76fd167dfd991"
     },
     {
       "path": "scripts/generate-runtime-session-keys.js",
@@ -152,7 +160,7 @@
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "7b0861e2cc9fc280dea8140993189b68720f572d058a7d1af8eeaa6fad87030f"
+      "sha256": "9ec809609981526a6edf62bc165794c3aaed790473ab87e43940ddb4ebcc0af6"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -251,5 +259,5 @@
       "sha256": "88e790f4e8a56c15098dff7234e769dae7d04718745d0b839b471f55bd0ae571"
     }
   ],
-  "signature": "5882c96a88541d7d0716955c6e1fc30773a9a78d9c744366c5705cbdbe06b30a"
+  "signature": "19b79390dd3e9a81f4e326200f9c18b3f68db206a8a8ec16c61038c77d04bded"
 }

@@ -65,6 +65,16 @@ function dotnetMajor(version) {
   return match ? Number(match[1]) : 0;
 }
 
+function dotnetVersion() {
+  const direct = commandVersion("dotnet", ["--version"]);
+  if (direct) return direct;
+  if (process.platform === "win32") {
+    const defaultDotnet = path.join(process.env.ProgramFiles || "C:\\Program Files", "dotnet", "dotnet.exe");
+    if (fs.existsSync(defaultDotnet)) return commandVersion(defaultDotnet, ["--version"]);
+  }
+  return "";
+}
+
 function npmVersion() {
   const direct = commandVersion(process.platform === "win32" ? "npm.cmd" : "npm", ["--version"]);
   if (direct) return direct;
@@ -131,7 +141,7 @@ function collectReleaseWorkstationStatus(input = {}) {
   ));
   const nodeVersion = commandVersion(process.execPath, ["--version"]);
   const detectedNpmVersion = npmVersion();
-  const dotnetVersion = commandVersion("dotnet", ["--version"]);
+  const detectedDotnetVersion = dotnetVersion();
   const signing = inspectSigningEnv();
   const git = gitStatus();
   const checks = [];
@@ -158,8 +168,8 @@ function collectReleaseWorkstationStatus(input = {}) {
     checks,
     "dotnet",
     ".NET 8 SDK",
-    Boolean(dotnetVersion) && dotnetMajor(dotnetVersion) >= 8,
-    dotnetVersion || "missing",
+    Boolean(detectedDotnetVersion) && dotnetMajor(detectedDotnetVersion) >= 8,
+    detectedDotnetVersion || "missing",
     "Install .NET 8 SDK, then run npm run guard:wrapper:build."
   );
   addCheck(
@@ -183,7 +193,7 @@ function collectReleaseWorkstationStatus(input = {}) {
     "code-signing",
     "Windows code signing",
     signing.ok,
-    `certificate=${signing.certificateSource}; password=${signing.passwordConfigured ? "configured" : "missing"}`,
+    `profile=${signing.profile}; certificate=${signing.certificateSource}; password=${signing.passwordConfigured ? "configured" : "missing"}`,
     "Configure CSC_LINK and CSC_KEY_PASSWORD, or the equivalent Windows signing env variables, outside the repository."
   );
   addCheck(

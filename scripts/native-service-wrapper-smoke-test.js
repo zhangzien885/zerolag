@@ -83,7 +83,7 @@ function main() {
   assertIncludes(buildScript, "dotnet", "Build script must publish the wrapper with dotnet.");
   assertIncludes(buildScript, "--optional", "Build script must support optional CI-safe validation.");
   assertOk(dryRun.output === "build/native-service/dist/ZeroLag.RuntimeGuard.Service.exe", "Dry-run must report the expected wrapper output.");
-  assertOk(dryRun.command.includes("dotnet publish"), "Dry-run must report the publish command.");
+  assertOk(dryRun.command.includes("publish"), "Dry-run must report the publish command.");
 
   assertIncludes(installScript, "$WrapperBinary", "Install script must accept a native wrapper binary path.");
   assertIncludes(installScript, "--worker-binary", "Install script must pass the desktop worker path into the wrapper.");

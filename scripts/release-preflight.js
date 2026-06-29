@@ -31,7 +31,7 @@ function isSemver(value) {
 }
 
 function hasStrongCodeSigningSignal() {
-  return inspectSigningEnv().ok;
+  return inspectSigningEnv().productionReady;
 }
 
 function forbiddenPublicReleaseNoteTerms() {
@@ -143,7 +143,7 @@ function main() {
   const gitignore = readTextIfExists(".gitignore");
   const ciWorkflow = readTextIfExists(".github/workflows/ci.yml");
 
-  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:guard:smoke", "installer:verify", "ui:restore:smoke", "ui:support:smoke", "ui:payment:smoke", "ui:service:smoke", "release:artifacts", "release:report", "release:report:smoke", "release:workstation", "release:workstation:strict", "release:workstation:smoke", "release:version", "release:version:smoke", "signing:check", "signing:check:strict", "signing:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "guard:uninstall:smoke", "guard:wrapper:build", "guard:wrapper:smoke", "runtime:keys", "runtime:keys:smoke", "app-config:snippet", "app-config:snippet:smoke", "server:bootstrap", "server:bootstrap:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "production:config", "production:config:smoke", "production:mode", "production:mode:smoke", "server:check", "server:smoke", "server:test", "server:env-check", "server:env-status", "server:env-status:smoke", "server:sqlite-status", "server:sqlite-status:smoke", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:prepare", "update:prepare:smoke", "update:sign", "update:smoke"].forEach((scriptName) => {
+  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:guard:smoke", "installer:verify", "ui:restore:smoke", "ui:support:smoke", "ui:payment:smoke", "ui:service:smoke", "release:artifacts", "release:report", "release:report:smoke", "release:workstation", "release:workstation:strict", "release:workstation:smoke", "release:version", "release:version:smoke", "signing:check", "signing:check:strict", "signing:smoke", "signing:test-cert", "signing:test-cert:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "guard:uninstall:smoke", "guard:wrapper:build", "guard:wrapper:smoke", "runtime:keys", "runtime:keys:smoke", "app-config:snippet", "app-config:snippet:smoke", "server:bootstrap", "server:bootstrap:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "production:config", "production:config:smoke", "production:mode", "production:mode:smoke", "server:check", "server:smoke", "server:test", "server:env-check", "server:env-status", "server:env-status:smoke", "server:sqlite-status", "server:sqlite-status:smoke", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:prepare", "update:prepare:smoke", "update:sign", "update:smoke"].forEach((scriptName) => {
     addIssue(issues, hasScript(packageJson, scriptName), `package.json script is missing: ${scriptName}`);
   });
 
@@ -175,6 +175,7 @@ function main() {
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run production:mode:smoke"), "npm run ci must verify guarded release-mode switching.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run release:version:smoke"), "npm run ci must verify release version synchronization.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run signing:smoke"), "npm run ci must verify code-signing env checks.");
+  addIssue(issues, (packageJson.scripts.ci || "").includes("npm run signing:test-cert:smoke"), "npm run ci must verify local test code-signing certificate tooling.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run app-config:snippet:smoke"), "npm run ci must verify public-key app-config snippet application.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run update:prepare:smoke"), "npm run ci must verify update manifest preparation.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run server:env-status:smoke"), "npm run ci must verify redacted server env status reporting.");
@@ -257,7 +258,7 @@ function main() {
   addReleaseGate(issues, warnings, JSON.stringify(build.asarUnpack || []).includes("runtime-watchdog"), "Runtime watchdog must stay unpacked for packaged cleanup execution.");
   addReleaseGate(issues, warnings, serviceGuard.nativeServiceWrapperStatus === "implemented" && fileExists("build/native-service/dist/ZeroLag.RuntimeGuard.Service.exe"), "Native Windows Service wrapper source is ready, but the built wrapper exe must be generated and privately validated before paid public release.");
   addReleaseGate(issues, warnings, fileExists("build/icon.ico"), "Final Windows icon is not configured at build/icon.ico.");
-  addReleaseGate(issues, warnings, hasStrongCodeSigningSignal(), "Windows code-signing certificate environment is not configured in this shell.");
+  addReleaseGate(issues, warnings, hasStrongCodeSigningSignal(), "Production Windows code-signing certificate environment is not configured in this shell.");
 
   printResult({ issues, warnings, packageJson, appConfig });
 }

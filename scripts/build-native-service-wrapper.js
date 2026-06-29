@@ -23,8 +23,23 @@ function printJson(value) {
   console.log(JSON.stringify(value, null, 2));
 }
 
-function dotnetVersion() {
-  const result = spawnSync("dotnet", ["--version"], {
+function dotnetCommand() {
+  if (spawnSync("dotnet", ["--version"], {
+    cwd: rootDir,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"]
+  }).status === 0) return "dotnet";
+
+  if (process.platform === "win32") {
+    const defaultDotnet = path.join(process.env.ProgramFiles || "C:\\Program Files", "dotnet", "dotnet.exe");
+    if (fs.existsSync(defaultDotnet)) return defaultDotnet;
+  }
+
+  return "dotnet";
+}
+
+function dotnetVersion(command = dotnetCommand()) {
+  const result = spawnSync(command, ["--version"], {
     cwd: rootDir,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"]
@@ -62,12 +77,13 @@ function buildNativeServiceWrapper(input = {}) {
   const outputDir = path.resolve(input.outputDir || defaultOutputDir);
   const exePath = path.join(outputDir, exeName);
   const command = buildCommand(outputDir);
+  const dotnet = dotnetCommand();
   const dryRun = input.dryRun === true;
   const optional = input.optional === true;
   const json = input.json === true;
 
   ensureSourceFiles();
-  const version = dotnetVersion();
+  const version = dotnetVersion(dotnet);
   if (!version) {
     const result = {
       ok: optional,
@@ -75,7 +91,7 @@ function buildNativeServiceWrapper(input = {}) {
       reason: ".NET SDK was not found. Install .NET 8 SDK, then rerun npm run guard:wrapper:build.",
       project: path.relative(rootDir, projectPath).replace(/\\/g, "/"),
       output: path.relative(rootDir, exePath).replace(/\\/g, "/"),
-      command: `dotnet ${command.map((item) => item.includes(" ") ? `"${item}"` : item).join(" ")}`
+      command: `${dotnet.includes(" ") ? `"${dotnet}"` : dotnet} ${command.map((item) => item.includes(" ") ? `"${item}"` : item).join(" ")}`
     };
     if (json) printJson(result);
     else console.log(result.reason);
@@ -90,7 +106,7 @@ function buildNativeServiceWrapper(input = {}) {
       dotnetVersion: version,
       project: path.relative(rootDir, projectPath).replace(/\\/g, "/"),
       output: path.relative(rootDir, exePath).replace(/\\/g, "/"),
-      command: `dotnet ${command.map((item) => item.includes(" ") ? `"${item}"` : item).join(" ")}`
+      command: `${dotnet.includes(" ") ? `"${dotnet}"` : dotnet} ${command.map((item) => item.includes(" ") ? `"${item}"` : item).join(" ")}`
     };
     if (json) printJson(result);
     else console.log(result.command);
@@ -98,7 +114,7 @@ function buildNativeServiceWrapper(input = {}) {
   }
 
   fs.mkdirSync(outputDir, { recursive: true });
-  const publish = spawnSync("dotnet", command, {
+  const publish = spawnSync(dotnet, command, {
     cwd: rootDir,
     encoding: "utf8",
     stdio: "inherit"
@@ -145,5 +161,6 @@ if (require.main === module) {
 }
 
 module.exports = {
+  dotnetCommand,
   buildNativeServiceWrapper
 };
