@@ -390,6 +390,8 @@ async function main() {
     assert(envTemplate.stdout.includes("ZEROLAG_RUNTIME_SESSION_KEY_VERSION=runtime-session-v1"), "Server env template should include runtime session key version.");
     assert(envTemplate.stdout.includes("ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM=HMAC-SHA256"), "Server env template should include runtime session proof algorithm.");
     assert(envTemplate.stdout.includes("ZEROLAG_PAYMENT_ALLOWED_PROVIDERS=manual,manual-admin"), "Server env template should use a safer payment allowlist.");
+    assert(envTemplate.stdout.includes("# ZEROLAG_WECHAT_PAY_MCH_ID="), "Server env template should document WeChat Pay merchant fields.");
+    assert(envTemplate.stdout.includes("# ZEROLAG_ALIPAY_APP_ID="), "Server env template should document Alipay merchant fields.");
     assert(envTemplate.stdout.includes("# ZEROLAG_STATE_STORE=sqlite"), "Default server env template should document SQLite opt-in.");
     const sqliteEnvPath = path.join(tempDir, "sqlite-server.env");
     const sqliteEnvTemplate = await runNodeScript("scripts/generate-server-secrets.js", [
@@ -418,6 +420,7 @@ async function main() {
     assert(sqliteEnvCheckBody.summary.runtimeSessionKeyVersion === "runtime-session-v1", "SQLite server env check should report runtime session key version.");
     assert(sqliteEnvCheckBody.summary.runtimeSessionProofAlgorithm === "HMAC-SHA256", "SQLite server env check should report runtime session proof algorithm.");
     assert(sqliteEnvCheckBody.summary.runtimeSessionAsymmetricProofConfigured === false, "SQLite server env check should report asymmetric runtime proof status.");
+    assert(sqliteEnvCheckBody.summary.paymentProviderCredentialsConfigured === true, "SQLite server env check should report payment credential readiness for manual mode.");
     assert(!sqliteEnvCheck.stdout.includes("zl_server_"), "Server env check must not print generated secret values.");
     const deploymentReportPath = path.join(tempDir, "server-deployment-report.md");
     const deploymentReport = await runNodeScript("scripts/generate-server-deployment-report.js", [
@@ -615,6 +618,12 @@ async function main() {
         ZEROLAG_PAYMENT_PROVIDER: "wechat_pay",
         ZEROLAG_PAYMENT_ALLOWED_PROVIDERS: "wechat_pay",
         ZEROLAG_PAYMENT_URL_TEMPLATE: "https://pay.zerolag.test/checkout/{orderId}",
+        ZEROLAG_PAYMENT_MESSAGE: "Open the secure checkout page to finish payment.",
+        ZEROLAG_WECHAT_PAY_MCH_ID: "1900000001",
+        ZEROLAG_WECHAT_PAY_APP_ID: "wx0000000000000001",
+        ZEROLAG_WECHAT_PAY_API_V3_KEY: "self_test_wechat_api_v3_key_32_chars",
+        ZEROLAG_WECHAT_PAY_SERIAL_NO: "SELFTESTWECHATSERIAL001",
+        ZEROLAG_WECHAT_PAY_PRIVATE_KEY_PATH: "private-wechat-key.pem",
         ZEROLAG_RATE_LIMIT_DISABLED: "0",
         ZEROLAG_SERVER_BACKUP_DISABLED: "0",
         ZEROLAG_MAINTENANCE_DISABLED: "0"

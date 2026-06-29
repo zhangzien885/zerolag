@@ -9,6 +9,20 @@ const defaultJsonOutputPath = path.join(rootDir, "docs", "server-deployment-repo
 const defaultPaymentProvider = "manual";
 const defaultPaymentUrlTemplate = "zerolag://pay/{orderId}";
 const testPaymentProviders = new Set(["self-test", "manual-signed-webhook", "signed-webhook"]);
+const providerCredentialKeys = {
+  wechat_pay: [
+    "ZEROLAG_WECHAT_PAY_MCH_ID",
+    "ZEROLAG_WECHAT_PAY_APP_ID",
+    "ZEROLAG_WECHAT_PAY_API_V3_KEY",
+    "ZEROLAG_WECHAT_PAY_SERIAL_NO",
+    "ZEROLAG_WECHAT_PAY_PRIVATE_KEY_PATH"
+  ],
+  alipay: [
+    "ZEROLAG_ALIPAY_APP_ID",
+    "ZEROLAG_ALIPAY_PRIVATE_KEY_PATH",
+    "ZEROLAG_ALIPAY_PUBLIC_KEY_PATH"
+  ]
+};
 
 function usage() {
   console.log("Usage:");
@@ -134,6 +148,9 @@ function buildReport() {
   const envProfile = stateStore === "sqlite" ? "sqlite" : "json";
   const envCheck = checkServerEnvFile(envFileLoad.path, { profile: envProfile, strict: false });
   const paymentProvider = normalizeKind(env("ZEROLAG_PAYMENT_PROVIDER", defaultPaymentProvider));
+  const paymentCredentialKeys = providerCredentialKeys[paymentProvider] || [];
+  const paymentCredentialConfiguredCount = paymentCredentialKeys.filter((key) => Boolean(env(key))).length;
+  const paymentCredentialsReady = paymentCredentialKeys.length === 0 || paymentCredentialConfiguredCount === paymentCredentialKeys.length;
   const paymentAllowedProviders = paymentProviderList(env(
     "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS",
     "manual,manual-admin,manual-signed-webhook,signed-webhook,self-test"
@@ -195,6 +212,11 @@ function buildReport() {
       detail: `${paymentAllowedProviders.length} provider(s)`
     },
     {
+      label: "Payment provider merchant credentials are configured",
+      ok: paymentCredentialsReady,
+      detail: paymentCredentialKeys.length ? `${paymentCredentialConfiguredCount}/${paymentCredentialKeys.length} configured` : "not required for current provider"
+    },
+    {
       label: "Checkout URL template is configured",
       ok: checkoutReady,
       detail: checkoutReady ? "ready" : "placeholder or missing"
@@ -244,6 +266,9 @@ function buildReport() {
         sqliteConfigured: Boolean(envCheck.summary.sqliteConfigured),
         paymentProvider: envCheck.summary.paymentProvider || paymentProvider,
         paymentAllowedProviderCount: envCheck.summary.paymentAllowedProviderCount || paymentAllowedProviders.length,
+        paymentProviderCredentialsConfigured: Boolean(envCheck.summary.paymentProviderCredentialsConfigured),
+        paymentCredentialKeysRequired: envCheck.summary.paymentCredentialKeysRequired || paymentCredentialKeys.length,
+        paymentCredentialKeysConfigured: envCheck.summary.paymentCredentialKeysConfigured || paymentCredentialConfiguredCount,
         runtimeSessionKeyVersion: envCheck.summary.runtimeSessionKeyVersion || runtimeSessionKeyVersion,
         runtimeSessionProofAlgorithm: envCheck.summary.runtimeSessionProofAlgorithm || runtimeSessionProofAlgorithm,
         runtimeSessionAsymmetricProofConfigured: envCheck.summary.runtimeSessionAsymmetricProofConfigured === undefined
@@ -265,6 +290,9 @@ function buildReport() {
       allowedProviderCount: paymentAllowedProviders.length,
       selectedProviderAllowlisted: paymentAllowedProviders.includes(paymentProvider),
       testWebhookProvidersRemoved: !paymentAllowedProviders.some((provider) => testPaymentProviders.has(provider)),
+      merchantCredentialsConfigured: paymentCredentialsReady,
+      credentialKeysRequired: paymentCredentialKeys.length,
+      credentialKeysConfigured: paymentCredentialConfiguredCount,
       checkoutUrlTemplateConfigured: checkoutReady,
       messageConfigured: Boolean(paymentMessage)
     },
@@ -341,6 +369,7 @@ ${listMessages(envCheck.warnings, envFileLoad.path, "No env warnings detected.")
 - Allowed provider count: ${code(paymentAllowedProviders.length)}
 - Selected provider is allowlisted: ${code(yesNo(paymentAllowedProviders.includes(paymentProvider)))}
 - Test webhook providers removed: ${code(yesNo(!paymentAllowedProviders.some((provider) => testPaymentProviders.has(provider))))}
+- Merchant credentials configured: ${code(paymentCredentialKeys.length ? `${paymentCredentialConfiguredCount}/${paymentCredentialKeys.length}` : "not required")}
 - Checkout URL template configured: ${code(yesNo(checkoutReady))}
 - Payment message configured: ${code(yesNo(Boolean(paymentMessage)))}
 

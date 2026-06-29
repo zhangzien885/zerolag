@@ -10,6 +10,20 @@ const defaultPaymentWebhookSecret = "zerolag-dev-payment-webhook-secret-change-b
 const defaultPaymentProvider = "manual";
 const defaultPaymentUrlTemplate = "zerolag://pay/{orderId}";
 const testPaymentProviders = new Set(["self-test", "manual-signed-webhook", "signed-webhook"]);
+const providerCredentialKeys = {
+  wechat_pay: [
+    "ZEROLAG_WECHAT_PAY_MCH_ID",
+    "ZEROLAG_WECHAT_PAY_APP_ID",
+    "ZEROLAG_WECHAT_PAY_API_V3_KEY",
+    "ZEROLAG_WECHAT_PAY_SERIAL_NO",
+    "ZEROLAG_WECHAT_PAY_PRIVATE_KEY_PATH"
+  ],
+  alipay: [
+    "ZEROLAG_ALIPAY_APP_ID",
+    "ZEROLAG_ALIPAY_PRIVATE_KEY_PATH",
+    "ZEROLAG_ALIPAY_PUBLIC_KEY_PATH"
+  ]
+};
 
 loadServerEnvFile();
 
@@ -90,6 +104,8 @@ function buildChecklist() {
   const stateStore = normalizePaymentProvider(env("ZEROLAG_STATE_STORE", "json"));
   const sqliteStatePath = env("ZEROLAG_SQLITE_STATE_PATH", "");
   const paymentProvider = normalizePaymentProvider(env("ZEROLAG_PAYMENT_PROVIDER", defaultPaymentProvider));
+  const paymentCredentialKeys = providerCredentialKeys[paymentProvider] || [];
+  const paymentCredentialsReady = paymentCredentialKeys.every((key) => Boolean(env(key)));
   const paymentAllowedProviders = paymentProviderList(env(
     "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS",
     "manual,manual-admin,manual-signed-webhook,signed-webhook,self-test"
@@ -141,6 +157,7 @@ function buildChecklist() {
     checkbox(paymentProvider !== defaultPaymentProvider, "Real payment provider is selected", `current: ${code(paymentProvider)}`),
     checkbox(paymentAllowedProviders.includes(paymentProvider), "Provider allowlist includes the selected provider"),
     checkbox(!paymentAllowedProviders.some((provider) => testPaymentProviders.has(provider)), "Provider allowlist excludes test webhook providers"),
+    checkbox(paymentCredentialKeys.length === 0 || paymentCredentialsReady, "Provider merchant credentials are configured", paymentCredentialKeys.length ? `${paymentCredentialKeys.filter((key) => Boolean(env(key))).length}/${paymentCredentialKeys.length}` : "not required for current provider"),
     checkbox(paymentUrlTemplate !== defaultPaymentUrlTemplate, "Checkout URL template is configured", `current: ${code(paymentUrlTemplate)}`),
     checkbox(Boolean(env("ZEROLAG_PAYMENT_MESSAGE")), "Payment message is configured")
   ];

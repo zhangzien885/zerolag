@@ -8,6 +8,20 @@ const defaultPaymentWebhookSecret = "zerolag-dev-payment-webhook-secret-change-b
 const defaultPaymentProvider = "manual";
 const defaultPaymentUrlTemplate = "zerolag://pay/{orderId}";
 const testPaymentProviders = new Set(["self-test", "manual-signed-webhook", "signed-webhook"]);
+const providerCredentialKeys = {
+  wechat_pay: [
+    "ZEROLAG_WECHAT_PAY_MCH_ID",
+    "ZEROLAG_WECHAT_PAY_APP_ID",
+    "ZEROLAG_WECHAT_PAY_API_V3_KEY",
+    "ZEROLAG_WECHAT_PAY_SERIAL_NO",
+    "ZEROLAG_WECHAT_PAY_PRIVATE_KEY_PATH"
+  ],
+  alipay: [
+    "ZEROLAG_ALIPAY_APP_ID",
+    "ZEROLAG_ALIPAY_PRIVATE_KEY_PATH",
+    "ZEROLAG_ALIPAY_PUBLIC_KEY_PATH"
+  ]
+};
 
 function usage() {
   console.log("Usage:");
@@ -133,6 +147,8 @@ function inspect(entries, profile) {
   const paymentProvider = normalizePaymentProvider(value(entries, "ZEROLAG_PAYMENT_PROVIDER", defaultPaymentProvider));
   const paymentAllowedProviders = paymentProviderList(value(entries, "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS", ""));
   const paymentUrlTemplate = value(entries, "ZEROLAG_PAYMENT_URL_TEMPLATE", "");
+  const paymentCredentialKeys = providerCredentialKeys[paymentProvider] || [];
+  const missingPaymentCredentialKeys = paymentCredentialKeys.filter((key) => !String(value(entries, key, "")).trim());
   const runtimeSessionKeyVersion = value(entries, "ZEROLAG_RUNTIME_SESSION_KEY_VERSION", "");
   const runtimeSessionProofAlgorithm = normalizeRuntimeSessionProofAlgorithm(value(entries, "ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM", ""));
   const runtimeSessionPrivateKeyText = decodePrivateKeyText(entries);
@@ -189,6 +205,11 @@ function inspect(entries, profile) {
   addIssue(issues, !isDisabled(value(entries, "ZEROLAG_SERVER_BACKUP_DISABLED")), "ZEROLAG_SERVER_BACKUP_DISABLED must not be 1.");
   addIssue(issues, !isDisabled(value(entries, "ZEROLAG_MAINTENANCE_DISABLED")), "ZEROLAG_MAINTENANCE_DISABLED must not be 1.");
   addIssue(issues, paymentAllowedProviders.includes(paymentProvider), "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS must include ZEROLAG_PAYMENT_PROVIDER.");
+  addIssue(
+    issues,
+    missingPaymentCredentialKeys.length === 0,
+    `Missing ${paymentProvider} payment credential keys: ${missingPaymentCredentialKeys.join(", ")}`
+  );
 
   addIssue(warnings, paymentProvider !== defaultPaymentProvider, "Payment provider is still manual.");
   addIssue(warnings, paymentUrlTemplate && paymentUrlTemplate !== defaultPaymentUrlTemplate, "Payment URL template is still the local placeholder.");
@@ -213,6 +234,9 @@ function inspect(entries, profile) {
       sqliteConfigured: stateStore === "sqlite" && entries.has("ZEROLAG_SQLITE_STATE_PATH"),
       paymentProvider,
       paymentAllowedProviderCount: paymentAllowedProviders.length,
+      paymentCredentialKeysRequired: paymentCredentialKeys.length,
+      paymentCredentialKeysConfigured: paymentCredentialKeys.length - missingPaymentCredentialKeys.length,
+      paymentProviderCredentialsConfigured: paymentCredentialKeys.length === 0 || missingPaymentCredentialKeys.length === 0,
       runtimeSessionKeyVersion,
       runtimeSessionProofAlgorithm,
       runtimeSessionAsymmetricProofConfigured,

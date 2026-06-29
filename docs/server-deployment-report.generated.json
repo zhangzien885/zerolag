@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-28T18:15:28.915Z",
+  "generatedAt": "2026-06-29T02:52:27.157Z",
   "ready": false,
   "strictFailureSummary": "Private env file passes validation, SQLite storage and backup paths are configured, Payment provider is no longer local manual mode, Payment provider allowlist excludes test webhook providers, Checkout URL template is configured, Public website, purchase, API, update, and support URLs are production HTTPS",
   "snapshot": {
@@ -36,6 +36,11 @@
       "detail": "5 provider(s)"
     },
     {
+      "label": "Payment provider merchant credentials are configured",
+      "ok": true,
+      "detail": "not required for current provider"
+    },
+    {
       "label": "Checkout URL template is configured",
       "ok": false,
       "detail": "placeholder or missing"
@@ -64,6 +69,9 @@
       "sqliteConfigured": false,
       "paymentProvider": "manual",
       "paymentAllowedProviderCount": 5,
+      "paymentProviderCredentialsConfigured": false,
+      "paymentCredentialKeysRequired": 0,
+      "paymentCredentialKeysConfigured": 0,
       "runtimeSessionKeyVersion": "runtime-session-v1",
       "runtimeSessionProofAlgorithm": "HMAC-SHA256",
       "runtimeSessionAsymmetricProofConfigured": false,
@@ -83,6 +91,9 @@
     "allowedProviderCount": 5,
     "selectedProviderAllowlisted": true,
     "testWebhookProvidersRemoved": false,
+    "merchantCredentialsConfigured": true,
+    "credentialKeysRequired": 0,
+    "credentialKeysConfigured": 0,
     "checkoutUrlTemplateConfigured": false,
     "messageConfigured": false
   },

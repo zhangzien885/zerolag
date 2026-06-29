@@ -105,7 +105,7 @@ function bootstrapProductionEnv(input = {}) {
     envWarnings: envCheck.warnings.length,
     nextSteps: [
       "Copy the generated app-config public key snippet into assets/app-config.json runtimeSessionPublicKeyPem.",
-      "Replace payment placeholders with the real provider before paid release.",
+      "Replace payment placeholders with wechat_pay or alipay and fill the provider credential keys before paid release.",
       "Set production HTTPS URLs in assets/app-config.json and assets/update.json.",
       "Run npm run server:env-check -- --profile sqlite --strict after replacing placeholders."
     ]

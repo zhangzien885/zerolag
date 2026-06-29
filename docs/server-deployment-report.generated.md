@@ -5,7 +5,7 @@ This report is designed for private deployment review and never prints secret va
 
 ## Snapshot
 
-- Generated at: `2026-06-28T18:15:29.151Z`
+- Generated at: `2026-06-29T02:52:27.152Z`
 - Report JSON: `npm run server:deployment-report:json`
 - App version: `0.1.0`
 - App mode: `development`
@@ -28,6 +28,7 @@ This report is designed for private deployment review and never prints secret va
 - [ ] SQLite storage and backup paths are configured - stateStore=json
 - [ ] Payment provider is no longer local manual mode - provider=manual
 - [ ] Payment provider allowlist excludes test webhook providers - 5 provider(s)
+- [x] Payment provider merchant credentials are configured - not required for current provider
 - [ ] Checkout URL template is configured - placeholder or missing
 - [ ] Public website, purchase, API, update, and support URLs are production HTTPS - one or more URLs are missing/placeholders
 - [x] Rate limit, backup, and maintenance guards are enabled - enabled
@@ -66,6 +67,7 @@ This report is designed for private deployment review and never prints secret va
 - Allowed provider count: `5`
 - Selected provider is allowlisted: `yes`
 - Test webhook providers removed: `no`
+- Merchant credentials configured: `not required`
 - Checkout URL template configured: `no`
 - Payment message configured: `no`
 

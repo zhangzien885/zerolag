@@ -68,6 +68,11 @@ function writePrivateEnv(tempDir) {
     "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS=wechat_pay",
     "ZEROLAG_PAYMENT_URL_TEMPLATE=https://pay.zerolag.test/checkout/{orderId}",
     "ZEROLAG_PAYMENT_MESSAGE=Open the secure checkout page to finish payment.",
+    "ZEROLAG_WECHAT_PAY_MCH_ID=1900000001",
+    "ZEROLAG_WECHAT_PAY_APP_ID=wx0000000000000001",
+    "ZEROLAG_WECHAT_PAY_API_V3_KEY=ci_report_wechat_api_v3_key_32_chars",
+    "ZEROLAG_WECHAT_PAY_SERIAL_NO=CIREPORTWECHATSERIAL001",
+    "ZEROLAG_WECHAT_PAY_PRIVATE_KEY_PATH=private-wechat-key.pem",
     "ZEROLAG_RATE_LIMIT_DISABLED=0",
     "ZEROLAG_SERVER_BACKUP_DISABLED=0",
     "ZEROLAG_MAINTENANCE_DISABLED=0"

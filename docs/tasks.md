@@ -170,6 +170,7 @@
 - Added a private local HTML analytics report for visual review of website conversion metrics and daily trends.
 - Added private operator summaries and CSV exports for paid orders, refunds, memberships, renewals, and upcoming expirations without exposing activation codes or tokens.
 - Added configurable payment-provider readiness with checkout URL templates and signed webhook provider allowlisting for future WeChat Pay / Alipay integration.
+- Added WeChat Pay and Alipay merchant credential env placeholders plus readiness checks across env validation, deployment checklist, and deployment reports.
 - Added a generated deployment checklist command that consolidates desktop config, server secrets, payment provider, update metadata, signing, and final release gates.
 - Added a private server deployment report command that summarizes env, storage, backup, payment, update, and endpoint readiness without exposing secret values.
 - Added a redacted JSON server deployment report for CI, deployment scripts, and private operations dashboards.
