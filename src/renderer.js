@@ -38,10 +38,13 @@ const els = {
   versionInstallButton: document.querySelector("#versionInstallButton"),
   serviceState: document.querySelector("#serviceState"),
   serviceDetail: document.querySelector("#serviceDetail"),
+  serviceWebsiteState: document.querySelector("#serviceWebsiteState"),
   servicePurchaseState: document.querySelector("#servicePurchaseState"),
   serviceAccountState: document.querySelector("#serviceAccountState"),
   serviceUpdateState: document.querySelector("#serviceUpdateState"),
   serviceSupportState: document.querySelector("#serviceSupportState"),
+  serviceRefreshButton: document.querySelector("#serviceRefreshButton"),
+  serviceWebsiteButton: document.querySelector("#serviceWebsiteButton"),
   supportState: document.querySelector("#supportState"),
   supportDetail: document.querySelector("#supportDetail"),
   supportPrepareButton: document.querySelector("#supportPrepareButton"),
@@ -374,6 +377,7 @@ function setServiceStatus(node, ready) {
 function renderServiceStatus(config = {}) {
   const status = config.serviceStatus || {};
   const checks = [
+    Boolean(status.websiteConfigured),
     Boolean(status.purchaseConfigured),
     Boolean(status.accountConfigured),
     Boolean(status.updateConfigured),
@@ -385,26 +389,32 @@ function renderServiceStatus(config = {}) {
   setText(
     els.serviceDetail,
     readyCount === checks.length
-      ? "购买、账号验证、版本更新和售后入口都已准备。"
+      ? "官网、购买、账号验证、版本更新和售后入口都已准备。"
       : (readyCount
         ? "部分官方服务已准备，其余通道会在正式上线前补齐。"
         : "官方服务正在准备中，当前仍可使用本地检测和工具箱功能。")
   );
+  setServiceStatus(els.serviceWebsiteState, status.websiteConfigured);
   setServiceStatus(els.servicePurchaseState, status.purchaseConfigured);
   setServiceStatus(els.serviceAccountState, status.accountConfigured);
   setServiceStatus(els.serviceUpdateState, status.updateConfigured);
   setServiceStatus(els.serviceSupportState, status.supportConfigured);
+  els.serviceWebsiteButton.disabled = !status.websiteConfigured;
 }
 
 async function refreshServiceStatus() {
   setText(els.serviceState, "读取中");
   setText(els.serviceDetail, "正在确认购买、账号、更新和售后通道是否准备就绪。");
+  els.serviceRefreshButton.disabled = true;
 
   try {
     renderServiceStatus(await window.zeroLag.getAppConfig());
   } catch {
     setText(els.serviceState, "读取失败");
     setText(els.serviceDetail, "服务状态暂时不可用，请稍后重新打开工具箱。");
+    els.serviceWebsiteButton.disabled = true;
+  } finally {
+    els.serviceRefreshButton.disabled = false;
   }
 }
 
@@ -963,6 +973,33 @@ els.closeToolboxButton.addEventListener("click", () => {
 els.toolboxOverlay.addEventListener("click", (event) => {
   if (event.target === els.toolboxOverlay) {
     els.toolboxOverlay.hidden = true;
+  }
+});
+
+els.serviceRefreshButton.addEventListener("click", async () => {
+  await refreshServiceStatus();
+});
+
+els.serviceWebsiteButton.addEventListener("click", async () => {
+  els.serviceWebsiteButton.disabled = true;
+  try {
+    const opened = await window.zeroLag.openWebsite();
+    if (opened) {
+      setText(els.serviceState, "官网已打开");
+      setText(els.serviceDetail, "已打开官方页面，可查看下载、购买和售后入口。");
+      addLog("已打开官方页面。", "good");
+      return;
+    }
+
+    setText(els.serviceState, "官网未配置");
+    setText(els.serviceDetail, "官网入口暂未准备好，正式上线后这里会直接打开官方页面。");
+    addLog("官网入口暂未配置。", "warn");
+  } catch {
+    setText(els.serviceState, "打开失败");
+    setText(els.serviceDetail, "官方页面打开失败，请稍后再试。");
+    addLog("官方页面打开失败。", "warn");
+  } finally {
+    els.serviceWebsiteButton.disabled = false;
   }
 });
 

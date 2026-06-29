@@ -1044,6 +1044,10 @@ body.ready-mid .metric-rail {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.service-actions {
+  grid-template-columns: 1fr 1fr;
+}
+
 .tool-actions.single {
   grid-template-columns: 1fr;
 }
@@ -1086,7 +1090,7 @@ body.ready-mid .metric-rail {
 
 .service-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   margin-top: 10px;
 }

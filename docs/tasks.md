@@ -35,7 +35,7 @@
 - Redacted local support log included in diagnostics, limited to recent user-facing events and filtered for activation codes, tokens, URLs, paths, and GUIDs.
 - Official support/contact button in the game toolbox, driven by production `supportUrl` configuration.
 - Support handoff summary in the game toolbox with case ID, membership, version, runtime, and readiness status before contacting support.
-- Official service readiness card in the game toolbox for purchase, account, update, and support channels.
+- Official service readiness card in the game toolbox for website, purchase, account, update, and support channels, with refresh and website handoff actions.
 - System detection panel for CPU, discrete GPU preference, live memory usage, and Game Mode status.
 - Memory usage refresh every second with one decimal place.
 - Anti-tamper integrity manifest for protected files.
@@ -207,7 +207,7 @@
 - Added restore-assurance UI coverage for the manual recovery control, including a visible recovery status card, safer restore result payload, and CI smoke checks.
 - Added a customer-support handoff flow that prepares a redacted case ID, membership/version/runtime/readiness summary, writes the same case ID into diagnostics, and verifies the flow in CI.
 - Added formal payment-flow UI coverage for checkout handoff, official purchase fallback, order/provider display, post-payment activation-code copy, and removal of customer-visible demo-code behavior.
-- Added official service-status UI coverage for purchase, account, update, and support channel readiness without exposing internal endpoint details.
+- Added official service-status UI coverage for website, purchase, account, update, and support channel readiness without exposing internal endpoint details.
 
 ## Known Boundaries
 
