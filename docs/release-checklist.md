@@ -84,7 +84,7 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 - Run `npm run guard:uninstall:smoke` to verify uninstall cleanup coordinates runtime restore, task fallback removal, and service removal without unsafe operations.
 - Run `npm run guard:runtime:smoke` to verify the service worker can clean invalid runtime sessions in dry-run mode and write health/log state.
 - Run `npm run ui:restore:smoke` to verify the desktop restore assurance card, restore button state, and safe restore result copy.
-- Run `npm run ui:support:smoke` to verify the support handoff case ID, membership/version/runtime summary, safe support-page handoff, diagnostics bundle case ID, and redaction guardrails.
+- Run `npm run ui:support:smoke` to verify the support handoff case ID, copyable membership/version/runtime summary, safe support-page handoff, diagnostics bundle case ID, and redaction guardrails.
 - Run `npm run ui:payment:smoke` to verify the purchase dialog checkout handoff, official purchase fallback, order/provider display, paid refresh path, and no-demo-code guardrails.
 - Run `npm run ui:service:smoke` to verify the toolbox official-service readiness card and safe website handoff for website, purchase, account, update, and support channels.
 - Confirm the installer service command uses `ZeroLag.exe --runtime-guard-service` and that the native service wrapper warning is resolved before paid public release.

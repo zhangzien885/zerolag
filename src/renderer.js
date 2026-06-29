@@ -49,6 +49,7 @@ const els = {
   supportDetail: document.querySelector("#supportDetail"),
   supportPrepareButton: document.querySelector("#supportPrepareButton"),
   supportBundleButton: document.querySelector("#supportBundleButton"),
+  supportCopyButton: document.querySelector("#supportCopyButton"),
   supportContactButton: document.querySelector("#supportContactButton"),
   supportCaseId: document.querySelector("#supportCaseId"),
   supportMemberStatus: document.querySelector("#supportMemberStatus"),
@@ -109,6 +110,7 @@ let pendingPurchaseActivationCode = "";
 let pendingPaymentUrl = "";
 let pendingCheckoutMode = "payment";
 let purchaseAppConfig = {};
+let latestSupportHandoff = null;
 
 function setText(node, value) {
   node.textContent = value;
@@ -368,6 +370,30 @@ function supportUpdateLabel(update) {
   return update.current ? `当前 ${update.current}` : "已就绪";
 }
 
+function supportHandoffShareText(handoff) {
+  const membership = handoff && handoff.membership ? handoff.membership : {};
+  const runtime = handoff && handoff.runtime ? handoff.runtime : {};
+  const update = handoff && handoff.update ? handoff.update : {};
+  const caseId = handoff && handoff.caseId ? handoff.caseId : "未生成";
+  const memberText = membership.active ? "Pro 有效" : (membership.integrityOk ? "未激活" : "授权异常");
+  const runtimeText = runtime.boostActive ? "Boost 运行中" : (runtime.errorCode ? "需重试" : "日常待命");
+
+  return [
+    "ZeroLag 售后摘要",
+    `售后编号：${caseId}`,
+    `会员状态：${memberText}`,
+    `版本状态：${supportUpdateLabel(update)}`,
+    `运行状态：${runtimeText}`,
+    "我已准备好诊断信息，请协助排查。"
+  ].join("\n");
+}
+
+async function copySupportHandoffText(handoff) {
+  const text = supportHandoffShareText(handoff);
+  await navigator.clipboard.writeText(text);
+  return text;
+}
+
 function setServiceStatus(node, ready) {
   setText(node, ready ? "已准备" : "准备中");
   node.classList.toggle("ready", Boolean(ready));
@@ -457,13 +483,16 @@ async function openOfficialWebsiteWithFeedback(source = "topbar") {
 
 function renderSupportHandoff(handoff) {
   if (!handoff || !handoff.ok) {
+    latestSupportHandoff = null;
     setText(els.supportCaseId, "准备失败");
     setText(els.supportMemberStatus, "未知");
     setText(els.supportVersionStatus, "未知");
     setText(els.supportRuntimeStatus, "未知");
+    els.supportCopyButton.disabled = true;
     return;
   }
 
+  latestSupportHandoff = handoff;
   const membership = handoff.membership || {};
   const runtime = handoff.runtime || {};
   setText(els.supportCaseId, handoff.caseId || "已准备");
@@ -471,6 +500,7 @@ function renderSupportHandoff(handoff) {
   setText(els.supportVersionStatus, supportUpdateLabel(handoff.update));
   setText(els.supportRuntimeStatus, runtime.boostActive ? "Boost 运行中" : (runtime.errorCode ? "需重试" : "日常待命"));
   els.supportCaseId.title = handoff.caseId || "";
+  els.supportCopyButton.disabled = false;
 }
 
 async function refreshSupportHandoff(manual = false) {
@@ -1104,6 +1134,35 @@ els.versionInstallButton.addEventListener("click", async () => {
 
 els.supportPrepareButton.addEventListener("click", async () => {
   await refreshSupportHandoff(true);
+});
+
+els.supportCopyButton.addEventListener("click", async () => {
+  els.supportCopyButton.disabled = true;
+  setText(els.toolState, "复制售后摘要");
+
+  try {
+    const handoff = latestSupportHandoff || await refreshSupportHandoff(true);
+    if (!handoff || !handoff.ok) {
+      setText(els.toolState, "复制失败");
+      setText(els.supportState, "准备失败");
+      setText(els.supportDetail, "售后摘要暂时无法生成，请重新扫描状态后再试。");
+      addLog("售后摘要复制失败。", "warn");
+      return;
+    }
+
+    await copySupportHandoffText(handoff);
+    setText(els.toolState, "摘要已复制");
+    setText(els.supportState, "已复制");
+    setText(els.supportDetail, `售后摘要已复制，编号 ${handoff.caseId}。可直接粘贴给客服。`);
+    addLog("售后摘要已复制。", "good");
+  } catch {
+    setText(els.toolState, "复制失败");
+    setText(els.supportState, "复制失败");
+    setText(els.supportDetail, "系统剪贴板暂时不可用，请稍后重试或手动发送售后编号。");
+    addLog("售后摘要复制失败。", "warn");
+  } finally {
+    els.supportCopyButton.disabled = !latestSupportHandoff;
+  }
 });
 
 els.supportBundleButton.addEventListener("click", async () => {
