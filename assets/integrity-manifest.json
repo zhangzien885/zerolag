@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T05:08:19.255Z",
+  "generatedAt": "2026-06-29T05:17:45.878Z",
   "files": [
     {
       "path": "package.json",
@@ -8,11 +8,11 @@
     },
     {
       "path": "main.js",
-      "sha256": "cd90f4aa41f97691cbb8314e6ac61a48efff92d6f454d9c4e8fe04ec1d0f42ce"
+      "sha256": "0834a6b7ab4bf088d0594866113268cd322665fd17113ec2dbe80fb3d86561e3"
     },
     {
       "path": "preload.js",
-      "sha256": "09bfa28ae14ce3c2dab96f0398f5b062828b08e0da5092640e150f34bed9e083"
+      "sha256": "e86be9ce4a376d4b08e6473850e1aca74e8e7539f30a227c67fe39b0a30a47b6"
     },
     {
       "path": "src/index.html",
@@ -24,7 +24,7 @@
     },
     {
       "path": "src/renderer.js",
-      "sha256": "7ad3d41f5e6c61f4131ba258ec1fbbfd68e9d070bbd691f83699dd70ccf1c441"
+      "sha256": "710a0ed23474b012e53a07a7deb6dac7109d9d7910203e33c4558dc8d6531155"
     },
     {
       "path": "src/styles.css",
@@ -180,7 +180,7 @@
     },
     {
       "path": "scripts/generate-server-secrets.js",
-      "sha256": "a79b29e0c5ba8e99443001557b5383cac3f420ac3e34557f928b7d982e179e3e"
+      "sha256": "dfc526d8042eb42591c5dcd38d504bcc12c77b6f1a1ab57276396c669a2fe7c1"
     },
     {
       "path": "scripts/update-signing-smoke-test.js",
@@ -227,5 +227,5 @@
       "sha256": "32959ffda1c3a8acacbe1806248f89e439b1264bc5235bb98eab10bc167c2b5f"
     }
   ],
-  "signature": "2971870175993c62445cc4b8ed5a88ff0fe73a2ed163e32614effc6a550cd59e"
+  "signature": "50a060a13f18321b33a87a3f9988e26e8c03186ad309f5a6b3c85b120796bc3e"
 }

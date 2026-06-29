@@ -31,7 +31,7 @@ ZeroLag is a Windows extreme gaming performance optimizer.
 - Opens a configured official support page from the game toolbox for customer help and diagnostics handoff.
 - Prepares a support handoff summary with case ID, membership, version, runtime, and readiness status before contacting support.
 - Shows membership expiry and renewal guidance before Pro access runs out.
-- Shows a production-style purchase flow with checkout handoff, order refresh, payment provider status, and activation-code copy only after payment completion.
+- Shows a production-style purchase flow with checkout handoff, official purchase fallback, order refresh, payment provider status, and activation-code copy only after payment completion.
 - Includes an official website button with a placeholder URL for the future ZeroLag site.
 - Writes VBS / HVCI / Credential Guard / Hypervisor disable configuration.
 - Does not delete files.

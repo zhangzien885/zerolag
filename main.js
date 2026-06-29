@@ -39,6 +39,7 @@ function defaultAppConfig() {
     releaseMode: "development",
     releaseChannel: "alpha",
     websiteUrl: "https://example.com/zerolag",
+    purchaseUrl: "",
     apiBaseUrl: "",
     updateManifestUrl: "",
     updatePublicKeyPem: "",
@@ -69,6 +70,7 @@ function readAppConfig() {
     releaseMode: process.env.ZEROLAG_RELEASE_MODE || config.releaseMode,
     releaseChannel: process.env.ZEROLAG_RELEASE_CHANNEL || config.releaseChannel,
     websiteUrl: process.env.ZEROLAG_WEBSITE_URL || config.websiteUrl,
+    purchaseUrl: process.env.ZEROLAG_PURCHASE_URL || config.purchaseUrl,
     apiBaseUrl: process.env.ZEROLAG_API_BASE_URL || config.apiBaseUrl,
     updateManifestUrl: process.env.ZEROLAG_UPDATE_MANIFEST_URL || config.updateManifestUrl,
     updatePublicKeyPem: process.env.ZEROLAG_UPDATE_PUBLIC_KEY || config.updatePublicKeyPem,
@@ -87,6 +89,20 @@ function isProductionMode() {
 
 function isHttpUrl(value) {
   return /^https?:\/\//i.test(String(value || ""));
+}
+
+function isPlaceholderUrl(value) {
+  return /example\.com|localhost|127\.0\.0\.1/i.test(String(value || ""));
+}
+
+function isConfiguredPublicUrl(value) {
+  return isHttpUrl(value) && !isPlaceholderUrl(value);
+}
+
+function purchaseTargetFromConfig(config) {
+  if (isConfiguredPublicUrl(config.purchaseUrl)) return config.purchaseUrl;
+  if (isConfiguredPublicUrl(config.websiteUrl)) return config.websiteUrl;
+  return "";
 }
 
 function normalizeBaseUrl(value) {
@@ -2352,6 +2368,7 @@ app.whenReady().then(async () => {
       releaseMode: config.releaseMode,
       releaseChannel: config.releaseChannel,
       websiteUrl: config.websiteUrl,
+      purchaseUrl: config.purchaseUrl,
       supportUrl: config.supportUrl
     };
   });
@@ -2363,6 +2380,30 @@ app.whenReady().then(async () => {
     if (!isHttpUrl(target)) return false;
     await shell.openExternal(target);
     return true;
+  });
+  ipcMain.handle("zerolag:open-purchase-url", async () => {
+    const target = purchaseTargetFromConfig(readAppConfig());
+    if (!target) {
+      return {
+        ok: false,
+        configured: false,
+        reason: "PURCHASE_URL_NOT_CONFIGURED"
+      };
+    }
+
+    try {
+      await shell.openExternal(target);
+      return {
+        ok: true,
+        configured: true
+      };
+    } catch {
+      return {
+        ok: false,
+        configured: true,
+        reason: "PURCHASE_URL_OPEN_FAILED"
+      };
+    }
   });
   ipcMain.handle("zerolag:open-support-url", async () => {
     const target = readAppConfig().supportUrl;

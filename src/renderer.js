@@ -98,6 +98,8 @@ let boostStartedAt = "";
 let pendingPurchaseOrderId = "";
 let pendingPurchaseActivationCode = "";
 let pendingPaymentUrl = "";
+let pendingCheckoutMode = "payment";
+let purchaseAppConfig = {};
 
 function setText(node, value) {
   node.textContent = value;
@@ -586,7 +588,7 @@ async function checkForUpdates(options = {}) {
   }
 }
 
-function renderPurchaseFallback() {
+function renderPurchaseFallback(config = purchaseAppConfig) {
   pendingPurchaseOrderId = "";
   pendingPurchaseActivationCode = "";
   pendingPaymentUrl = "";
@@ -599,7 +601,7 @@ function renderPurchaseFallback() {
   setText(els.orderCode, "支付后生成");
   setText(els.paidButton, "刷新开通状态");
   setText(els.copyActivationCodeButton, "复制激活码");
-  els.paymentCheckoutButton.disabled = true;
+  renderCheckoutFallback(config);
   els.copyActivationCodeButton.disabled = true;
 }
 
@@ -615,7 +617,34 @@ function isHttpPaymentUrl(value) {
   return /^https?:\/\//i.test(String(value || ""));
 }
 
-function renderPurchaseOrder(order, payment = null) {
+function isConfiguredPublicUrl(value) {
+  return isHttpPaymentUrl(value) && !/example\.com|localhost|127\.0\.0\.1/i.test(String(value || ""));
+}
+
+function purchaseFallbackAvailable(config = {}) {
+  return isConfiguredPublicUrl(config.purchaseUrl) || isConfiguredPublicUrl(config.websiteUrl);
+}
+
+function renderCheckoutFallback(config = {}) {
+  const available = purchaseFallbackAvailable(config);
+  pendingCheckoutMode = available ? "purchase" : "disabled";
+  setText(els.paymentCheckoutButton, available ? "前往官网购买" : "支付通道准备中");
+  els.paymentCheckoutButton.disabled = !available;
+}
+
+function renderPaymentCheckout(status, config = {}) {
+  const hasPaymentUrl = isHttpPaymentUrl(pendingPaymentUrl);
+  if (!hasPaymentUrl && status !== "paid") {
+    renderCheckoutFallback(config);
+    return;
+  }
+
+  pendingCheckoutMode = "payment";
+  setText(els.paymentCheckoutButton, "打开支付页");
+  els.paymentCheckoutButton.disabled = !hasPaymentUrl || status === "paid";
+}
+
+function renderPurchaseOrder(order, payment = null, config = purchaseAppConfig) {
   const status = order && order.status ? order.status : "pending";
   const code = order && order.activationCode ? order.activationCode : "";
   pendingPurchaseOrderId = order && order.orderId ? order.orderId : pendingPurchaseOrderId;
@@ -635,7 +664,7 @@ function renderPurchaseOrder(order, payment = null) {
   els.orderCode.title = code || "";
   setText(els.paidButton, "刷新开通状态");
   setText(els.copyActivationCodeButton, code ? "复制激活码" : "等待激活码");
-  els.paymentCheckoutButton.disabled = !isHttpPaymentUrl(pendingPaymentUrl) || status === "paid";
+  renderPaymentCheckout(status, config);
   els.copyActivationCodeButton.disabled = !code;
 }
 
@@ -684,6 +713,8 @@ async function refreshPurchaseOrder() {
 async function openPurchaseOverlay() {
   els.purchaseOverlay.hidden = false;
   pendingPaymentUrl = "";
+  pendingCheckoutMode = "payment";
+  purchaseAppConfig = {};
   setText(els.memberState, "等待支付");
   setText(els.paymentState, "准备中");
   setText(els.paymentTitle, "ZeroLag Pro 月度");
@@ -692,21 +723,27 @@ async function openPurchaseOverlay() {
   setText(els.paymentOrderId, "创建中");
   setText(els.paymentProvider, "连接中");
   setText(els.orderCode, "等待开通");
+  setText(els.paymentCheckoutButton, "准备支付页");
   setText(els.paidButton, "刷新开通状态");
   setText(els.copyActivationCodeButton, "复制激活码");
   els.paymentCheckoutButton.disabled = true;
   els.copyActivationCodeButton.disabled = true;
 
+  const configPromise = window.zeroLag.getAppConfig().catch(() => ({}));
+
   try {
     const result = await window.zeroLag.createOrder();
+    const config = await configPromise;
+    purchaseAppConfig = config || {};
     if (!result || !result.ok || !result.order) {
-      renderPurchaseFallback();
+      renderPurchaseFallback(purchaseAppConfig);
       return;
     }
 
-    renderPurchaseOrder(result.order, result.payment);
+    renderPurchaseOrder(result.order, result.payment, purchaseAppConfig);
   } catch {
-    renderPurchaseFallback();
+    purchaseAppConfig = await configPromise;
+    renderPurchaseFallback(purchaseAppConfig);
   }
 }
 
@@ -1039,6 +1076,23 @@ els.paidButton.addEventListener("click", async () => {
 });
 
 els.paymentCheckoutButton.addEventListener("click", async () => {
+  if (pendingCheckoutMode === "purchase") {
+    try {
+      const result = await window.zeroLag.openPurchaseUrl();
+      if (result && result.ok) {
+        setText(els.paymentState, "官网购买");
+        setText(els.paymentMessage, "已打开官方购买页。完成购买后回到 ZeroLag，刷新开通状态或输入获得的激活码。");
+        addLog("已打开官方购买页。", "good");
+        return;
+      }
+    } catch {
+      // Keep purchase fallbacks user-safe; configuration details stay out of the UI.
+    }
+
+    addLog("官方购买页暂未配置，请稍后再试。", "warn");
+    return;
+  }
+
   if (!isHttpPaymentUrl(pendingPaymentUrl)) {
     addLog("支付页暂未准备好，请重新创建订单或稍后再试。", "warn");
     return;

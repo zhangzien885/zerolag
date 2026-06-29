@@ -118,7 +118,7 @@ function buildEnvFile(inputProfile = "json") {
     "ZEROLAG_PAYMENT_PROVIDER=manual",
     "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS=manual,manual-admin",
     "ZEROLAG_PAYMENT_URL_TEMPLATE=zerolag://pay/{orderId}",
-    "ZEROLAG_PAYMENT_MESSAGE=Manual payment confirmation is required.",
+    "ZEROLAG_PAYMENT_MESSAGE=支付通道正在准备，完成支付确认后会自动开通。",
     "",
     "# WeChat Pay production placeholders. Uncomment and fill after merchant approval.",
     "# ZEROLAG_WECHAT_PAY_MCH_ID=",

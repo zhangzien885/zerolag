@@ -30,7 +30,7 @@ const defaultPaymentAllowedProviders = [
   "self-test"
 ];
 const defaultPaymentUrlTemplate = "zerolag://pay/{orderId}";
-const defaultPaymentMessage = "Manual payment confirmation is required in the MVP.";
+const defaultPaymentMessage = "支付通道正在准备，完成支付确认后会自动开通。";
 const defaultRateLimitByRoute = {
   "website:events": 240,
   "orders:create": 30,
