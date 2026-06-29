@@ -1,6 +1,6 @@
 # ZeroLag
 
-ZeroLag is a Windows gaming performance optimizer prototype.
+ZeroLag is a Windows extreme gaming performance optimizer.
 
 ## First version
 
