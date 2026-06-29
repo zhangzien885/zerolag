@@ -38,6 +38,39 @@ function hasStrongCodeSigningSignal() {
   );
 }
 
+function forbiddenPublicReleaseNoteTerms() {
+  return [
+    "subscription control",
+    "protection strategy",
+    "permanent config",
+    "watchdog",
+    "task scheduler",
+    "windows service",
+    "anti-crack",
+    "reverse engineering",
+    "private key",
+    "server env",
+    "forbidden helper",
+    "\u53cd\u7834\u89e3",
+    "\u6c38\u4e45\u7559\u5b58",
+    "\u8ba2\u9605\u63a7\u5236",
+    "\u4fdd\u62a4\u7b56\u7565",
+    "\u5f3a\u6740\u515c\u5e95",
+    "\u79c1\u94a5",
+    "\u670d\u52a1\u7aef\u73af\u5883"
+  ];
+}
+
+function publicReleaseNotesAreSafe(notes) {
+  if (!Array.isArray(notes)) return true;
+  const forbiddenTerms = forbiddenPublicReleaseNoteTerms();
+  return notes.every((note) => {
+    if (typeof note !== "string") return true;
+    const lowered = note.toLowerCase();
+    return !forbiddenTerms.some((term) => lowered.includes(term.toLowerCase()));
+  });
+}
+
 function addIssue(issues, ok, message) {
   if (!ok) issues.push(message);
 }
@@ -187,6 +220,7 @@ function main() {
   addReleaseGate(issues, warnings, updateManifest.latest === packageJson.version, "Update manifest latest version must match package.json version before release.");
   addReleaseGate(issues, warnings, isHttpsUrl(updateManifest.downloadUrl) && !isPlaceholderUrl(updateManifest.downloadUrl), "Update manifest downloadUrl must be a real HTTPS URL.");
   addReleaseGate(issues, warnings, updateManifest.signatureAlgorithm === "RSA-SHA256" && Boolean(updateManifest.signature), "Update manifest must be signed before release.");
+  addIssue(issues, publicReleaseNotesAreSafe(updateManifest.releaseNotes), "Update manifest releaseNotes must not contain internal protection, service, key, or packaging wording.");
   addReleaseGate(issues, warnings, Boolean(packageJson.devDependencies && packageJson.devDependencies["electron-builder"]), "electron-builder is not installed yet.");
   addReleaseGate(issues, warnings, build.asar === true, "Installer packaging should keep app files inside an asar archive.");
   addReleaseGate(issues, warnings, JSON.stringify(build.asarUnpack || []).includes("runtime-guard-core"), "Runtime guard core must stay unpacked for packaged watchdog execution.");

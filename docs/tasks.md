@@ -153,6 +153,7 @@
 - Added isolated website release publishing smoke tests for both available and preparing states, without mutating the real website manifest.
 - Added sanitized public release notes rendering on the website download panel, sourced from verified release metadata.
 - Added website release-note filtering so internal protection, watchdog, server-env, private-key, and helper-packaging wording is not published to customers.
+- Added release-preflight validation so `assets/update.json` public release notes cannot contain internal protection, service, key, or packaging wording before website publishing.
 - Added human-readable installer size display on the website download panel while keeping byte-accurate release metadata.
 - Added a website download-panel control for copying the full installer SHA256 checksum, with smoke-test coverage.
 - Added a website download-panel support CTA that opens the configured production support URL when available.

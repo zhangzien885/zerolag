@@ -50,6 +50,7 @@ npm run server:deployment-report:strict
 
 - Update `assets/update.json` `latest` to match `package.json` version.
 - Replace placeholder download URLs with the final HTTPS download page.
+- Keep `assets/update.json` public release notes customer-facing; do not mention internal protection strategy, watchdogs, Windows services, private keys, server env, or packaging helper details.
 - Run `npm run update:smoke` to verify the signing toolchain with temporary keys.
 - Sign the update manifest with the private update key.
 - Verify the manifest with the public key.
