@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T03:45:40.621Z",
+  "generatedAt": "2026-06-29T03:52:02.597Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "53893769f2ad67f73b4c2f39421387bac6a27e7c2e55992163c6fe70b4ddbeb0"
+      "sha256": "6effb553e322424830f17d36b68b35d1f686555d4e076b5d2168de24c37a829f"
     },
     {
       "path": "main.js",
@@ -136,7 +136,7 @@
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "b4352309c9ba2505c88f81f89aefe2fd16c2cb6a29e5a297d6303aac0a1c1b80"
+      "sha256": "bd6fbaed123cabf64a20ef608a436f202c2b00d61a42ed63b8c7546377724ab1"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -227,5 +227,5 @@
       "sha256": "4c2f2e026519154d9549d810f6ecbd0cc2028d2aeb09ff35c37c03869cb70a67"
     }
   ],
-  "signature": "f61242c9ef9c45767a9b6bd80011b051eae60ffb6f7b34f00d0f472282241b25"
+  "signature": "b1157d3bc41be6fd47ebc65388e231e725c605e3aa91f94b0f599c04b9d57eee"
 }
