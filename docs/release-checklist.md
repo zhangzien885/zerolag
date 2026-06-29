@@ -23,6 +23,7 @@ npm run server:deployment-report:strict
 - Generate the update-signing keypair with `npm run update:sign -- --generate-keypair .secrets\update-private.pem .secrets\update-public.pem --app-config-snippet .secrets\update-app-config-snippet.json`.
 - Add the generated update public-key snippet to `updatePublicKeyPem`; never ship or commit the matching private key.
 - Copy only the generated app config snippet public key to `runtimeSessionPublicKeyPem`; never ship the matching private key.
+- Prefer `npm run app-config:snippet -- --snippet <snippet.json> --write` when applying public-key snippets so private key material is rejected automatically.
 
 ## 2. Server Readiness
 
