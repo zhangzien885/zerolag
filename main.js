@@ -993,11 +993,11 @@ function supportConfigSnapshot(config) {
     releaseMode: config.releaseMode,
     releaseChannel: config.releaseChannel,
     apiConfigured: Boolean(normalizeBaseUrl(config.apiBaseUrl)),
-    websiteConfigured: isHttpUrl(config.websiteUrl),
-    updateManifestConfigured: isHttpUrl(config.updateManifestUrl),
+    websiteConfigured: isConfiguredPublicUrl(config.websiteUrl),
+    updateManifestConfigured: isConfiguredPublicUrl(config.updateManifestUrl),
     updatePublicKeyConfigured: Boolean(normalizePem(config.updatePublicKeyPem)),
     runtimeSessionPublicKeyConfigured: Boolean(normalizePem(config.runtimeSessionPublicKeyPem)),
-    supportConfigured: isHttpUrl(config.supportUrl),
+    supportConfigured: isConfiguredPublicUrl(config.supportUrl),
     localDemoAllowed: Boolean(config.allowLocalDemoLicense),
     offlineGraceHours: Number(config.offlineGraceHours || 0)
   };
@@ -2436,18 +2436,27 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle("zerolag:open-support-url", async () => {
     const target = readAppConfig().supportUrl;
-    if (!isHttpUrl(target)) {
+    if (!isConfiguredPublicUrl(target)) {
       return {
         ok: false,
-        configured: false
+        configured: false,
+        reason: "SUPPORT_URL_NOT_CONFIGURED"
       };
     }
 
-    await shell.openExternal(target);
-    return {
-      ok: true,
-      configured: true
-    };
+    try {
+      await shell.openExternal(target);
+      return {
+        ok: true,
+        configured: true
+      };
+    } catch {
+      return {
+        ok: false,
+        configured: true,
+        reason: "SUPPORT_URL_OPEN_FAILED"
+      };
+    }
   });
   ipcMain.handle("zerolag:open-payment-url", async (_event, url) => {
     const target = String(url || "");

@@ -1155,10 +1155,16 @@ els.supportContactButton.addEventListener("click", async () => {
       return;
     }
 
-    setText(els.toolState, "待配置");
-    setText(els.supportState, "未配置");
-    setText(els.supportDetail, "客服入口暂未配置，正式官网上线后这里会直接打开支持页面。");
-    addLog("客服入口暂未配置。", "warn");
+    const configured = Boolean(result && result.configured);
+    setText(els.toolState, configured ? "打开失败" : "待配置");
+    setText(els.supportState, configured ? "打开失败" : "未配置");
+    setText(
+      els.supportDetail,
+      configured
+        ? "官方支持页面打开失败，请稍后再试。"
+        : "客服入口暂未配置，正式官网上线后这里会直接打开支持页面。"
+    );
+    addLog(configured ? "官方支持入口打开失败。" : "客服入口暂未配置。", "warn");
   } catch {
     setText(els.toolState, "打开失败");
     setText(els.supportState, "打开失败");

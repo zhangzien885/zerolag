@@ -35,6 +35,11 @@ function main() {
   assertIncludes(mainJs, "supportHandoffSummary", "Main process must build a redacted support handoff summary.");
   assertIncludes(mainJs, "getSupportHandoff", "Main process must expose a support handoff read path.");
   assertIncludes(mainJs, "zerolag:get-support-handoff", "IPC must expose support handoff.");
+  assertIncludes(mainJs, "zerolag:open-support-url", "IPC must expose official support opening.");
+  assertIncludes(mainJs, "SUPPORT_URL_NOT_CONFIGURED", "Support opening must reject missing or placeholder URLs.");
+  assertIncludes(mainJs, "SUPPORT_URL_OPEN_FAILED", "Support opening must fail safely when the browser handoff fails.");
+  assertIncludes(mainJs, "isConfiguredPublicUrl(target)", "Support opening must reject placeholder support targets.");
+  assertIncludes(mainJs, "supportConfigured: isConfiguredPublicUrl(config.supportUrl)", "Support summaries must reject placeholder support URLs.");
   assertIncludes(mainJs, "payload.supportHandoff = supportHandoffSummary(payload)", "Diagnostic bundle must include the same support handoff summary.");
   assertIncludes(mainJs, "caseId: payload.supportHandoff.caseId", "Support bundle result summary must return the case ID.");
   assertOk(!/activationCode|serverToken|licenseToken|accessToken|webhook|privateKey/i.test(handoffBlock), "Support handoff summary must not include sensitive token/code fields.");
@@ -48,6 +53,8 @@ function main() {
   assertIncludes(indexHtml, 'id="supportRuntimeStatus"', "Toolbox must show runtime support status.");
   assertIncludes(rendererJs, "refreshSupportHandoff", "Renderer must refresh support handoff.");
   assertIncludes(rendererJs, "window.zeroLag.getSupportHandoff", "Renderer must call support handoff IPC.");
+  assertIncludes(rendererJs, "window.zeroLag.openSupportUrl", "Renderer must open support through IPC.");
+  assertIncludes(rendererJs, "result && result.configured", "Renderer must distinguish configured support-open failures from unconfigured support.");
   assertIncludes(rendererJs, "supportPrepareButton.addEventListener", "Renderer must wire support preparation action.");
   assertIncludes(rendererJs, "summary.caseId", "Renderer must surface generated support case IDs.");
   assertIncludes(stylesCss, ".support-handoff", "Support handoff must have dedicated styling.");

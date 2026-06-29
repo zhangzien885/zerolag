@@ -30,6 +30,7 @@ function main() {
   assertIncludes(mainJs, "purchaseConfigured: Boolean(purchaseTargetFromConfig(config))", "Purchase readiness must reuse official purchase fallback rules.");
   assertIncludes(mainJs, "isConfiguredPublicUrl(config.apiBaseUrl)", "Account readiness must require a configured public API URL.");
   assertIncludes(mainJs, "isConfiguredPublicUrl(config.updateManifestUrl)", "Update readiness must require a configured public update URL.");
+  assertIncludes(mainJs, "supportConfigured: isConfiguredPublicUrl(config.supportUrl)", "Support readiness must require a configured public support URL.");
   assertIncludes(indexHtml, 'id="serviceState"', "Toolbox must include official service state.");
   assertIncludes(indexHtml, 'id="serviceWebsiteState"', "Toolbox must include website service state.");
   assertIncludes(indexHtml, 'id="servicePurchaseState"', "Toolbox must include purchase service state.");
