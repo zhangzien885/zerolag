@@ -32,8 +32,10 @@ function main() {
 
   try {
     const fakeExe = path.join(tempDir, "ZeroLag.exe");
+    const fakeWrapper = path.join(tempDir, "ZeroLag.RuntimeGuard.Service.exe");
     const guardDataDir = path.join(tempDir, "guard");
     fs.writeFileSync(fakeExe, "placeholder executable for WhatIf smoke test", "utf8");
+    fs.writeFileSync(fakeWrapper, "placeholder native service wrapper for WhatIf smoke test", "utf8");
 
     const blocked = runPowerShell([
       "-File",
@@ -46,9 +48,23 @@ function main() {
     ]);
     assertOk(blocked.status !== 0, "Install script should refuse Electron worker registration unless explicitly allowed.");
     assertOk(
-      `${blocked.stderr}\n${blocked.stdout}`.includes("Native Windows Service wrapper is not implemented yet"),
+      `${blocked.stderr}\n${blocked.stdout}`.includes("Native Windows Service wrapper binary is missing"),
       "Install script should explain why registration is blocked."
     );
+
+    const wrapperWhatIf = runPowerShell([
+      "-File",
+      installScriptPath,
+      "-ServiceBinary",
+      fakeExe,
+      "-WrapperBinary",
+      fakeWrapper,
+      "-GuardDataDir",
+      guardDataDir,
+      "-WhatIf"
+    ]);
+    assertOk(wrapperWhatIf.status === 0, `Install script wrapper WhatIf validation failed: ${wrapperWhatIf.stderr || wrapperWhatIf.stdout}`);
+    assertOk(!fs.existsSync(guardDataDir), "Install script wrapper WhatIf validation should not create the guard data directory.");
 
     const allowedWhatIf = runPowerShell([
       "-File",

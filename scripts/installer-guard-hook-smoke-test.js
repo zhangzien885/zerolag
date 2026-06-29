@@ -39,7 +39,9 @@ function main() {
   assertIncludes(hook, "install-runtime-guard-service.ps1", "Installer guard hook must attempt service installation first.");
   assertIncludes(hook, "install-runtime-guard-task.ps1", "Installer guard hook must fall back to Task Scheduler registration.");
   assertIncludes(hook, "uninstall-runtime-cleanup.ps1", "Installer guard hook must coordinate runtime restore and guard removal during uninstall.");
-  assertIncludes(hook, "-AllowElectronWorkerService", "Service registration must require the explicit private validation switch.");
+  assertIncludes(hook, "-WrapperBinary", "Service registration must pass the native wrapper binary path.");
+  assertIncludes(hook, "ZeroLag.RuntimeGuard.Service.exe", "Service registration must use the native wrapper executable.");
+  assertOk(!hook.includes("-AllowElectronWorkerService"), "Installer hook must not enable Electron worker-mode service registration by default.");
   assertIncludes(hook, "-AllowTaskFallbackRegistration", "Task fallback registration must require the explicit private validation switch.");
   assertOk(
     hook.indexOf("install-runtime-guard-service.ps1") < hook.indexOf("install-runtime-guard-task.ps1"),

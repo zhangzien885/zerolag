@@ -88,18 +88,21 @@ Implemented in prototype:
 - Windows Service guard manifest plus install/uninstall script assets.
 - Runtime guard core and service worker that reuse the same signed-session cleanup flow as the desktop watchdog.
 - Desktop entry mode `--runtime-guard-service`, allowing the installed ZeroLag executable to run the guard worker without opening the UI.
-- Service install script registration is blocked by default and requires an explicit private-validation switch until the native wrapper exists.
+- Native Windows Service wrapper source and build command are in place under `build/native-service` and `npm run guard:wrapper:build`.
+- Service install script now prefers the native wrapper binary and only allows Electron worker-mode registration through an explicit private-validation switch.
 - Installer-managed Task Scheduler fallback assets for service-install failure, with logon and periodic cleanup triggers gated behind an explicit private-validation switch.
 - NSIS installer guard hook that is ready to call service registration first, then the visible Task Scheduler fallback if service registration fails, while staying disabled unless `ZEROLAG_ENABLE_GUARD_REGISTRATION` is explicitly defined.
 - CI smoke test for transparent service-guard packaging and prohibited behavior guardrails.
 - CI smoke test for service-worker cleanup behavior in dry-run mode.
 - CI smoke test for Task Scheduler fallback registration gating.
+- CI smoke test for native wrapper source, build-command dry run, and installer wiring.
 - CI smoke test for the gated NSIS installer guard hook.
 
 Still required for paid production:
 
-- Native Windows Service wrapper executable.
-- Installer service registration without the private-validation guard after the native wrapper is ready.
+- Build `ZeroLag.RuntimeGuard.Service.exe` from the native wrapper source on a Windows build machine with the .NET 8 SDK.
+- Package and privately validate the native wrapper executable in the signed installer.
+- Update the wrapper status to implemented after the executable is built, packaged, and validated.
 - Enable the NSIS guard hook in the final signed installer after the native service wrapper is ready and privately validated.
 - Native wrapper embedding/locking of the RSA runtime-session public key and full production key rotation.
 - Server-side subscription/session validation.

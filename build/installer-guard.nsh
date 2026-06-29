@@ -1,7 +1,7 @@
 !macro customInstall
   !ifdef ZEROLAG_ENABLE_GUARD_REGISTRATION
     DetailPrint "ZeroLag: installing visible runtime guard service."
-    ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\service-guard\install-runtime-guard-service.ps1" -ServiceBinary "$INSTDIR\ZeroLag.exe" -AllowElectronWorkerService' $0
+    ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\service-guard\install-runtime-guard-service.ps1" -ServiceBinary "$INSTDIR\ZeroLag.exe" -WrapperBinary "$INSTDIR\resources\service-guard\ZeroLag.RuntimeGuard.Service.exe"' $0
     StrCmp $0 0 guard_install_done 0
 
     DetailPrint "ZeroLag: service install did not complete; registering visible Task Scheduler fallback."

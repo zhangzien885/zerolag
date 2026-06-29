@@ -16,6 +16,8 @@ const protectedFiles = [
   "scripts/runtime-guard-core.js",
   "scripts/runtime-guard-service.js",
   "scripts/runtime-guard-service-smoke-test.js",
+  "scripts/build-native-service-wrapper.js",
+  "scripts/native-service-wrapper-smoke-test.js",
   "scripts/generate-runtime-session-keys.js",
   "scripts/runtime-session-keygen-smoke-test.js",
   "scripts/bootstrap-production-env.js",
@@ -61,7 +63,9 @@ const protectedFiles = [
   "build/uninstall-runtime-guard-service.ps1",
   "build/install-runtime-guard-task.ps1",
   "build/uninstall-runtime-guard-task.ps1",
-  "build/installer-guard.nsh"
+  "build/installer-guard.nsh",
+  "build/native-service/ZeroLag.RuntimeGuard.Service.csproj",
+  "build/native-service/Program.cs"
 ];
 
 function sha256File(filePath) {

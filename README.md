@@ -45,8 +45,8 @@ ZeroLag is a Windows extreme gaming performance optimizer.
 
 - Configure `assets/app-config.json` with the production website, API, update manifest, and demo-license switch.
 - Implement the backend contract in `docs/server-api-contract.md`.
-- Add a Windows Service guard before paid release.
-- Move the prototype Task Scheduler guard into the installer as a production fallback if service installation fails.
+- Build and privately validate the native Windows Service wrapper before paid release.
+- Keep Task Scheduler registration as the installer fallback if service installation fails.
 - The guard must restore the original power plan and delete runtime tuning after crash, force kill, logout, restart, subscription expiry, or integrity failure.
 - Deploy the static landing page in `website/` as the official ZeroLag website.
 - Keep `docs/tasks.md` updated as prototype features move into the paid release roadmap.

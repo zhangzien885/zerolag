@@ -115,8 +115,12 @@ function main() {
   addIssue(issues, fileExists("build/uninstall-runtime-guard-task.ps1"), "Task Scheduler fallback uninstall script is missing.");
   addIssue(issues, fileExists("build/uninstall-runtime-cleanup.ps1"), "Runtime uninstall cleanup coordinator is missing.");
   addIssue(issues, fileExists("build/installer-guard.nsh"), "NSIS installer guard hook is missing.");
+  addIssue(issues, fileExists("build/native-service/ZeroLag.RuntimeGuard.Service.csproj"), "Native Windows Service wrapper project is missing.");
+  addIssue(issues, fileExists("build/native-service/Program.cs"), "Native Windows Service wrapper source is missing.");
   addIssue(issues, fileExists("scripts/runtime-guard-core.js"), "Runtime guard core worker is missing.");
   addIssue(issues, fileExists("scripts/runtime-guard-service.js"), "Runtime guard service worker is missing.");
+  addIssue(issues, fileExists("scripts/build-native-service-wrapper.js"), "Native Windows Service wrapper build tool is missing.");
+  addIssue(issues, fileExists("scripts/native-service-wrapper-smoke-test.js"), "Native Windows Service wrapper smoke test is missing.");
   addIssue(issues, fileExists("scripts/generate-runtime-session-keys.js"), "Runtime session key generation tool is missing.");
   addIssue(issues, fileExists("scripts/runtime-session-keygen-smoke-test.js"), "Runtime session keygen smoke test is missing.");
   addIssue(issues, fileExists("scripts/bootstrap-production-env.js"), "Production server env bootstrap tool is missing.");
@@ -137,7 +141,7 @@ function main() {
   const gitignore = readTextIfExists(".gitignore");
   const ciWorkflow = readTextIfExists(".github/workflows/ci.yml");
 
-  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:guard:smoke", "installer:verify", "ui:restore:smoke", "ui:support:smoke", "ui:payment:smoke", "ui:service:smoke", "release:artifacts", "release:report", "release:report:smoke", "release:version", "release:version:smoke", "signing:check", "signing:check:strict", "signing:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "guard:uninstall:smoke", "runtime:keys", "runtime:keys:smoke", "app-config:snippet", "app-config:snippet:smoke", "server:bootstrap", "server:bootstrap:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "production:config", "production:config:smoke", "production:mode", "production:mode:smoke", "server:check", "server:smoke", "server:test", "server:env-check", "server:env-status", "server:env-status:smoke", "server:sqlite-status", "server:sqlite-status:smoke", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:prepare", "update:prepare:smoke", "update:sign", "update:smoke"].forEach((scriptName) => {
+  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:guard:smoke", "installer:verify", "ui:restore:smoke", "ui:support:smoke", "ui:payment:smoke", "ui:service:smoke", "release:artifacts", "release:report", "release:report:smoke", "release:version", "release:version:smoke", "signing:check", "signing:check:strict", "signing:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "guard:uninstall:smoke", "guard:wrapper:build", "guard:wrapper:smoke", "runtime:keys", "runtime:keys:smoke", "app-config:snippet", "app-config:snippet:smoke", "server:bootstrap", "server:bootstrap:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "production:config", "production:config:smoke", "production:mode", "production:mode:smoke", "server:check", "server:smoke", "server:test", "server:env-check", "server:env-status", "server:env-status:smoke", "server:sqlite-status", "server:sqlite-status:smoke", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:prepare", "update:prepare:smoke", "update:sign", "update:smoke"].forEach((scriptName) => {
     addIssue(issues, hasScript(packageJson, scriptName), `package.json script is missing: ${scriptName}`);
   });
 
@@ -162,6 +166,7 @@ function main() {
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:task:smoke"), "npm run ci must verify Task Scheduler fallback gating.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:runtime:smoke"), "npm run ci must verify the runtime guard service worker.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:uninstall:smoke"), "npm run ci must verify uninstall cleanup coordination.");
+  addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:wrapper:smoke"), "npm run ci must verify the native Windows Service wrapper source and installer wiring.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run runtime:keys:smoke"), "npm run ci must verify runtime session key generation.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run server:bootstrap:smoke"), "npm run ci must verify production server env bootstrap.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run production:config:smoke"), "npm run ci must verify production URL config generation.");
@@ -207,8 +212,12 @@ function main() {
   addIssue(issues, build.nsis && build.nsis.include === "build/installer-guard.nsh", "Installer packaging config must include the NSIS guard hook.");
   addIssue(issues, build.win && build.win.requestedExecutionLevel === "requireAdministrator", "Windows package must request administrator execution.");
   addIssue(issues, serviceGuard.serviceName === "ZeroLagRuntimeGuard", "Windows Service guard manifest must use the ZeroLagRuntimeGuard service name.");
-  addIssue(issues, serviceGuard.serviceBinary === "ZeroLag.exe", "Windows Service guard manifest must use the installed ZeroLag executable for worker mode.");
-  addIssue(issues, serviceGuard.serviceBinaryStatus === "electron-worker-mode", "Windows Service guard manifest must mark the Electron worker-mode entry.");
+  addIssue(issues, serviceGuard.serviceBinary === "ZeroLag.RuntimeGuard.Service.exe", "Windows Service guard manifest must use the native service wrapper binary.");
+  addIssue(issues, serviceGuard.desktopWorkerBinary === "ZeroLag.exe", "Windows Service guard manifest must keep the installed ZeroLag executable as the worker binary.");
+  addIssue(issues, serviceGuard.serviceBinaryStatus === "native-wrapper-source", "Windows Service guard manifest must mark the native wrapper source readiness state.");
+  addIssue(issues, serviceGuard.nativeServiceWrapperSource === "build/native-service", "Windows Service guard manifest must point to native wrapper source.");
+  addIssue(issues, serviceGuard.nativeServiceWrapperBuildScript === "scripts/build-native-service-wrapper.js", "Windows Service guard manifest must point to the native wrapper build script.");
+  addIssue(issues, serviceGuard.nativeServiceWrapperOutput === "build/native-service/dist/ZeroLag.RuntimeGuard.Service.exe", "Windows Service guard manifest must point to the native wrapper build output.");
   addIssue(issues, serviceGuard.installerRegistrationStatus === "explicit-private-validation-only", "Windows Service guard registration must stay explicitly gated until the native wrapper exists.");
   addIssue(issues, serviceGuard.taskSchedulerFallback && serviceGuard.taskSchedulerFallback.registrationStatus === "explicit-private-validation-only", "Task Scheduler fallback registration must stay explicitly gated.");
   addIssue(issues, serviceGuard.taskSchedulerFallback && serviceGuard.taskSchedulerFallback.enabledWhenServiceInstallFails === true, "Task Scheduler fallback must be enabled when service installation fails.");
@@ -242,7 +251,7 @@ function main() {
   addReleaseGate(issues, warnings, build.asar === true, "Installer packaging should keep app files inside an asar archive.");
   addReleaseGate(issues, warnings, JSON.stringify(build.asarUnpack || []).includes("runtime-guard-core"), "Runtime guard core must stay unpacked for packaged watchdog execution.");
   addReleaseGate(issues, warnings, JSON.stringify(build.asarUnpack || []).includes("runtime-watchdog"), "Runtime watchdog must stay unpacked for packaged cleanup execution.");
-  addReleaseGate(issues, warnings, serviceGuard.nativeServiceWrapperStatus === "implemented", "Native Windows Service wrapper is not implemented yet; Electron worker mode is ready for the installer entry.");
+  addReleaseGate(issues, warnings, serviceGuard.nativeServiceWrapperStatus === "implemented" && fileExists("build/native-service/dist/ZeroLag.RuntimeGuard.Service.exe"), "Native Windows Service wrapper source is ready, but the built wrapper exe must be generated and privately validated before paid public release.");
   addReleaseGate(issues, warnings, fileExists("build/icon.ico"), "Final Windows icon is not configured at build/icon.ico.");
   addReleaseGate(issues, warnings, hasStrongCodeSigningSignal(), "Windows code-signing certificate environment is not configured in this shell.");
 

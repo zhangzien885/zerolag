@@ -85,6 +85,8 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 - Run `npm run package:smoke` to verify the unpacked build contains the executable, app archive, icon, and unpacked runtime watchdog.
 - Run `npm run installer:guard:smoke` to verify the NSIS guard hook is present, gated, uninstall-aware, and service-first before Task Scheduler fallback.
 - Run `npm run guard:service:smoke` to verify the Windows Service guard manifest, install script, uninstall script, and packaged resources.
+- Run `npm run guard:wrapper:smoke` to verify the native wrapper source, build command, and installer wiring before building.
+- Install the .NET 8 SDK on the release build machine, then run `npm run guard:wrapper:build` to generate `build/native-service/dist/ZeroLag.RuntimeGuard.Service.exe`.
 - Run `npm run guard:install:smoke` to verify the service install script refuses accidental registration unless the private validation switch is passed with `-WhatIf`.
 - Run `npm run guard:task:smoke` to verify the Task Scheduler fallback refuses accidental registration unless the private validation switch is passed with `-WhatIf`.
 - Run `npm run guard:uninstall:smoke` to verify uninstall cleanup coordinates runtime restore, task fallback removal, and service removal without unsafe operations.
@@ -94,7 +96,7 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 - Run `npm run ui:payment:smoke` to verify the purchase dialog checkout handoff, activation-code paste normalization, order-ID copy, official purchase fallback, order/provider display, paid refresh path, and no-demo-code guardrails.
 - Run `npm run ui:account:smoke` to verify WeChat, QQ, email, and phone account binding UI, IPC, server routes, and membership-link guardrails.
 - Run `npm run ui:service:smoke` to verify the toolbox official-service readiness card and safe website handoff for website, purchase, account, update, and support channels.
-- Confirm the installer service command uses `ZeroLag.exe --runtime-guard-service` and that the native service wrapper warning is resolved before paid public release.
+- Confirm the installer service command uses `ZeroLag.RuntimeGuard.Service.exe --worker-binary ZeroLag.exe` and that the native service wrapper warning is resolved before paid public release.
 - Keep `ZEROLAG_ENABLE_GUARD_REGISTRATION` disabled for development installers; enable it only for private validation or the final signed build after the native service wrapper is ready.
 - Run `npm run dist:win` only after the strict release gates are satisfied.
 - Run `npm run installer:smoke` to verify the installer executable, blockmap, update metadata, and Windows installer settings.
