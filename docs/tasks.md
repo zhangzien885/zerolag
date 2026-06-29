@@ -131,6 +131,7 @@
 - Added configurable runtime-session proof signing so development can keep HMAC while paid release environments can issue server-only RSA-SHA256 runtime-session proofs without exposing private key material to the desktop client.
 - Added desktop and runtime-guard RSA proof verification using `runtimeSessionPublicKeyPem`, with runtime session subscription/revision fields bound into the local session signature.
 - Added runtime-session RSA key generation tooling that writes server-private env values and a desktop public-key config snippet without printing private key material.
+- Added a production server env bootstrap command that creates private server env values, runtime-session RSA keys, and a public-key app-config snippet with smoke coverage.
 - Added release preflight checks and a release checklist for packaging, signing, update metadata, production config, and strict final gates.
 - Added Electron Builder packaging scripts and Windows NSIS installer configuration, with build-resource guidance for the final Windows icon and signing assets.
 - Added a reproducible ZeroLag Windows icon generator and generated `build/icon.ico` for packaged builds.

@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T02:34:53.912Z",
+  "generatedAt": "2026-06-29T02:45:11.745Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "e7423a79fba772a95f3762ccf027ddab9ebbc2c386b94a0abe16631179a4a60b"
+      "sha256": "52cfe437310d681bc7cfb01ca538ab94f03407d6248d44cfe49685bcb474eadd"
     },
     {
       "path": "main.js",
@@ -49,6 +49,14 @@
     {
       "path": "scripts/runtime-session-keygen-smoke-test.js",
       "sha256": "d7cde7fe97ee9714b4075722a0d3a41db137ef456acfee1f1f095ca7220bae6a"
+    },
+    {
+      "path": "scripts/bootstrap-production-env.js",
+      "sha256": "9427f5c222091637024e100f69d8c0dcd56cd4ae168c9c0fc463a32951a35edb"
+    },
+    {
+      "path": "scripts/bootstrap-production-env-smoke-test.js",
+      "sha256": "a9b61d8b966854e09c17a833bbdbf340e37435fc5fadc50be51762a441620ce6"
     },
     {
       "path": "scripts/runtime-watchdog.js",
@@ -128,7 +136,7 @@
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "c0ac9d771857d602efe62264c0f9f8c8a1e55488d11e2127348ec60051446659"
+      "sha256": "956ae020c4dfff5a665f762f659659c8b4dfeef36fcf257dca9ef4bad4d2c2be"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -172,7 +180,7 @@
     },
     {
       "path": "scripts/generate-server-secrets.js",
-      "sha256": "543c002e003e58350146ba1a8821748383d59e88da28635670e8dbd7320723f7"
+      "sha256": "b55df1ef9b7ba71cc56db63a2d67470acb6d52925711cd2f0d288bb9acf181cc"
     },
     {
       "path": "scripts/update-signing-smoke-test.js",
@@ -219,5 +227,5 @@
       "sha256": "4c2f2e026519154d9549d810f6ecbd0cc2028d2aeb09ff35c37c03869cb70a67"
     }
   ],
-  "signature": "80b5d50757ac1650d2e34d33be99b6bb16dfaf001d464b7986f3b59f4ee7c994"
+  "signature": "9ec9a62cd10a11539361dc7cf3ea80cf62ee6e7a327adaa36deb75fa75a3642a"
 }

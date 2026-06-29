@@ -122,6 +122,8 @@ function main() {
   addIssue(issues, fileExists("scripts/runtime-guard-service.js"), "Runtime guard service worker is missing.");
   addIssue(issues, fileExists("scripts/generate-runtime-session-keys.js"), "Runtime session key generation tool is missing.");
   addIssue(issues, fileExists("scripts/runtime-session-keygen-smoke-test.js"), "Runtime session keygen smoke test is missing.");
+  addIssue(issues, fileExists("scripts/bootstrap-production-env.js"), "Production server env bootstrap tool is missing.");
+  addIssue(issues, fileExists("scripts/bootstrap-production-env-smoke-test.js"), "Production server env bootstrap smoke test is missing.");
 
   if (issues.length) {
     printResult({ issues, warnings, packageJson: {}, appConfig: {} });
@@ -136,7 +138,7 @@ function main() {
   const gitignore = readTextIfExists(".gitignore");
   const ciWorkflow = readTextIfExists(".github/workflows/ci.yml");
 
-  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:guard:smoke", "installer:verify", "release:artifacts", "release:report", "release:report:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "runtime:keys", "runtime:keys:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "server:check", "server:smoke", "server:test", "server:env-check", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:sign", "update:smoke"].forEach((scriptName) => {
+  ["check", "ci", "icon:generate", "pack:dir", "package:smoke", "package:verify", "installer:smoke", "installer:guard:smoke", "installer:verify", "release:artifacts", "release:report", "release:report:smoke", "ci:reports:smoke", "guard:service:smoke", "guard:install:smoke", "guard:task:smoke", "guard:runtime:smoke", "runtime:keys", "runtime:keys:smoke", "server:bootstrap", "server:bootstrap:smoke", "release:gate", "release:gate:smoke", "website:release", "website:smoke", "website:release:smoke", "release:verify", "release:build", "dist:win", "production:check", "server:check", "server:smoke", "server:test", "server:env-check", "server:deployment-report", "server:deployment-report:json", "server:deployment-report:strict", "server:deployment-report:smoke", "server:migrate-sqlite", "server:backup-sqlite", "server:restore-sqlite", "server:check-sqlite-backups", "deploy:checklist", "integrity:verify", "update:sign", "update:smoke"].forEach((scriptName) => {
     addIssue(issues, hasScript(packageJson, scriptName), `package.json script is missing: ${scriptName}`);
   });
 
@@ -161,6 +163,7 @@ function main() {
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:task:smoke"), "npm run ci must verify Task Scheduler fallback gating.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run guard:runtime:smoke"), "npm run ci must verify the runtime guard service worker.");
   addIssue(issues, (packageJson.scripts.ci || "").includes("npm run runtime:keys:smoke"), "npm run ci must verify runtime session key generation.");
+  addIssue(issues, (packageJson.scripts.ci || "").includes("npm run server:bootstrap:smoke"), "npm run ci must verify production server env bootstrap.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:verify", "release:gate", "website:release"), "release:verify must run release:gate before website:release.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:verify", "installer:guard:smoke", "installer:smoke"), "release:verify must check the NSIS guard hook before installer artifacts.");
   addIssue(issues, scriptIncludesInOrder(packageJson, "release:build", "dist:win", "release:verify"), "release:build must build the installer before running release:verify.");

@@ -63,6 +63,14 @@ Generate strong local secrets for private testing or deployment preparation:
 npm run server:secrets -- --write
 ```
 
+Fast path for the first paid-release server environment:
+
+```powershell
+npm run server:bootstrap
+```
+
+This creates `.secrets/server.env`, generates runtime-session RSA keys under `.secrets/runtime-session`, and merges the server-only RSA private-key env into the private server env file. It prints only a safe summary. After it finishes, copy the generated app-config public-key snippet into `assets/app-config.json` `runtimeSessionPublicKeyPem`, then replace payment placeholders and production URLs.
+
 Generate the paid-release runtime-session RSA keypair separately:
 
 ```powershell

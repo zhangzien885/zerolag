@@ -159,4 +159,12 @@ function main() {
   console.log("Tip: add `--profile sqlite` after migration when preparing wider paid testing.");
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  buildEnvFile,
+  normalizeProfile,
+  randomSecret
+};
