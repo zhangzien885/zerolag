@@ -17,6 +17,7 @@
 - Local monthly membership prototype with signed license and machine binding.
 - Membership purchase and activation UI.
 - Production-style purchase flow with checkout handoff, official purchase fallback, order refresh, payment-provider status, and activation-code copy only after payment completion.
+- Copyable paid order IDs for customer support when payment status needs checking.
 - Activation-code paste normalization for common whitespace, full-width, label-prefixed, and lowercase input formats.
 - Membership expiry and renewal guidance in the desktop membership center.
 - Administrator relaunch prompt on normal startup.
@@ -213,6 +214,7 @@
 - Added restore-assurance UI coverage for the manual recovery control, including a visible recovery status card, safer restore result payload, and CI smoke checks.
 - Added a customer-support handoff flow that prepares a redacted case ID, membership/version/runtime/readiness summary, writes the same case ID into diagnostics, and verifies the flow in CI.
 - Added formal payment-flow UI coverage for checkout handoff, official purchase fallback, order/provider display, post-payment activation-code copy, and removal of customer-visible demo-code behavior.
+- Added a copyable order-ID action in the purchase dialog so users can send payment references to support without copying activation codes.
 - Added activation-code paste normalization across desktop and server activation paths to reduce failed activations from copied formatting.
 - Added official service-status UI coverage for website, purchase, account, update, and support channel readiness plus safe website handoff without exposing internal endpoint details.
 

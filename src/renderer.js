@@ -76,6 +76,7 @@ const els = {
   purchaseOverlay: document.querySelector("#purchaseOverlay"),
   closePurchaseButton: document.querySelector("#closePurchaseButton"),
   paidButton: document.querySelector("#paidButton"),
+  copyOrderIdButton: document.querySelector("#copyOrderIdButton"),
   copyActivationCodeButton: document.querySelector("#copyActivationCodeButton"),
   paymentCheckoutButton: document.querySelector("#paymentCheckoutButton"),
   paymentState: document.querySelector("#paymentState"),
@@ -770,8 +771,10 @@ function renderPurchaseFallback(config = purchaseAppConfig) {
   setText(els.paymentProvider, "未连接");
   setText(els.orderCode, "支付后生成");
   setText(els.paidButton, "刷新开通状态");
+  setText(els.copyOrderIdButton, "复制订单号");
   setText(els.copyActivationCodeButton, "复制激活码");
   renderCheckoutFallback(config);
+  els.copyOrderIdButton.disabled = true;
   els.copyActivationCodeButton.disabled = true;
 }
 
@@ -833,8 +836,10 @@ function renderPurchaseOrder(order, payment = null, config = purchaseAppConfig) 
   setText(els.orderCode, code ? shorten(code, 18) : "支付后生成");
   els.orderCode.title = code || "";
   setText(els.paidButton, "刷新开通状态");
+  setText(els.copyOrderIdButton, pendingPurchaseOrderId ? "复制订单号" : "等待订单号");
   setText(els.copyActivationCodeButton, code ? "复制激活码" : "等待激活码");
   renderPaymentCheckout(status, config);
+  els.copyOrderIdButton.disabled = !pendingPurchaseOrderId;
   els.copyActivationCodeButton.disabled = !code;
 }
 
@@ -1366,6 +1371,26 @@ els.paymentCheckoutButton.addEventListener("click", async () => {
   }
 
   addLog("支付页暂未准备好，请稍后再试。", "warn");
+});
+
+els.copyOrderIdButton.addEventListener("click", async () => {
+  if (!pendingPurchaseOrderId) {
+    addLog("订单创建后才可以复制订单号。", "warn");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(pendingPurchaseOrderId);
+    setText(els.copyOrderIdButton, "订单号已复制");
+    addLog("订单号已复制，可用于联系客服核对支付状态。", "good");
+  } catch {
+    setText(els.copyOrderIdButton, "复制失败");
+    addLog("订单号复制失败，请稍后重试。", "warn");
+  } finally {
+    setTimeout(() => {
+      setText(els.copyOrderIdButton, pendingPurchaseOrderId ? "复制订单号" : "等待订单号");
+    }, 1600);
+  }
 });
 
 els.copyActivationCodeButton.addEventListener("click", async () => {

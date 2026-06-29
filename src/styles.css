@@ -1752,7 +1752,7 @@ body.ready-mid .metric-rail {
 
 .purchase-actions {
   display: grid;
-  grid-template-columns: 1.15fr 1fr 1fr;
+  grid-template-columns: 1.25fr repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 16px;
 }
