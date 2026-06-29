@@ -124,6 +124,24 @@ npm run server:deployment-report:strict
 
 Strict mode still writes the report, but returns a failing exit code until every deployment gate is ready.
 
+## Production Payment Loop
+
+Before connecting a real payment provider, verify the full ZeroLag paid-state loop locally:
+
+```powershell
+npm run server:payment-loop
+```
+
+The command starts an isolated temporary server and does not touch live membership state. It creates a test account, creates a pending order, sends a signed provider-style payment success webhook, confirms the generated activation code is visible only to the owning account, activates the membership, validates it, sends a signed refund webhook, and confirms the membership is no longer active.
+
+Use a different provider label when checking provider-specific configuration wording:
+
+```powershell
+npm run server:payment-loop -- --provider alipay
+```
+
+This command does not replace real WeChat Pay or Alipay merchant certification. It verifies that ZeroLag's own server, order, webhook, account, activation, validation, and refund logic is ready before the external provider adapter is connected.
+
 ## Create A Test Code
 
 ```powershell

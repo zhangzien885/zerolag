@@ -77,7 +77,9 @@ function main() {
   assertIncludes(stylesCss, "grid-template-columns: 1.25fr repeat(3, minmax(0, 1fr))", "Purchase actions must support checkout, refresh, order copy, and activation copy buttons.");
   assertIncludes(stylesCss, ".update-actions", "Update dialog must keep a dedicated action layout.");
   assertOk(packageJson.scripts && packageJson.scripts["ui:payment:smoke"], "ui:payment:smoke script is missing.");
+  assertOk(packageJson.scripts && packageJson.scripts["server:payment-loop"], "server:payment-loop script is missing.");
   assertOk((packageJson.scripts.ci || "").includes("npm run ui:payment:smoke"), "npm run ci must include payment flow smoke coverage.");
+  assertOk((packageJson.scripts.ci || "").includes("npm run server:payment-loop:smoke"), "npm run ci must include production payment loop coverage.");
 
   console.log("ZeroLag payment flow smoke test passed.");
 }
