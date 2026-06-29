@@ -112,15 +112,16 @@ The first official website landing page is available under `website/`.
 Start-Process .\website\index.html
 ```
 
-## Prototype license
+## Local demo license
 
-Current local demo activation code:
+Local demo activation is disabled in the default config so release builds do not accidentally ship a free activation path.
+For development-only checks, launch with `ZEROLAG_ALLOW_LOCAL_DEMO=true` and use:
 
 ```text
 ZL-PRO-DEMO-2026
 ```
 
-The prototype binds the license to the current Windows machine and stores a signed local license under Electron's app data directory. For a paid release, replace this with server-side account, device, and subscription validation.
+The demo license binds to the current Windows machine and stores a signed local license under Electron's app data directory. Paid releases should use server-side account, device, and subscription validation instead.
 
 ## Run
 

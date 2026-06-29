@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T03:20:00.173Z",
+  "generatedAt": "2026-06-29T03:24:00.205Z",
   "files": [
     {
       "path": "package.json",
@@ -196,7 +196,7 @@
     },
     {
       "path": "assets/app-config.json",
-      "sha256": "b7dbcb614086757e09626ac6dce6c38948b87e27c4f4a5532fdbe10b154684a9"
+      "sha256": "b0248be097dbd392b2853422c793019660d1193efa4426ce88ff965e5851552f"
     },
     {
       "path": "assets/zerolag-power-plan-template.protected.json",
@@ -227,5 +227,5 @@
       "sha256": "4c2f2e026519154d9549d810f6ecbd0cc2028d2aeb09ff35c37c03869cb70a67"
     }
   ],
-  "signature": "e21fa47344e0bb5e0dc1b81a2723fe22003e5d6445aa0394e10b7243088823cd"
+  "signature": "ec3173c4ff74013342206fd008e9e8abe0d47c26bc128bd8b488a2ee2662ae84"
 }

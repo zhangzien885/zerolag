@@ -8,7 +8,7 @@
   "updateManifestUrl": "",
   "updatePublicKeyPem": "",
   "runtimeSessionPublicKeyPem": "",
-  "allowLocalDemoLicense": true,
+  "allowLocalDemoLicense": false,
   "offlineGraceHours": 24,
   "supportUrl": ""
 }
