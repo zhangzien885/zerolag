@@ -124,6 +124,28 @@ npm run server:deployment-report:strict
 
 Strict mode still writes the report, but returns a failing exit code until every deployment gate is ready.
 
+## Server Deployment Pack
+
+Generate a server-only folder that can be copied to a private production host:
+
+```powershell
+npm run server:deployment-pack
+```
+
+The pack is written to `dist/server-deployment` by default. It includes the server runtime files, admin tools, readiness checks, SQLite backup and restore tools, payment-loop verifier, reverse-proxy examples, a placeholder `.env.example`, and a manifest with SHA256 hashes. It intentionally excludes desktop Electron files, `node_modules`, `.secrets`, local state, certificates, and merchant private keys.
+
+Validate the generated pack in isolation:
+
+```powershell
+npm run server:deployment-pack:smoke
+```
+
+Use `--force` only when replacing a previously generated local pack:
+
+```powershell
+npm run server:deployment-pack -- --force
+```
+
 ## Production Payment Loop
 
 Before connecting a real payment provider, verify the full ZeroLag paid-state loop locally:

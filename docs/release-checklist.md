@@ -6,6 +6,8 @@ Generate the current machine-readable checklist first:
 
 ```powershell
 npm run deploy:checklist
+npm run server:deployment-pack:smoke
+npm run server:deployment-pack
 npm run server:deployment-report:smoke
 npm run server:deployment-report
 npm run server:deployment-report:json
@@ -36,6 +38,8 @@ npm run server:deployment-report:strict
 - Confirm `ZEROLAG_RUNTIME_SESSION_KEY_VERSION` is present in the private env file and matches the runtime-session signing strategy for this release.
 - Confirm `ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM=RSA-SHA256` before paid public release, with `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_B64` or `ZEROLAG_RUNTIME_SESSION_PRIVATE_KEY_PEM` stored only on the server and matching `runtimeSessionPublicKeyPem` in the desktop config.
 - Run `npm run server:deployment-report:smoke` to verify Markdown, JSON, strict failure behavior, and redaction before trusting deployment reports.
+- Run `npm run server:deployment-pack:smoke` to verify the server-only deployment pack contains the runtime, ops scripts, reverse-proxy examples, env template, and isolated payment-loop check.
+- Run `npm run server:deployment-pack` and copy `dist/server-deployment` to the private production host after reviewing the generated `manifest.json`.
 - Run `npm run server:deployment-report` to generate a private deployment summary for env, storage, payment, update, and public endpoint readiness without printing secret values.
 - Run `npm run server:deployment-report:json` when CI, deployment scripts, or private dashboards need a machine-readable readiness result.
 - Run `npm run server:deployment-report:strict` before a paid public release; it fails when production env, storage, payment, URLs, or runtime guards are not ready.

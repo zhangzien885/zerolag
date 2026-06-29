@@ -202,6 +202,8 @@ Run these in order before a paid public release:
 
 \`\`\`powershell
 npm run deploy:checklist
+npm run server:deployment-pack:smoke
+npm run server:deployment-pack
 npm run server:deployment-report:smoke
 npm run server:deployment-report
 npm run server:deployment-report:json
