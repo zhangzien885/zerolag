@@ -83,6 +83,7 @@ npm run update:sign -- --verify assets\update.json .\.secrets\update-public.pem
 - Run `npm run guard:task:smoke` to verify the Task Scheduler fallback refuses accidental registration unless the private validation switch is passed with `-WhatIf`.
 - Run `npm run guard:uninstall:smoke` to verify uninstall cleanup coordinates runtime restore, task fallback removal, and service removal without unsafe operations.
 - Run `npm run guard:runtime:smoke` to verify the service worker can clean invalid runtime sessions in dry-run mode and write health/log state.
+- Run `npm run ui:restore:smoke` to verify the desktop restore assurance card, restore button state, and safe restore result copy.
 - Confirm the installer service command uses `ZeroLag.exe --runtime-guard-service` and that the native service wrapper warning is resolved before paid public release.
 - Keep `ZEROLAG_ENABLE_GUARD_REGISTRATION` disabled for development installers; enable it only for private validation or the final signed build after the native service wrapper is ready.
 - Run `npm run dist:win` only after the strict release gates are satisfied.

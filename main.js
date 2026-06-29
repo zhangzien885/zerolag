@@ -1422,7 +1422,13 @@ async function activateRuntimePowerPlan() {
 
 async function cleanupRuntimePowerPlan() {
   if (!runtimePowerPlanGuid) {
-    return { restored: false, deleted: false };
+    return {
+      ok: true,
+      restored: false,
+      deleted: false,
+      sessionCleared: !fs.existsSync(runtimeSessionPath()),
+      message: "Daily mode is already active."
+    };
   }
 
   const active = await getActivePowerPlan();
@@ -1440,9 +1446,12 @@ async function cleanupRuntimePowerPlan() {
   removeRuntimeSession();
   await removeRuntimeGuardTask();
   const result = {
+    ok: deleted.ok,
     restored: isRuntimeActive,
     deleted: deleted.ok,
-    deletedGuid: runtimePowerPlanGuid
+    sessionCleared: !fs.existsSync(runtimeSessionPath()),
+    message: deleted.ok ? "Daily mode restored." : "Daily mode restored with cleanup warning.",
+    errorCode: deleted.ok ? "" : "RUNTIME_PLAN_DELETE_LIMITED"
   };
 
   runtimePowerPlanGuid = "";

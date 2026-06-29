@@ -27,6 +27,7 @@
 - Official website button that opens the future ZeroLag website.
 - Background tray mode: closing the desktop window hides ZeroLag to the Windows tray, while tray exit performs real cleanup.
 - Manual recovery control: topbar "restore daily mode" button stops the active Boost session and refreshes status without closing the app.
+- Restore assurance card showing whether Boost can currently be returned to daily mode, with clearer recovery result copy.
 - Manual rescan control: topbar "rescan" button refreshes license, permission, performance, diagnostics, and memory status on demand.
 - Game toolbox button that opens a dedicated toolbox dialog with local game library, add-game picker, one-click game launch, network latency check, DNS refresh, and Boost session timer.
 - Support diagnostics export in the game toolbox for customer support, without exposing activation codes, tokens, protected tuning parameters, or game paths.
@@ -200,6 +201,7 @@
 - Hardened the server smoke test so SQLite deployments use an isolated temporary SQLite state by default instead of touching the configured live database.
 - Added a read-only SQLite storage status command with safe relative paths, latest-backup freshness review, recovery next steps, and CI smoke coverage.
 - Added an installer uninstall cleanup coordinator that performs one final runtime restore pass, removes Task Scheduler fallback entries, removes the Windows Service guard, and is covered by CI smoke checks.
+- Added restore-assurance UI coverage for the manual recovery control, including a visible recovery status card, safer restore result payload, and CI smoke checks.
 
 ## Known Boundaries
 

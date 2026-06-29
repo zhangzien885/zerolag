@@ -11,6 +11,9 @@ const els = {
   toolboxButton: document.querySelector("#toolboxButton"),
   rescanButton: document.querySelector("#rescanButton"),
   restoreButton: document.querySelector("#restoreButton"),
+  recoveryCard: document.querySelector("#recoveryCard"),
+  restoreState: document.querySelector("#restoreState"),
+  restoreDetail: document.querySelector("#restoreDetail"),
   websiteButton: document.querySelector("#websiteButton"),
   activePlan: document.querySelector("#activePlan"),
   diagnosticState: document.querySelector("#diagnosticState"),
@@ -247,6 +250,32 @@ function renderDiagnostics(diagnostics) {
   setValueWithTitle(els.gameModeState, diagnostics.windows.gameMode);
 }
 
+function renderRestoreAssurance(runtimeReady, status = {}) {
+  els.recoveryCard.classList.toggle("active", runtimeReady);
+  els.recoveryCard.classList.toggle("warn", !runtimeReady && Boolean(status.runtimePowerPlanError));
+
+  if (runtimeReady) {
+    setText(els.restoreState, "可恢复");
+    setText(els.restoreDetail, "当前处于 Boost 状态，点击右上角恢复即可回到日常模式。");
+    setText(els.restoreButton.querySelector("span"), "Safe");
+    setText(els.restoreButton.querySelector("b"), "恢复");
+    return;
+  }
+
+  if (status.runtimePowerPlanError) {
+    setText(els.restoreState, "需重试");
+    setText(els.restoreDetail, "性能模式启动受限，建议使用管理员权限重新打开后再恢复。");
+    setText(els.restoreButton.querySelector("span"), "Reset");
+    setText(els.restoreButton.querySelector("b"), "恢复");
+    return;
+  }
+
+  setText(els.restoreState, "已待命");
+  setText(els.restoreDetail, "当前没有正在运行的 Boost，会保持日常状态。");
+  setText(els.restoreButton.querySelector("span"), "Safe");
+  setText(els.restoreButton.querySelector("b"), "待命");
+}
+
 function updateBoostTimer() {
   if (!boostStartedAt) {
     setText(els.boostTimer, "待启动");
@@ -342,6 +371,7 @@ async function refreshStatus() {
     boostStartedAt = runtimeReady && status.runtimePowerPlan ? status.runtimePowerPlan.activatedAt : "";
     updateBoostTimer();
     els.restoreButton.disabled = !runtimeReady;
+    renderRestoreAssurance(runtimeReady, status);
     setText(els.activePlan, runtimeReady ? "已启用" : "待启用");
     setText(els.readyState, licenseActive ? (runtimeReady ? "加速中" : "待处理") : "等待授权");
     setText(els.memberState, expiredLicense ? "已到期" : (licenseActive ? (memberAlert ? "即将到期" : "Pro 已启用") : (integrityOk ? "未授权" : "授权异常")));
@@ -372,6 +402,7 @@ async function refreshStatus() {
     setPill(els.planState, "读取失败", "warn");
     setText(els.readyState, "异常");
     els.restoreButton.disabled = true;
+    renderRestoreAssurance(false, { runtimePowerPlanError: true });
     addLog("状态读取失败，请重新打开软件。", "fail");
   }
 }
@@ -683,8 +714,10 @@ els.restoreButton.addEventListener("click", async () => {
     const result = await window.zeroLag.restoreDailyMode();
     boostStartedAt = "";
     updateBoostTimer();
-    setText(els.resultState, result && result.deleted ? "已恢复" : "已处理");
-    addLog("已恢复日常状态。", "good");
+    setText(els.resultState, result && result.ok !== false ? "已恢复" : "需重试");
+    setText(els.restoreState, result && result.ok !== false ? "已恢复" : "需重试");
+    setText(els.restoreDetail, result && result.ok !== false ? "已回到日常状态，Boost 临时状态已收尾。" : "恢复已执行，但仍建议重新扫描确认状态。");
+    addLog(result && result.ok !== false ? "已恢复日常状态。" : "恢复已执行，但仍建议重新扫描确认状态。", result && result.ok !== false ? "good" : "warn");
     await refreshStatus();
   } catch {
     setText(els.resultState, "恢复失败");

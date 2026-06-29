@@ -24,6 +24,7 @@ ZeroLag is a Windows extreme gaming performance optimizer.
 - Provides server health and admin readiness checks for private deployment operations.
 - Provides automatic and admin-triggered maintenance cleanup for expired memberships and stale server tokens.
 - Provides manual rescan and restore-daily-mode controls from the topbar.
+- Shows a restore assurance card so users can see when Boost can safely return to daily mode.
 - Includes a game toolbox button that opens local game library, one-click game launch, network latency check, DNS refresh, and Boost session timer tools.
 - Exports a redacted support diagnostics bundle from the game toolbox for customer support.
 - Keeps a local redacted support log so diagnostics include recent user-facing events without activation codes, tokens, paths, or tuning details.
@@ -161,7 +162,7 @@ npm run check
 npm run ci
 ```
 
-`ci` runs the standard local verification set used by GitHub Actions: syntax checks, desktop production readiness, server readiness, SQLite storage-status smoke checks, server self-test, server smoke test, CI report-artifact smoke checks, Windows Service guard asset, uninstall cleanup, worker checks, and integrity verification.
+`ci` runs the standard local verification set used by GitHub Actions: syntax checks, desktop production readiness, restore UI smoke checks, server readiness, SQLite storage-status smoke checks, server self-test, server smoke test, CI report-artifact smoke checks, Windows Service guard asset, uninstall cleanup, worker checks, and integrity verification.
 It also runs the non-strict release preflight so release gaps stay visible during normal development.
 
 ## Continuous Integration
