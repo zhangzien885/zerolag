@@ -339,6 +339,7 @@ For a paid release:
 - Set `allowLocalDemoLicense` to `false`.
 - Set `runtimeSessionPublicKeyPem` to the public key that matches the server-only RSA runtime-session private key.
 - Configure real HTTPS `websiteUrl`, `purchaseUrl`, `analyticsUrl`, `supportUrl`, `apiBaseUrl`, and `updateManifestUrl` values.
+- Use `npm run production:config -- --domain your-domain.example --write` to prepare those public URL fields, then review `assets/app-config.json` and `assets/update.json` before signing.
 - Use a strong `ZEROLAG_SERVER_SECRET`.
 - Use a strong `ZEROLAG_ADMIN_SECRET`.
 - Use a strong `ZEROLAG_PAYMENT_WEBHOOK_SECRET`.

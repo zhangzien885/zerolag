@@ -16,6 +16,7 @@ npm run server:deployment-report:strict
 
 - Set `assets/app-config.json` `releaseMode` to `production`.
 - Set real HTTPS values for `websiteUrl`, `purchaseUrl`, `analyticsUrl`, `supportUrl`, `apiBaseUrl`, and `updateManifestUrl`.
+- Use `npm run production:config -- --domain your-domain.example --write` to generate the production URL fields, then review them before building.
 - Set `allowLocalDemoLicense` to `false`.
 - Generate the runtime-session RSA keypair with `npm run runtime:keys -- --output-dir .secrets\runtime-session --key-version runtime-session-v1`.
 - Add the production update public key to `updatePublicKeyPem`.
