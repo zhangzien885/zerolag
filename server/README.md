@@ -71,6 +71,14 @@ npm run server:bootstrap
 
 This creates `.secrets/server.env`, generates runtime-session RSA keys under `.secrets/runtime-session`, and merges the server-only RSA private-key env into the private server env file. It prints only a safe summary. After it finishes, copy the generated app-config public-key snippet into `assets/app-config.json` `runtimeSessionPublicKeyPem`, then replace payment placeholders and production URLs.
 
+For a safer local all-in-one setup, use:
+
+```powershell
+npm run server:provision-local
+```
+
+This reuses the bootstrap flow when `.secrets/server.env` is missing, initializes the SQLite state document, writes a verified SQLite backup, regenerates the server-only deployment pack, and prints only redacted paths and remaining launch tasks. It will not overwrite an existing private env file unless you explicitly pass `--force`.
+
 Generate the paid-release runtime-session RSA keypair separately:
 
 ```powershell

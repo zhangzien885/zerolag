@@ -5,29 +5,29 @@ This report is designed for private deployment review and never prints secret va
 
 ## Snapshot
 
-- Generated at: `2026-06-29T03:23:50.758Z`
+- Generated at: `2026-06-29T09:10:03.746Z`
 - Report JSON: `npm run server:deployment-report:json`
 - App version: `0.1.0`
 - App mode: `development`
 - Release channel: `alpha`
 - Update manifest latest: `0.1.1`
-- Private env file: `.secrets/server.env (not loaded)`
+- Private env file: `.secrets/server.env`
 - Overall server deployment state: `needs configuration`
 
 ## Readiness Summary
 
-- Env check: `1 issue(s), 0 warning(s)`
-- Storage: `SQLite/backups not fully configured`
+- Env check: `0 issue(s), 2 warning(s)`
+- Storage: `SQLite configured with backups`
 - Payment: `provider setup incomplete`
 - Public links: `production URLs incomplete`
 - Runtime safety: `guards enabled`
 
 ## Strict Gate Details
 
-- [ ] Private env file passes validation - 1 issue(s), 0 warning(s)
-- [ ] SQLite storage and backup paths are configured - stateStore=json
+- [x] Private env file passes validation - 0 issue(s), 2 warning(s)
+- [x] SQLite storage and backup paths are configured - stateStore=sqlite
 - [ ] Payment provider is no longer local manual mode - provider=manual
-- [ ] Payment provider allowlist excludes test webhook providers - 5 provider(s)
+- [x] Payment provider allowlist excludes test webhook providers - 2 provider(s)
 - [x] Payment provider merchant credentials are configured - not required for current provider
 - [ ] Checkout URL template is configured - placeholder or missing
 - [ ] Public website, purchase, API, update, and support URLs are production HTTPS - one or more URLs are missing/placeholders
@@ -35,41 +35,42 @@ This report is designed for private deployment review and never prints secret va
 
 ## Env Check
 
-- Profile: `json`
-- Loaded key count: `0`
-- State store from env: `json`
+- Profile: `sqlite`
+- Loaded key count: `22`
+- State store from env: `sqlite`
 - Payment provider from env: `manual`
 
 ### Blocking Issues
 
-- Env file does not exist: .secrets/server.env
+- No blocking env issues detected.
 
 ### Warnings
 
-- No env warnings detected.
+- Payment provider is still manual.
+- Payment URL template is still the local placeholder.
 
 ## Storage And Backup
 
-- State store: `json`
-- SQLite state path configured: `no`
-- SQLite backup directory configured: `no`
+- State store: `sqlite`
+- SQLite state path configured: `yes`
+- SQLite backup directory configured: `yes`
 - SQLite backup max age: `24 hour(s)`
 - Rate limiting enabled: `yes`
 - State backups enabled: `yes`
 - Automatic maintenance enabled: `yes`
 - Runtime session key version: `runtime-session-v1`
-- Runtime session proof algorithm: `HMAC-SHA256`
-- Runtime session asymmetric proof configured: `no`
+- Runtime session proof algorithm: `RSA-SHA256`
+- Runtime session asymmetric proof configured: `yes`
 
 ## Payment And Membership
 
 - Payment provider: `manual`
-- Allowed provider count: `5`
+- Allowed provider count: `2`
 - Selected provider is allowlisted: `yes`
-- Test webhook providers removed: `no`
+- Test webhook providers removed: `yes`
 - Merchant credentials configured: `not required`
 - Checkout URL template configured: `no`
-- Payment message configured: `no`
+- Payment message configured: `yes`
 
 ## Public Endpoints
 

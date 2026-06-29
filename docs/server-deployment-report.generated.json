@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-29T03:23:50.821Z",
+  "generatedAt": "2026-06-29T09:10:03.889Z",
   "ready": false,
-  "strictFailureSummary": "Private env file passes validation, SQLite storage and backup paths are configured, Payment provider is no longer local manual mode, Payment provider allowlist excludes test webhook providers, Checkout URL template is configured, Public website, purchase, API, update, and support URLs are production HTTPS",
+  "strictFailureSummary": "Payment provider is no longer local manual mode, Checkout URL template is configured, Public website, purchase, API, update, and support URLs are production HTTPS",
   "snapshot": {
     "appVersion": "0.1.0",
     "appMode": "development",
@@ -9,21 +9,21 @@
     "updateManifestLatest": "0.1.1",
     "privateEnvFile": {
       "path": ".secrets/server.env",
-      "loaded": false,
-      "profile": "json",
-      "keyCount": 0
+      "loaded": true,
+      "profile": "sqlite",
+      "keyCount": 22
     }
   },
   "gates": [
     {
       "label": "Private env file passes validation",
-      "ok": false,
-      "detail": "1 issue(s), 0 warning(s)"
+      "ok": true,
+      "detail": "0 issue(s), 2 warning(s)"
     },
     {
       "label": "SQLite storage and backup paths are configured",
-      "ok": false,
-      "detail": "stateStore=json"
+      "ok": true,
+      "detail": "stateStore=sqlite"
     },
     {
       "label": "Payment provider is no longer local manual mode",
@@ -32,8 +32,8 @@
     },
     {
       "label": "Payment provider allowlist excludes test webhook providers",
-      "ok": false,
-      "detail": "5 provider(s)"
+      "ok": true,
+      "detail": "2 provider(s)"
     },
     {
       "label": "Payment provider merchant credentials are configured",
@@ -57,53 +57,54 @@
     }
   ],
   "envCheck": {
-    "ok": false,
-    "issueCount": 1,
-    "warningCount": 0,
-    "issues": [
-      "Env file does not exist: .secrets/server.env"
+    "ok": true,
+    "issueCount": 0,
+    "warningCount": 2,
+    "issues": [],
+    "warnings": [
+      "Payment provider is still manual.",
+      "Payment URL template is still the local placeholder."
     ],
-    "warnings": [],
     "summary": {
-      "stateStore": "json",
-      "sqliteConfigured": false,
+      "stateStore": "sqlite",
+      "sqliteConfigured": true,
       "paymentProvider": "manual",
-      "paymentAllowedProviderCount": 5,
-      "paymentProviderCredentialsConfigured": false,
+      "paymentAllowedProviderCount": 2,
+      "paymentProviderCredentialsConfigured": true,
       "paymentCredentialKeysRequired": 0,
       "paymentCredentialKeysConfigured": 0,
       "runtimeSessionKeyVersion": "runtime-session-v1",
-      "runtimeSessionProofAlgorithm": "HMAC-SHA256",
-      "runtimeSessionAsymmetricProofConfigured": false,
-      "rateLimitEnabled": false,
-      "backupsEnabled": false,
-      "maintenanceEnabled": false
+      "runtimeSessionProofAlgorithm": "RSA-SHA256",
+      "runtimeSessionAsymmetricProofConfigured": true,
+      "rateLimitEnabled": true,
+      "backupsEnabled": true,
+      "maintenanceEnabled": true
     }
   },
   "storage": {
-    "stateStore": "json",
-    "sqliteStatePathConfigured": false,
-    "sqliteBackupDirConfigured": false,
+    "stateStore": "sqlite",
+    "sqliteStatePathConfigured": true,
+    "sqliteBackupDirConfigured": true,
     "sqliteBackupMaxAgeHours": 24
   },
   "payment": {
     "provider": "manual",
-    "allowedProviderCount": 5,
+    "allowedProviderCount": 2,
     "selectedProviderAllowlisted": true,
-    "testWebhookProvidersRemoved": false,
+    "testWebhookProvidersRemoved": true,
     "merchantCredentialsConfigured": true,
     "credentialKeysRequired": 0,
     "credentialKeysConfigured": 0,
     "checkoutUrlTemplateConfigured": false,
-    "messageConfigured": false
+    "messageConfigured": true
   },
   "runtimeGuards": {
     "rateLimitEnabled": true,
     "backupsEnabled": true,
     "maintenanceEnabled": true,
     "runtimeSessionKeyVersion": "runtime-session-v1",
-    "runtimeSessionProofAlgorithm": "HMAC-SHA256",
-    "runtimeSessionAsymmetricProofConfigured": false
+    "runtimeSessionProofAlgorithm": "RSA-SHA256",
+    "runtimeSessionAsymmetricProofConfigured": true
   },
   "publicEndpoints": [
     {

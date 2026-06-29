@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T08:51:49.564Z",
+  "generatedAt": "2026-06-29T09:17:53.720Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "a3bdb3aea0534e2f0fb526348a573dace304fe4fc76a41833cc011f4add743c4"
+      "sha256": "55376bc9b3cdb5f399fde7ef01e885eea9904181afb4774b91ebc2bbf8fbea02"
     },
     {
       "path": "main.js",
@@ -148,7 +148,7 @@
     },
     {
       "path": "scripts/generate-deployment-checklist.js",
-      "sha256": "e7600ba210d8a5c6b0604eee7ddc546cde0c41c86bec95469f2dbc3454e3238e"
+      "sha256": "9f1ac2159226a9fff8f3a1aea44332013669bf4315b368b5f30a230ed9f6ce48"
     },
     {
       "path": "scripts/generate-server-deployment-report.js",
@@ -160,7 +160,7 @@
     },
     {
       "path": "scripts/migrate-state-to-sqlite.js",
-      "sha256": "96b126e2533f827cfd9b0d6de91582c4d896258052deae54ec89a4ee46bac603"
+      "sha256": "ab3bc2443fa1bb595356fe17951d957ae703d926455c2758b46b1c86686b5aef"
     },
     {
       "path": "scripts/backup-sqlite-state.js",
@@ -227,5 +227,5 @@
       "sha256": "32959ffda1c3a8acacbe1806248f89e439b1264bc5235bb98eab10bc167c2b5f"
     }
   ],
-  "signature": "698e8bccf7277fa400168473cc7cea872266a739c383153a9c5ed05964b21418"
+  "signature": "19aaa3614d96cf398c7bf5381630e1124bc510aaf79751dc148542bef9cb5ba6"
 }

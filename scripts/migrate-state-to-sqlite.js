@@ -71,7 +71,12 @@ function main() {
     return;
   }
 
-  const state = loadState({ statePath: inputFile });
+  const state = loadState({
+    statePath: inputFile,
+    storage: {
+      kind: "json"
+    }
+  });
   const stateSha256 = sha256Json(state);
   const summary = stateSummary(state);
 

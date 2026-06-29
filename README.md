@@ -64,6 +64,7 @@ npm run server:sqlite-status
 npm run server:smoke
 npm run server:payment-loop
 npm run server:deployment-pack
+npm run server:provision-local
 npm run server:secrets
 npm run release:preflight
 npm run release:preflight:strict
@@ -81,6 +82,7 @@ npm run production:mode -- --mode production --write
 `server:smoke` starts a temporary local license server, checks public health, and verifies the admin readiness endpoint with the loaded server secret configuration.
 `server:payment-loop` starts an isolated temporary server and verifies the paid loop: account login, order creation, signed payment webhook, order activation, membership validation, refund webhook, and membership revocation.
 `server:deployment-pack` writes a server-only deployment folder under `dist/server-deployment` with runtime server files, ops scripts, reverse-proxy examples, env template, and a manifest without shipping desktop app files or private secrets.
+`server:provision-local` prepares the private local server environment with `.secrets/server.env`, runtime-session RSA keys, SQLite state, a verified SQLite backup, and a refreshed server deployment pack.
 `server:secrets` prints strong private server secrets; use `npm run server:secrets -- --write` to save them under `.secrets/server.env`.
 
 Server commands automatically load `.secrets/server.env` when it exists. Existing system environment variables stay higher priority, and `ZEROLAG_ENV_FILE` can point commands at another private env file for staging or deployment tests.

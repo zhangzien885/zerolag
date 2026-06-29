@@ -204,6 +204,7 @@
 - Added a strict private server deployment report gate that fails until env, SQLite backup readiness, payment provider, production URLs, and runtime guards are ready.
 - Added a deployment-report smoke test that verifies Markdown output, JSON output, strict gate failure, and redaction in an isolated temporary environment.
 - Added a server-only deployment pack generator with runtime files, ops scripts, reverse-proxy examples, env template, manifest hashes, and an isolated smoke test that runs the paid payment loop from the generated pack.
+- Added a local server provisioning command that safely creates or reuses private server env, runtime RSA keys, SQLite state, verified SQLite backup, and a refreshed server deployment pack.
 - Expanded private server env generation with JSON and SQLite profiles, payment placeholders, SQLite backup freshness settings, and overwrite protection.
 - Added a redacted private server env checker for missing keys, weak secrets, unsafe switches, storage profile mismatches, and payment placeholder warnings.
 - Integrated redacted private env-file validation into strict server production checks so deployment config drift is caught automatically.

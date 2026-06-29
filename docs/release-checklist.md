@@ -31,6 +31,7 @@ npm run server:deployment-report:strict
 
 - Generate private server secrets with `npm run server:secrets -- --write`.
 - Run `npm run server:env-status` to confirm whether `.secrets/server.env` exists and what private setup step remains.
+- For local production-like preparation, run `npm run server:provision-local`; it creates or reuses the private env, initializes SQLite state, writes a verified SQLite backup, and refreshes the server deployment pack without printing secrets.
 - For the first paid-release server setup, prefer `npm run server:bootstrap`; it creates `.secrets/server.env`, runtime-session RSA keys, and a public-key app-config snippet without printing secrets.
 - For SQLite paid testing, generate the private env template with `npm run server:secrets -- --profile sqlite --write`.
 - Copy the generated `runtime-session-v1.server.env` values into the private server env file; keep the generated private PEM and env file outside Git.
