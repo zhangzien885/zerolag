@@ -154,6 +154,21 @@ function main() {
       "--artifacts",
       artifactsPath
     ], 1);
+    const placeholder = runNode([
+      scriptPath,
+      "--base-url",
+      "https://example.com/releases",
+      "--manifest",
+      manifestPath,
+      "--package",
+      packagePath,
+      "--artifacts",
+      artifactsPath,
+      "--allow-placeholder"
+    ]);
+    const placeholderResult = JSON.parse(placeholder.stdout);
+    assertOk(placeholderResult.downloadUrl === "https://example.com/releases/ZeroLag%20Setup%201.2.3.exe", "Explicit placeholder mode should build a placeholder download URL.");
+    assertOk(placeholderResult.nextSteps.some((step) => step.includes("Replace placeholder update URLs")), "Explicit placeholder mode should warn about replacement.");
 
     writeJson(artifactsPath, { version: "9.9.9", installer: { file: "ZeroLag Setup 9.9.9.exe" } });
     runNode([

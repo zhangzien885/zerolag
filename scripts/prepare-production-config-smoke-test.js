@@ -115,6 +115,23 @@ function main() {
     assertOk(appConfig.updatePublicKeyPem === "", "Write mode must preserve key fields for later secure fill.");
 
     runNode([scriptPath, "--domain", "example.com", "--config", configPath, "--update", updatePath], 1);
+    const placeholder = runNode([
+      scriptPath,
+      "--domain",
+      "example.com",
+      "--api-domain",
+      "api.example.com",
+      "--cdn-domain",
+      "cdn.example.com",
+      "--config",
+      configPath,
+      "--update",
+      updatePath,
+      "--allow-placeholder"
+    ]);
+    const placeholderResult = JSON.parse(placeholder.stdout);
+    assertOk(placeholderResult.appConfigPatch.websiteUrl === "https://example.com", "Explicit placeholder mode should build placeholder website URL.");
+    assertOk(placeholderResult.nextSteps.some((step) => step.includes("Replace placeholder domains")), "Explicit placeholder mode should warn about replacement.");
     runNode([scriptPath, "--domain", "localhost", "--config", configPath, "--update", updatePath], 1);
 
     console.log("ZeroLag production config smoke test passed.");

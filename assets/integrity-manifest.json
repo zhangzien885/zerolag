@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T11:47:25.713Z",
+  "generatedAt": "2026-06-30T02:52:50.541Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "151cd3845b32137deaf348e82f300070ddaa756d019ad6c3528ed28a3d67dfcb"
+      "sha256": "a7d0147d1ed473c24ee7dfa57f4dff493e0139ff7e0f441dc4526a370f1d2493"
     },
     {
       "path": "main.js",
@@ -100,7 +100,7 @@
     },
     {
       "path": "scripts/installer-smoke-test.js",
-      "sha256": "43ee47c15c1104ba78aaa8d30d02096de37f57d8d2042d57a83a289f1029f7f7"
+      "sha256": "eb49e0dead387cc7e4d80d395df13731e505598d6e63c3d27402ba0e15e312f8"
     },
     {
       "path": "scripts/installer-guard-hook-smoke-test.js",
@@ -120,7 +120,7 @@
     },
     {
       "path": "scripts/generate-release-artifacts.js",
-      "sha256": "68378caefa10ab6726c35467a0cc90ed472900d20affd425e1c7338a04e0a9f8"
+      "sha256": "36a600ff58ed8235af497e24e71e0b03227b69b7f00174c1be84fa8ce8dbc2b9"
     },
     {
       "path": "scripts/generate-release-report.js",
@@ -220,7 +220,7 @@
     },
     {
       "path": "assets/app-config.json",
-      "sha256": "b0248be097dbd392b2853422c793019660d1193efa4426ce88ff965e5851552f"
+      "sha256": "63b20dd0e3479024d27f02e76ccbdcbe42d248dcb5b1f36756186abd339c6c6a"
     },
     {
       "path": "assets/zerolag-power-plan-template.protected.json",
@@ -259,5 +259,5 @@
       "sha256": "88e790f4e8a56c15098dff7234e769dae7d04718745d0b839b471f55bd0ae571"
     }
   ],
-  "signature": "19b79390dd3e9a81f4e326200f9c18b3f68db206a8a8ec16c61038c77d04bded"
+  "signature": "77dc77d3f78539933b65f37b2d2afcf672a3f3becc07e979bd18c4155c775823"
 }

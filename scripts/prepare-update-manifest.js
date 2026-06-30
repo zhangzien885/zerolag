@@ -9,7 +9,7 @@ const defaultArtifactsPath = path.join(rootDir, "dist", "release-artifacts.json"
 
 function usage() {
   console.log("Usage:");
-  console.log("  node scripts/prepare-update-manifest.js --base-url https://cdn.example/releases [--artifacts dist/release-artifacts.json] [--private-key file] [--public-key file] [--write]");
+  console.log("  node scripts/prepare-update-manifest.js --base-url https://cdn.example/releases [--artifacts dist/release-artifacts.json] [--private-key file] [--public-key file] [--write] [--allow-placeholder]");
   console.log("");
   console.log("Prepares update metadata from release artifacts. Dry-run is default.");
 }
@@ -57,9 +57,9 @@ function signingBody(manifest) {
   return stableStringify(payload);
 }
 
-function normalizeBaseUrl(value) {
+function normalizeBaseUrl(value, options = {}) {
   const baseUrl = String(value || "").trim().replace(/\/+$/g, "");
-  if (!isHttpsUrl(baseUrl) || isPlaceholderUrl(baseUrl)) {
+  if (!isHttpsUrl(baseUrl) || (!options.allowPlaceholder && isPlaceholderUrl(baseUrl))) {
     throw new Error("--base-url must be a real HTTPS URL.");
   }
   return baseUrl;
@@ -92,7 +92,7 @@ function prepareUpdateManifest(input = {}) {
   const manifestPath = path.resolve(input.manifestPath || defaultManifestPath);
   const packagePath = path.resolve(input.packagePath || defaultPackagePath);
   const artifactsPath = path.resolve(input.artifactsPath || defaultArtifactsPath);
-  const baseUrl = normalizeBaseUrl(input.baseUrl);
+  const baseUrl = normalizeBaseUrl(input.baseUrl, { allowPlaceholder: input.allowPlaceholder === true });
   const write = input.write === true;
   const packageJson = readJson(packagePath);
   const manifest = readJson(manifestPath);
@@ -138,8 +138,9 @@ function prepareUpdateManifest(input = {}) {
     nextSteps: [
       "Upload the installer to the same public CDN path.",
       "Run npm run website:release after release artifacts and update metadata are ready.",
+      input.allowPlaceholder ? "Replace placeholder update URLs before paid public release." : "",
       "Run npm run release:preflight:strict before publishing."
-    ]
+    ].filter(Boolean)
   };
 }
 
@@ -157,6 +158,7 @@ function main() {
       artifactsPath: argValue("--artifacts", defaultArtifactsPath),
       privateKeyPath: argValue("--private-key"),
       publicKeyPath: argValue("--public-key"),
+      allowPlaceholder: process.argv.includes("--allow-placeholder"),
       write: process.argv.includes("--write")
     });
     console.log(JSON.stringify(result, null, 2));
@@ -169,6 +171,7 @@ function main() {
 if (require.main === module) main();
 
 module.exports = {
+  normalizeBaseUrl,
   prepareUpdateManifest,
   signingBody
 };

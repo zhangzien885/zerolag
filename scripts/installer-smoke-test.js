@@ -30,12 +30,34 @@ function sha256File(filePath) {
   return crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
 }
 
-function findInstaller() {
+function renderArtifactName(template, ext = "exe") {
+  return String(template || "")
+    .replace(/\$\{productName\}/g, productName)
+    .replace(/\$\{version\}/g, version)
+    .replace(/\$\{ext\}/g, ext);
+}
+
+function installerNameFromLatest(latestText) {
+  const match = String(latestText || "").match(/^path:\s*(.+)$/m);
+  return match ? path.basename(match[1].trim().replace(/^["']|["']$/g, "")) : "";
+}
+
+function findInstaller(latestText = "") {
   if (!fs.existsSync(distDir)) return null;
 
-  const expectedName = `${productName} Setup ${version}.exe`;
-  const expectedPath = path.join(distDir, expectedName);
-  if (fs.existsSync(expectedPath)) return expectedPath;
+  const configuredArtifactName = packageJson.build && packageJson.build.artifactName
+    ? renderArtifactName(packageJson.build.artifactName, "exe")
+    : "";
+  const expectedNames = [
+    installerNameFromLatest(latestText),
+    configuredArtifactName,
+    `${productName} Setup ${version}.exe`
+  ].filter(Boolean);
+
+  for (const expectedName of expectedNames) {
+    const expectedPath = path.join(distDir, expectedName);
+    if (fs.existsSync(expectedPath)) return expectedPath;
+  }
 
   const lowerProductName = productName.toLowerCase();
   return fs.readdirSync(distDir)
@@ -67,15 +89,15 @@ function main() {
   assertInstallerConfig();
   assertOk(fs.existsSync(distDir), "Installer output is missing. Run `npm run dist:win` first.");
 
-  const installerPath = findInstaller();
+  const latestPath = path.join(distDir, "latest.yml");
+  const latest = fileInfo(latestPath, 64);
+  const latestText = fs.readFileSync(latestPath, "utf8");
+  const installerPath = findInstaller(latestText);
   assertOk(installerPath, "NSIS installer .exe is missing. Run `npm run dist:win` first.");
 
   const installer = fileInfo(installerPath, 1024 * 1024);
   const blockmapPath = `${installerPath}.blockmap`;
   const blockmap = fileInfo(blockmapPath, 128);
-  const latestPath = path.join(distDir, "latest.yml");
-  const latest = fileInfo(latestPath, 64);
-  const latestText = fs.readFileSync(latestPath, "utf8");
 
   assertOk(latestText.includes(path.basename(installerPath)), "latest.yml does not reference the installer executable.");
   assertOk(latestText.includes(version), "latest.yml does not include the package version.");

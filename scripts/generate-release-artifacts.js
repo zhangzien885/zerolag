@@ -39,11 +39,30 @@ function artifactInfo(filePath) {
   };
 }
 
-function findInstaller() {
+function renderArtifactName(template, ext = "exe") {
+  return String(template || "")
+    .replace(/\$\{productName\}/g, productName)
+    .replace(/\$\{version\}/g, version)
+    .replace(/\$\{ext\}/g, ext);
+}
+
+function findInstaller(latestMetadata = {}) {
   if (!fs.existsSync(distDir)) return null;
 
-  const expectedPath = path.join(distDir, `${productName} Setup ${version}.exe`);
-  if (fs.existsSync(expectedPath)) return expectedPath;
+  const latestInstallerName = latestMetadata.path ? path.basename(latestMetadata.path) : "";
+  const configuredArtifactName = packageJson.build && packageJson.build.artifactName
+    ? renderArtifactName(packageJson.build.artifactName, "exe")
+    : "";
+  const expectedNames = [
+    latestInstallerName,
+    configuredArtifactName,
+    `${productName} Setup ${version}.exe`
+  ].filter(Boolean);
+
+  for (const expectedName of expectedNames) {
+    const expectedPath = path.join(distDir, expectedName);
+    if (fs.existsSync(expectedPath)) return expectedPath;
+  }
 
   const lowerProductName = productName.toLowerCase();
   return fs.readdirSync(distDir)
@@ -79,15 +98,15 @@ function writeChecksums(filePath, artifacts) {
 function main() {
   assertOk(fs.existsSync(distDir), "Release output is missing. Run `npm run dist:win` first.");
 
-  const installerPath = findInstaller();
+  const latestPath = path.join(distDir, "latest.yml");
+  const latest = artifactInfo(latestPath);
+  const latestMetadata = readElectronBuilderMetadata(latestPath);
+  const installerPath = findInstaller(latestMetadata);
   assertOk(installerPath, "NSIS installer .exe is missing. Run `npm run dist:win` first.");
 
   const blockmapPath = `${installerPath}.blockmap`;
-  const latestPath = path.join(distDir, "latest.yml");
   const installer = artifactInfo(installerPath);
   const blockmap = artifactInfo(blockmapPath);
-  const latest = artifactInfo(latestPath);
-  const latestMetadata = readElectronBuilderMetadata(latestPath);
   const artifacts = [installer, blockmap, latest];
   const manifest = {
     productName,

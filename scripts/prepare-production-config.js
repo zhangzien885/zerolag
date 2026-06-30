@@ -7,7 +7,7 @@ const defaultUpdatePath = path.join(rootDir, "assets", "update.json");
 
 function usage() {
   console.log("Usage:");
-  console.log("  node scripts/prepare-production-config.js --domain zerolag.example [--api-domain api.zerolag.example] [--cdn-domain cdn.zerolag.example] [--write]");
+  console.log("  node scripts/prepare-production-config.js --domain zerolag.example [--api-domain api.zerolag.example] [--cdn-domain cdn.zerolag.example] [--write] [--allow-placeholder]");
   console.log("");
   console.log("Builds production HTTPS URL settings for desktop config and update metadata.");
   console.log("Dry-run is default; pass --write to update the target JSON files.");
@@ -33,13 +33,13 @@ function stripProtocol(value) {
   return String(value || "").trim().replace(/^https?:\/\//i, "").replace(/\/+$/g, "");
 }
 
-function normalizeHost(value, label) {
+function normalizeHost(value, label, options = {}) {
   const host = stripProtocol(value).toLowerCase();
   if (!host) throw new Error(`${label} is required.`);
   if (!/^[a-z0-9][a-z0-9.-]*[a-z0-9]$/.test(host)) {
     throw new Error(`${label} must be a domain name, for example zerolag.example.`);
   }
-  if (/example\.com|localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(host)) {
+  if (!options.allowPlaceholder && /example\.com|localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(host)) {
     throw new Error(`${label} must not use a placeholder or local-only domain.`);
   }
   return host;
@@ -56,9 +56,10 @@ function safeRelative(filePath) {
 }
 
 function buildProductionUrls(input) {
-  const domain = normalizeHost(input.domain, "domain");
-  const apiDomain = normalizeHost(input.apiDomain || `api.${domain}`, "api-domain");
-  const cdnDomain = normalizeHost(input.cdnDomain || `cdn.${domain}`, "cdn-domain");
+  const allowPlaceholder = input.allowPlaceholder === true;
+  const domain = normalizeHost(input.domain, "domain", { allowPlaceholder });
+  const apiDomain = normalizeHost(input.apiDomain || `api.${domain}`, "api-domain", { allowPlaceholder });
+  const cdnDomain = normalizeHost(input.cdnDomain || `cdn.${domain}`, "cdn-domain", { allowPlaceholder });
   const installerName = input.installerName || "ZeroLag-Setup-{version}.exe";
 
   return {
@@ -108,8 +109,9 @@ function prepareProductionConfig(input = {}) {
     nextSteps: [
       "Fill updatePublicKeyPem and runtimeSessionPublicKeyPem before signing a paid release.",
       "Run npm run update:sign after the real installer download URL is final.",
+      input.allowPlaceholder ? "Replace placeholder domains before paid public release." : "",
       "Run npm run release:preflight:strict before publishing the installer."
-    ]
+    ].filter(Boolean)
   };
 }
 
@@ -125,6 +127,7 @@ function main() {
       apiDomain: argValue("--api-domain"),
       cdnDomain: argValue("--cdn-domain"),
       installerName: argValue("--installer-name", "ZeroLag-Setup-{version}.exe"),
+      allowPlaceholder: process.argv.includes("--allow-placeholder"),
       configPath: argValue("--config", defaultConfigPath),
       updatePath: argValue("--update", defaultUpdatePath),
       write: process.argv.includes("--write")

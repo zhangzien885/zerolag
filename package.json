@@ -108,6 +108,7 @@
   "build": {
     "appId": "com.zerolag.optimizer",
     "productName": "ZeroLag",
+    "artifactName": "${productName}-Setup-${version}.${ext}",
     "copyright": "Copyright 2026 ZeroLag",
     "directories": {
       "output": "dist",
