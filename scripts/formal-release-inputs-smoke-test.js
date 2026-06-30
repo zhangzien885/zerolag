@@ -74,6 +74,8 @@ function main() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-release-inputs-"));
   const templatePath = path.join(tempDir, "formal-release-inputs.json");
   const setPath = path.join(tempDir, "set.json");
+  const domainPath = path.join(tempDir, "domain.json");
+  const badDomainPath = path.join(tempDir, "bad-domain.json");
   const readyPath = path.join(tempDir, "ready.json");
   const reservedPath = path.join(tempDir, "reserved.json");
   const secretPath = path.join(tempDir, "secret.json");
@@ -114,6 +116,37 @@ function main() {
   const badBooleanResult = run(["--file", setPath, "--set", "codeSigning.passwordConfigured=maybe"]);
   assert.notStrictEqual(badBooleanResult.status, 0, "boolean fields should reject ambiguous values");
   assert.match(badBooleanResult.stderr, /expects true or false/);
+
+  const domainResult = run(["--file", domainPath, "--domain", "zerolag.gg"]);
+  assert.notStrictEqual(domainResult.status, 0, "domain preset alone should not pass readiness");
+  assert.ok(fs.existsSync(domainPath), "--domain should write the private input file");
+  const domainData = parseJson(fs.readFileSync(domainPath, "utf8"));
+  assert.strictEqual(domainData.domains.website, "zerolag.gg");
+  assert.strictEqual(domainData.domains.api, "api.zerolag.gg");
+  assert.strictEqual(domainData.domains.cdn, "cdn.zerolag.gg");
+  assert.strictEqual(domainData.payment.checkoutUrlTemplate, "https://pay.zerolag.gg/checkout/{orderId}");
+  assert.strictEqual(domainData.payment.webhookUrl, "https://api.zerolag.gg/v1/payments/webhook");
+  assert.strictEqual(domainData.release.cdnReleaseBaseUrl, "https://cdn.zerolag.gg/releases");
+  assert.strictEqual(domainData.support.supportUrl, "https://zerolag.gg/support");
+  assert.strictEqual(domainData.support.contactEmail, "support@zerolag.gg");
+  assert.match(domainResult.stdout, /Domain preset: zerolag\.gg/);
+
+  const domainOverrideResult = run([
+    "--file",
+    domainPath,
+    "--domain",
+    "zerolag.gg",
+    "--set",
+    "support.contactEmail=help@zerolag.gg"
+  ]);
+  assert.notStrictEqual(domainOverrideResult.status, 0, "--set overrides should still validate partial readiness");
+  const domainOverrideData = parseJson(fs.readFileSync(domainPath, "utf8"));
+  assert.strictEqual(domainOverrideData.support.contactEmail, "help@zerolag.gg");
+
+  const badDomainResult = run(["--file", badDomainPath, "--domain", "your-domain.example"]);
+  assert.notStrictEqual(badDomainResult.status, 0, "placeholder domains must be rejected");
+  assert.match(badDomainResult.stderr, /real public HTTPS domain/);
+  assert.ok(!fs.existsSync(badDomainPath), "bad domain preset must not write an input file");
 
   writeJson(readyPath, readyFixture());
   const readyResult = run(["--file", readyPath, "--json"]);

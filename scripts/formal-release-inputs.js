@@ -12,6 +12,7 @@ function usage() {
   console.log("Usage:");
   console.log("  node scripts/formal-release-inputs.js --init [--output .secrets/formal-release-inputs.json] [--force]");
   console.log("  node scripts/formal-release-inputs.js --guide");
+  console.log("  node scripts/formal-release-inputs.js --domain zerolag.gg");
   console.log("  node scripts/formal-release-inputs.js --set domains.website=zerolag.gg [--set payment.provider=wechat_pay]");
   console.log("  node scripts/formal-release-inputs.js [--file .secrets/formal-release-inputs.json] [--json]");
   console.log("");
@@ -237,6 +238,28 @@ function applySetValues(input, assignments) {
     setDeepValue(data, parsed.field, parseFieldValue(parsed.field, parsed.value));
   });
   return data;
+}
+
+function normalizeRootDomain(value) {
+  const normalized = asHttpsUrl(value);
+  if (!normalized || !isRealPublicHttps(normalized)) {
+    throw new Error(`Formal release domain must be a real public HTTPS domain, not: ${value || "missing"}`);
+  }
+  return new URL(normalized).hostname.toLowerCase();
+}
+
+function domainPresetAssignments(value) {
+  const domain = normalizeRootDomain(value);
+  return [
+    `domains.website=${domain}`,
+    `domains.api=api.${domain}`,
+    `domains.cdn=cdn.${domain}`,
+    `payment.checkoutUrlTemplate=https://pay.${domain}/checkout/{orderId}`,
+    `payment.webhookUrl=https://api.${domain}/v1/payments/webhook`,
+    `release.cdnReleaseBaseUrl=https://cdn.${domain}/releases`,
+    `support.supportUrl=https://${domain}/support`,
+    `support.contactEmail=support@${domain}`
+  ];
 }
 
 function makeCheck(id, label, ok, detail, nextStep, severity = "blocker") {
@@ -470,11 +493,20 @@ function main() {
     }
 
     const inputFile = path.resolve(argValue("--file", defaultInputPath));
+    const domainValue = argValue("--domain", "");
+    const hasDomainFlag = hasFlag("--domain") || process.argv.some((arg) => arg.startsWith("--domain="));
     const setValues = argValues("--set");
-    if (setValues.length) {
-      const updated = updateInputFile(inputFile, setValues);
+    if (hasDomainFlag && !domainValue) {
+      throw new Error("Missing value for --domain. Example: npm run release:inputs -- --domain zerolag.gg");
+    }
+
+    const domainSetValues = domainValue ? domainPresetAssignments(domainValue) : [];
+    const pendingSetValues = [...domainSetValues, ...setValues];
+    if (pendingSetValues.length) {
+      const updated = updateInputFile(inputFile, pendingSetValues);
       console.log(`Formal release input file updated: ${inputFile}`);
-      console.log(`Updated fields: ${setValues.map((item) => parseSetArg(item).field).join(", ")}`);
+      if (domainValue) console.log(`Domain preset: ${normalizeRootDomain(domainValue)}`);
+      console.log(`Updated fields: ${pendingSetValues.map((item) => parseSetArg(item).field).join(", ")}`);
       console.log("");
       const result = collectFormalReleaseInputs(updated);
       printHuman(result, inputFile);
@@ -506,6 +538,7 @@ if (require.main === module) {
 module.exports = {
   applySetValues,
   collectFormalReleaseInputs,
+  domainPresetAssignments,
   initTemplate,
   printGuide,
   template

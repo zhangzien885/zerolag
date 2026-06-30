@@ -21,6 +21,7 @@ npm run release:next
 
 - Run `npm run release:inputs -- --init` once to create `.secrets/formal-release-inputs.json`.
 - Run `npm run release:inputs -- --guide` when the private file is hard to understand; it explains each required field, where to get it, and why it matters.
+- Use `npm run release:inputs -- --domain zerolag.gg` after buying a real domain to derive the website, API, CDN, checkout, webhook, release CDN, support URL, and support email fields.
 - Use `npm run release:inputs -- --set domains.website=zerolag.gg` for safe single-field updates when you do not want to hand-edit JSON.
 - Fill real website, API, CDN, payment, code-signing, release CDN, and support values in the private `.secrets` copy.
 - Do not paste payment API keys, private-key PEM text, or certificate passwords into the JSON file; use the `*Configured` boolean fields to confirm those secrets exist in the private server env or CI secrets.

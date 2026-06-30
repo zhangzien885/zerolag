@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T05:10:08.890Z",
+  "generatedAt": "2026-06-30T05:17:14.765Z",
   "files": [
     {
       "path": "package.json",
@@ -84,11 +84,11 @@
     },
     {
       "path": "scripts/formal-release-inputs.js",
-      "sha256": "944fb220c3c33eb8ceaec6e0bd94e560374ae4cb34104c00b2d5ef209ab5eb7d"
+      "sha256": "c026b477ae048d835aa759a883cb856117c295b72784f657e6737e97bc4c36a0"
     },
     {
       "path": "scripts/formal-release-inputs-smoke-test.js",
-      "sha256": "3d9e49a51e2ff0639a0e6bc997625bc642f5cb26ac8b7584a1c2af139a31c1ea"
+      "sha256": "1962a7960f011d0ccb392d9f898dca055e85c9672ac95f0ffb176b45bf0df117"
     },
     {
       "path": "scripts/generate-test-code-signing-cert.js",
@@ -303,5 +303,5 @@
       "sha256": "88e790f4e8a56c15098dff7234e769dae7d04718745d0b839b471f55bd0ae571"
     }
   ],
-  "signature": "77f33a72b8f921c717c8eb15ae5c93b65792f7b5fad76498fefa0fa8a288be81"
+  "signature": "0b1cbbb215538023af23341ae4f9769a23bc66ff6c9d861e01f5b68ae5f1376d"
 }

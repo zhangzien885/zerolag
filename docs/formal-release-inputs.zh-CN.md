@@ -19,7 +19,24 @@ npm run release:next
 
 ## 不想手改 JSON 时
 
-可以用 `--set 字段=值` 安全写入常用字段：
+如果你已经买好正式根域名，可以先用 `--domain` 一次性生成官网、API、CDN、支付回调、更新目录和客服入口：
+
+```powershell
+npm run release:inputs -- --domain zerolag.gg
+```
+
+这个命令会自动写入：
+
+- `domains.website=zerolag.gg`
+- `domains.api=api.zerolag.gg`
+- `domains.cdn=cdn.zerolag.gg`
+- `payment.checkoutUrlTemplate=https://pay.zerolag.gg/checkout/{orderId}`
+- `payment.webhookUrl=https://api.zerolag.gg/v1/payments/webhook`
+- `release.cdnReleaseBaseUrl=https://cdn.zerolag.gg/releases`
+- `support.supportUrl=https://zerolag.gg/support`
+- `support.contactEmail=support@zerolag.gg`
+
+也可以用 `--set 字段=值` 安全写入或覆盖单个字段：
 
 ```powershell
 npm run release:inputs -- --set domains.website=zerolag.gg

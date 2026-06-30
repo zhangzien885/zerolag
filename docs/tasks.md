@@ -235,6 +235,7 @@
 - Added a beginner-facing release next-step command that combines formal release inputs and release status into one recommended action, with CI smoke coverage.
 - Added a Chinese beginner guide for the formal release input file, exposed through `npm run release:inputs -- --guide`, so domain, payment, CDN, signing, and support fields can be filled without reading raw JSON alone.
 - Added allowlisted `npm run release:inputs -- --set field=value` updates so formal release fields can be written without hand-editing the private JSON file, while rejecting secret-like unsupported fields.
+- Added `npm run release:inputs -- --domain <domain>` to derive the website, API, CDN, checkout, webhook, release CDN, support URL, and support email fields from one real public root domain.
 - Tightened server secret-strength checks so known default or obvious weak values still fail, while generated strong secrets are not rejected just because a random substring happens to contain `dev`.
 
 ## Known Boundaries
