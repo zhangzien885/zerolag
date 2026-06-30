@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T09:08:51.236Z",
+  "generatedAt": "2026-06-30T09:30:42.277Z",
   "files": [
     {
       "path": "package.json",
@@ -16,7 +16,7 @@
     },
     {
       "path": "src/index.html",
-      "sha256": "87066b2182d6199c9606aa166e76ec5e7647dddd21a38018a2d319404f1ce4e2"
+      "sha256": "1ff5f536b375633b0c7949966a477b3303eecf25d895a72ad785012e68be67a6"
     },
     {
       "path": "src/splash.html",
@@ -24,11 +24,11 @@
     },
     {
       "path": "src/renderer.js",
-      "sha256": "7fa5baa2a9dd5bd323e38237823dfba5837d719c6f6d016d8e7e8628a247b521"
+      "sha256": "289229c9a234d53dfbccb7eae11dcda32c1eab16b182867f1de97a9133474c86"
     },
     {
       "path": "src/styles.css",
-      "sha256": "f885844dd7920cc2c2ebdd8523d8abc3e70f10f5d48a66f684be3cf9a59fcc2c"
+      "sha256": "d4a78b013a1d6817e36030dfc4906f04bdfe237c61477e215a00f922931c67d0"
     },
     {
       "path": "scripts/runtime-guard-core.js",
@@ -303,5 +303,5 @@
       "sha256": "88e790f4e8a56c15098dff7234e769dae7d04718745d0b839b471f55bd0ae571"
     }
   ],
-  "signature": "4050f2332858e927409332fc8243db058d6fb2372731223f72055730feb10cde"
+  "signature": "d7548a1ca6f3b43f93c3c6bb3f4c4bed6ab8bc2cb91bcc97e8f5473d938dc96e"
 }

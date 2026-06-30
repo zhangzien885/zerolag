@@ -33,6 +33,8 @@ function firstRule(stylesCss, selectorPart) {
 
 function main() {
   const stylesCss = readText("src/styles.css");
+  const indexHtml = readText("src/index.html");
+  const rendererJs = readText("src/renderer.js");
   const packageJson = JSON.parse(readText("package.json"));
 
   const bodyRule = firstRule(stylesCss, "body");
@@ -57,6 +59,23 @@ function main() {
   assertOk(topbarPillRules.some((rule) => /max-width:\s*100%\s*;/.test(rule.body)), "Topbar pills must not expand past the right edge.");
   assertOk(topbarPillRules.some((rule) => /flex-wrap:\s*wrap\s*;/.test(rule.body)), "Topbar pills must wrap instead of clipping on the right.");
   assertOk(!topbarPillRules.some((rule) => /grid-template-columns:\s*38px repeat\(4,\s*max-content\)\s*;/.test(rule.body)), "Topbar pills must not use a fixed max-content grid.");
+
+  assertOk(indexHtml.includes('class="preflight-panel"'), "Main dashboard must fill the lower-left empty area with the preflight panel.");
+  assertOk(indexHtml.includes('id="preflightScanButton"'), "Preflight panel must include a quick scan action.");
+  assertOk(indexHtml.includes('id="preflightNetworkButton"'), "Preflight panel must include a network check action.");
+  assertOk(indexHtml.includes('id="preflightMemoryButton"'), "Preflight panel must include a memory refresh action.");
+  assertOk(indexHtml.includes('id="preflightSupportButton"'), "Preflight panel must include a support diagnostics action.");
+
+  const preflightRules = rulesFor(stylesCss, ".preflight-panel");
+  assertOk(preflightRules.some((rule) => /grid-column:\s*1 \/ span 2\s*;/.test(rule.body)), "Preflight panel must span the lower-left two columns on desktop.");
+  const preflightActionRules = rulesFor(stylesCss, ".preflight-actions");
+  assertOk(preflightActionRules.some((rule) => /grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)\s*;/.test(rule.body)), "Preflight actions must use four compact desktop columns.");
+  assertOk(stylesCss.includes(".preflight-panel {\n    grid-column: auto;"), "Preflight panel must collapse back to normal flow on narrow windows.");
+  assertOk(rendererJs.includes("renderPreflightSummary"), "Renderer must keep the preflight panel in sync with system state.");
+  assertOk(rendererJs.includes('preflightScanButton.addEventListener("click"'), "Preflight scan action must be wired.");
+  assertOk(rendererJs.includes('preflightNetworkButton.addEventListener("click"'), "Preflight network action must be wired.");
+  assertOk(rendererJs.includes('preflightMemoryButton.addEventListener("click"'), "Preflight memory action must be wired.");
+  assertOk(rendererJs.includes('preflightSupportButton.addEventListener("click"'), "Preflight support action must be wired.");
 
   assertOk(stylesCss.includes("@media (max-height: 820px)"), "Short windows need a compact-height layout fallback.");
   assertOk(packageJson.scripts && packageJson.scripts["ui:layout:smoke"], "ui:layout:smoke script is missing.");

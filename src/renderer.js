@@ -59,6 +59,17 @@ const els = {
   toolboxOverlay: document.querySelector("#toolboxOverlay"),
   closeToolboxButton: document.querySelector("#closeToolboxButton"),
   resultState: document.querySelector("#resultState"),
+  preflightState: document.querySelector("#preflightState"),
+  preflightAdvice: document.querySelector("#preflightAdvice"),
+  preflightDetail: document.querySelector("#preflightDetail"),
+  preflightScanButton: document.querySelector("#preflightScanButton"),
+  preflightNetworkButton: document.querySelector("#preflightNetworkButton"),
+  preflightMemoryButton: document.querySelector("#preflightMemoryButton"),
+  preflightSupportButton: document.querySelector("#preflightSupportButton"),
+  preflightAdmin: document.querySelector("#preflightAdmin"),
+  preflightMember: document.querySelector("#preflightMember"),
+  preflightMemory: document.querySelector("#preflightMemory"),
+  preflightGameMode: document.querySelector("#preflightGameMode"),
   memberState: document.querySelector("#memberState"),
   memberCard: document.querySelector("#memberCard"),
   expiresAt: document.querySelector("#expiresAt"),
@@ -120,6 +131,9 @@ let pendingCheckoutMode = "payment";
 let purchaseAppConfig = {};
 let latestSupportHandoff = null;
 let latestSupportBundleReady = false;
+let latestStatusSnapshot = null;
+let latestDiagnostics = null;
+let latestMemory = null;
 
 function setText(node, value) {
   node.textContent = value;
@@ -371,13 +385,76 @@ function railLabel(score) {
   return "NEEDS BOOST";
 }
 
-function renderMemory(memory) {
-  if (!memory) {
-    setValueWithTitle(els.memoryState, "读取失败");
+function setPreflightCheck(node, value, tone = "") {
+  setValueWithTitle(node, value);
+  node.classList.toggle("good", tone === "good");
+  node.classList.toggle("warn", tone === "warn");
+  node.classList.toggle("fail", tone === "fail");
+}
+
+function renderPreflightSummary() {
+  const status = latestStatusSnapshot || {};
+  const diagnostics = latestDiagnostics || {};
+  const memory = latestMemory || diagnostics.memory || null;
+  const score = Number(diagnostics.readinessScore || 0);
+  const gameMode = diagnostics.windows && diagnostics.windows.gameMode ? diagnostics.windows.gameMode : "读取中";
+  const memoryValue = memory && memory.usedPercent !== undefined ? `${memory.usedPercent}% / ${memory.total}` : "读取中";
+
+  setPreflightCheck(els.preflightAdmin, status.admin ? "权限就绪" : "需管理员", status.admin ? "good" : "warn");
+  setPreflightCheck(els.preflightMember, status.licenseActive ? "Pro 可用" : (status.integrityOk === false ? "授权异常" : "待授权"), status.licenseActive ? "good" : "warn");
+  setPreflightCheck(els.preflightMemory, memoryValue, memory && Number(memory.usedPercent) >= 88 ? "warn" : "good");
+  setPreflightCheck(els.preflightGameMode, gameMode, /开|启|on|enabled/i.test(gameMode) ? "good" : "warn");
+
+  if (status.integrityOk === false) {
+    setText(els.preflightState, "需修复");
+    setText(els.preflightAdvice, "授权环境异常，请重新安装正版客户端。");
+    setText(els.preflightDetail, "当前不建议继续加速，先恢复客户端完整性会更稳。");
     return;
   }
 
+  if (!status.licenseActive) {
+    setText(els.preflightState, "待授权");
+    setText(els.preflightAdvice, "先登录或开通 Pro，再启用极限性能。");
+    setText(els.preflightDetail, "会员生效后，一键加速、性能模式和会员工具会自动解锁。");
+    return;
+  }
+
+  if (!status.admin) {
+    setText(els.preflightState, "需权限");
+    setText(els.preflightAdvice, "建议用管理员权限重新打开。");
+    setText(els.preflightDetail, "性能模式、DNS 刷新和部分系统优化需要管理员权限才能完整执行。");
+    return;
+  }
+
+  if (status.runtimeReady) {
+    setText(els.preflightState, "加速中");
+    setText(els.preflightAdvice, "Boost 正在运行，可以直接开局。");
+    setText(els.preflightDetail, "关闭软件或点击恢复后，会自动回到日常状态。");
+    return;
+  }
+
+  if (score && score < 70) {
+    setText(els.preflightState, "建议加速");
+    setText(els.preflightAdvice, "当前系统干扰偏高，建议开局前先 Boost。");
+    setText(els.preflightDetail, "一键加速会优先处理性能模式、游戏内存和系统延迟相关项目。");
+    return;
+  }
+
+  setText(els.preflightState, score >= 84 ? "准备就绪" : "可优化");
+  setText(els.preflightAdvice, score >= 84 ? "状态不错，开局前可直接启动 Boost。" : "还有优化空间，建议开局前一键整理。");
+  setText(els.preflightDetail, "这里会实时汇总权限、会员、内存和游戏模式，让你不用来回切页面。");
+}
+
+function renderMemory(memory) {
+  if (!memory) {
+    setValueWithTitle(els.memoryState, "读取失败");
+    setPreflightCheck(els.preflightMemory, "读取失败", "warn");
+    return;
+  }
+
+  latestMemory = memory;
   setValueWithTitle(els.memoryState, `${memory.usedPercent}% / ${memory.total}`);
+  renderPreflightSummary();
 }
 
 function renderDiagnostics(diagnostics) {
@@ -388,6 +465,7 @@ function renderDiagnostics(diagnostics) {
 
   const score = diagnostics.readinessScore || 80;
   const gpu = diagnostics.gpu && diagnostics.gpu.length ? diagnostics.gpu[0] : null;
+  latestDiagnostics = diagnostics;
 
   document.body.classList.remove("ready-good", "ready-mid", "ready-low");
   document.body.classList.add(readinessClass(score));
@@ -401,6 +479,7 @@ function renderDiagnostics(diagnostics) {
   setValueWithTitle(els.gpuState, gpu ? gpu.name : "未识别");
   renderMemory(diagnostics.memory);
   setValueWithTitle(els.gameModeState, diagnostics.windows.gameMode);
+  renderPreflightSummary();
 }
 
 function renderRestoreAssurance(runtimeReady, status = {}) {
@@ -725,6 +804,12 @@ async function refreshStatus() {
     const expiryInfo = membershipExpiryInfo(status.license && status.license.expiresAt);
     const expiredLicense = !licenseActive && expiryInfo && expiryInfo.state === "expired";
     const memberAlert = (licenseActive || expiredLicense) && expiryInfo && (expiryInfo.state === "expiring" || expiryInfo.state === "expired");
+    latestStatusSnapshot = {
+      admin: Boolean(status.admin),
+      integrityOk,
+      licenseActive,
+      runtimeReady
+    };
 
     setPill(els.licenseState, licenseActive ? "Pro 已启用" : (integrityOk ? "待激活" : "授权异常"), licenseActive ? "good" : "warn");
     setPill(els.adminState, status.admin ? "权限就绪" : "权限待启用", status.admin ? "good" : "warn");
@@ -763,6 +848,9 @@ async function refreshStatus() {
   } catch (error) {
     setPill(els.planState, "读取失败", "warn");
     setText(els.readyState, "异常");
+    setText(els.preflightState, "读取失败");
+    setText(els.preflightAdvice, "状态读取失败，请重新打开或重新扫描。");
+    setText(els.preflightDetail, "如果多次失败，可以生成诊断信息发给客服排查。");
     els.restoreButton.disabled = true;
     renderRestoreAssurance(false, { runtimePowerPlanError: true });
     addLog("状态读取失败，请重新打开软件。", "fail");
@@ -1184,6 +1272,41 @@ els.rescanButton.addEventListener("click", async () => {
   await refreshMemoryUsage();
   setText(els.resultState, "扫描完成");
   addLog("状态扫描完成。", "good");
+});
+
+els.preflightScanButton.addEventListener("click", async () => {
+  els.preflightScanButton.disabled = true;
+  setText(els.preflightState, "扫描中");
+  try {
+    await refreshStatus();
+    await refreshMemoryUsage();
+    addLog("赛前自检完成。", "good");
+  } finally {
+    els.preflightScanButton.disabled = false;
+  }
+});
+
+els.preflightNetworkButton.addEventListener("click", () => {
+  els.toolboxOverlay.hidden = false;
+  setText(els.preflightState, "检测网络");
+  els.networkCheckButton.click();
+});
+
+els.preflightMemoryButton.addEventListener("click", async () => {
+  els.preflightMemoryButton.disabled = true;
+  setText(els.preflightState, "刷新内存");
+  try {
+    await refreshMemoryUsage();
+    addLog("内存读数已刷新。", "good");
+  } finally {
+    els.preflightMemoryButton.disabled = false;
+  }
+});
+
+els.preflightSupportButton.addEventListener("click", async () => {
+  els.toolboxOverlay.hidden = false;
+  setText(els.preflightState, "准备诊断");
+  await refreshSupportHandoff(true);
 });
 
 els.restoreButton.addEventListener("click", async () => {

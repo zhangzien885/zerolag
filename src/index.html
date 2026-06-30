@@ -216,6 +216,56 @@
           </div>
           <button id="renewButton" class="renew-button">续费月度会员</button>
         </div>
+
+        <div class="preflight-panel">
+          <div class="section-title">
+            <span>赛前作战台</span>
+            <strong id="preflightState">待扫描</strong>
+          </div>
+          <div class="preflight-body">
+            <div class="preflight-command">
+              <span>BOOST READY CHECK</span>
+              <strong id="preflightAdvice">先完成授权，再启动一键加速。</strong>
+              <p id="preflightDetail">自动汇总权限、会员、内存和游戏模式，开局前一眼判断该做什么。</p>
+            </div>
+            <div class="preflight-actions">
+              <button id="preflightScanButton" type="button">
+                <span>SCAN</span>
+                <b>快速自检</b>
+              </button>
+              <button id="preflightNetworkButton" type="button">
+                <span>NET</span>
+                <b>网络检测</b>
+              </button>
+              <button id="preflightMemoryButton" type="button">
+                <span>RAM</span>
+                <b>刷新内存</b>
+              </button>
+              <button id="preflightSupportButton" type="button">
+                <span>LOG</span>
+                <b>诊断信息</b>
+              </button>
+            </div>
+          </div>
+          <div class="preflight-checks">
+            <div>
+              <span>权限</span>
+              <strong id="preflightAdmin">读取中</strong>
+            </div>
+            <div>
+              <span>会员</span>
+              <strong id="preflightMember">读取中</strong>
+            </div>
+            <div>
+              <span>内存</span>
+              <strong id="preflightMemory">读取中</strong>
+            </div>
+            <div>
+              <span>游戏模式</span>
+              <strong id="preflightGameMode">读取中</strong>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
     <section id="toolboxOverlay" class="purchase-overlay toolbox-overlay" hidden>
