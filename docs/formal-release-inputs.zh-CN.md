@@ -83,3 +83,11 @@ npm run release:next
 ```
 
 它会继续告诉你下一步应该做什么，例如写入生产 URL、配置服务器支付环境、准备更新清单、切到 production 模式、生成官网发布信息或跑最终发布门禁。
+
+如果资料已经全部通过，也可以生成一份可审阅的 PowerShell 命令计划：
+
+```powershell
+npm run release:inputs -- --write-commands
+```
+
+默认会写到 `.secrets/formal-release-commands.ps1`。这份文件只包含发布命令，不会写入支付密钥、证书密码或私钥正文。运行前仍然要先打开检查一遍。

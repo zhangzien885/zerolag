@@ -4,6 +4,7 @@ const { isRealHttpsUrl } = require("./release-url-policy");
 
 const rootDir = path.join(__dirname, "..");
 const defaultInputPath = path.join(rootDir, ".secrets", "formal-release-inputs.json");
+const defaultCommandPlanPath = path.join(rootDir, ".secrets", "formal-release-commands.ps1");
 const guidePath = path.join(rootDir, "docs", "formal-release-inputs.zh-CN.md");
 
 const paymentProviders = new Set(["wechat_pay", "alipay"]);
@@ -14,6 +15,7 @@ function usage() {
   console.log("  node scripts/formal-release-inputs.js --guide");
   console.log("  node scripts/formal-release-inputs.js --domain zerolag.gg");
   console.log("  node scripts/formal-release-inputs.js --set domains.website=zerolag.gg [--set payment.provider=wechat_pay]");
+  console.log("  node scripts/formal-release-inputs.js --write-commands [--output .secrets/formal-release-commands.ps1]");
   console.log("  node scripts/formal-release-inputs.js [--file .secrets/formal-release-inputs.json] [--json]");
   console.log("");
   console.log("Collects and validates the external facts required for a paid public release without printing secrets.");
@@ -450,6 +452,35 @@ function printHuman(result, inputFile) {
   });
 }
 
+function powerShellComment(value) {
+  return String(value || "").replace(/\r?\n/g, " ");
+}
+
+function commandPlan(inputFile, result) {
+  const lines = [
+    "# ZeroLag formal release command plan",
+    `# Source input: ${powerShellComment(inputFile)}`,
+    `# Generated at: ${new Date().toISOString()}`,
+    "# Review each command before running this file.",
+    "# Keep this file private if your paths reveal local machine details.",
+    "",
+    "$ErrorActionPreference = 'Stop'",
+    "",
+    ...result.nextCommands
+  ];
+  return `${lines.join("\n")}\n`;
+}
+
+function writeCommandPlan(outputPath, inputFile, result) {
+  if (!result.readyForPublicRelease) {
+    const failed = (result.checks || []).find((entry) => !entry.ok);
+    throw new Error(`Formal release inputs are not ready. First blocker: ${failed ? `${failed.label}: ${failed.detail}` : "unknown"}`);
+  }
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, commandPlan(inputFile, result), "utf8");
+  return outputPath;
+}
+
 function initTemplate(outputPath, force) {
   if (fs.existsSync(outputPath) && !force) {
     throw new Error(`${outputPath} already exists. Pass --force to overwrite it.`);
@@ -493,6 +524,7 @@ function main() {
     }
 
     const inputFile = path.resolve(argValue("--file", defaultInputPath));
+    const writeCommands = hasFlag("--write-commands");
     const domainValue = argValue("--domain", "");
     const hasDomainFlag = hasFlag("--domain") || process.argv.some((arg) => arg.startsWith("--domain="));
     const setValues = argValues("--set");
@@ -519,6 +551,14 @@ function main() {
     }
 
     const result = collectFormalReleaseInputs(readJson(inputFile));
+    if (writeCommands) {
+      const outputPath = path.resolve(argValue("--output", defaultCommandPlanPath));
+      writeCommandPlan(outputPath, inputFile, result);
+      console.log(`Formal release command plan written: ${outputPath}`);
+      console.log("Review it before running; it does not contain payment keys or certificate passwords.");
+      return;
+    }
+
     if (hasFlag("--json")) {
       console.log(JSON.stringify(result, null, 2));
     } else {
@@ -537,6 +577,7 @@ if (require.main === module) {
 
 module.exports = {
   applySetValues,
+  commandPlan,
   collectFormalReleaseInputs,
   domainPresetAssignments,
   initTemplate,

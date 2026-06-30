@@ -97,6 +97,7 @@ Server commands automatically load `.secrets/server.env` when it exists. Existin
 `release:inputs -- --guide` prints a beginner-friendly field guide for the private formal-release input file.
 `release:inputs -- --domain zerolag.gg` derives the website, API, CDN, checkout, webhook, release CDN, support URL, and support email fields from one real root domain.
 `release:inputs -- --set domains.website=zerolag.gg` safely writes allowlisted formal-release fields without hand-editing the private JSON file.
+`release:inputs -- --write-commands` writes a private reviewable PowerShell command plan after all formal inputs pass validation.
 `release:inputs` validates the private formal-release input checklist for real domains, payment provider, signing certificate readiness, release CDN, and support URL without printing secrets.
 `release:next` turns the current release status and formal input checklist into one beginner-friendly next action.
 `signing:test-cert` creates a local self-signed test code-signing certificate under `.secrets/codesign`; use it only to test packaging and signing flow, not for paid public release.

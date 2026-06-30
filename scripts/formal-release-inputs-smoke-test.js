@@ -77,6 +77,8 @@ function main() {
   const domainPath = path.join(tempDir, "domain.json");
   const badDomainPath = path.join(tempDir, "bad-domain.json");
   const readyPath = path.join(tempDir, "ready.json");
+  const commandPlanPath = path.join(tempDir, "formal-release-commands.ps1");
+  const blockedCommandPlanPath = path.join(tempDir, "blocked-formal-release-commands.ps1");
   const reservedPath = path.join(tempDir, "reserved.json");
   const secretPath = path.join(tempDir, "secret.json");
 
@@ -148,6 +150,11 @@ function main() {
   assert.match(badDomainResult.stderr, /real public HTTPS domain/);
   assert.ok(!fs.existsSync(badDomainPath), "bad domain preset must not write an input file");
 
+  const blockedCommandsResult = run(["--file", setPath, "--write-commands", "--output", blockedCommandPlanPath]);
+  assert.notStrictEqual(blockedCommandsResult.status, 0, "command plan must not be written before inputs are ready");
+  assert.match(blockedCommandsResult.stderr, /Formal release inputs are not ready/);
+  assert.ok(!fs.existsSync(blockedCommandPlanPath), "blocked command plan should not be written");
+
   writeJson(readyPath, readyFixture());
   const readyResult = run(["--file", readyPath, "--json"]);
   assert.strictEqual(readyResult.status, 0, readyResult.stderr);
@@ -155,6 +162,16 @@ function main() {
   assert.strictEqual(ready.ok, true);
   assert.strictEqual(ready.readyForPublicRelease, true);
   assert.strictEqual(ready.blockerCount, 0);
+
+  const commandPlanResult = run(["--file", readyPath, "--write-commands", "--output", commandPlanPath]);
+  assert.strictEqual(commandPlanResult.status, 0, commandPlanResult.stderr);
+  assert.ok(fs.existsSync(commandPlanPath), "ready inputs should write a command plan");
+  const commandPlan = fs.readFileSync(commandPlanPath, "utf8");
+  assert.match(commandPlan, /ZeroLag formal release command plan/);
+  assert.match(commandPlan, /npm run release:version -- --version 1\.0\.0 --write/);
+  assert.match(commandPlan, /npm run production:config -- --domain zerolag\.gg --api-domain api\.zerolag\.gg --cdn-domain cdn\.zerolag\.gg --write/);
+  assert.match(commandPlan, /npm run update:prepare -- --base-url https:\/\/cdn\.zerolag\.gg\/releases/);
+  assert.ok(!commandPlan.includes("do-not-print"), "command plan must not expose rejected secret fixtures");
 
   const reserved = readyFixture();
   reserved.domains.website = "zerolag.test";

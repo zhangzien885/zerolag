@@ -24,6 +24,7 @@ npm run release:next
 - Use `npm run release:inputs -- --domain zerolag.gg` after buying a real domain to derive the website, API, CDN, checkout, webhook, release CDN, support URL, and support email fields.
 - Use `npm run release:inputs -- --set domains.website=zerolag.gg` for safe single-field updates when you do not want to hand-edit JSON.
 - Fill real website, API, CDN, payment, code-signing, release CDN, and support values in the private `.secrets` copy.
+- After `npm run release:inputs` passes, run `npm run release:inputs -- --write-commands` to create a private PowerShell command plan under `.secrets` and review it before applying release changes.
 - Do not paste payment API keys, private-key PEM text, or certificate passwords into the JSON file; use the `*Configured` boolean fields to confirm those secrets exist in the private server env or CI secrets.
 - Run `npm run release:inputs` before switching production mode so placeholder domains, manual payment, and test signing cannot be mistaken for formal release readiness.
 - Run `npm run release:next` whenever the next public-release action is unclear; it compresses the release dashboard into one recommended action.
