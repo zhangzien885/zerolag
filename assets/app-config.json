@@ -6,8 +6,8 @@
   "analyticsUrl": "",
   "apiBaseUrl": "",
   "updateManifestUrl": "",
-  "updatePublicKeyPem": "",
-  "runtimeSessionPublicKeyPem": "",
+  "updatePublicKeyPem": "-----BEGIN PUBLIC KEY-----\\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAwkHwxAyUpU9lYb2kO2o9\\nDSdyDDAPD+bkHPm/SB4wvt+Y9v8wjZ4ckanWPYNrL/VGKyAUE9U/iFa/9542D4GY\\nay2BJoE2B8XUy+28IJMBRIVzZSvFtX3xRsCNtaBA3m6A7XMnOPLUcrjXmAHfOfCL\\n7JEwWfrPrtXQpXyHzfiTN0dm3mNXEK7TVTM4zFmTcIQWLegRgWOpWOLYiLOADM9K\\noBK1yO256huRj21Xni1GRAAV1/11UPlCs6LAilRcwOEFvm1m9UmRZlWz6MQ2BrlH\\nK9ZfrRXDqQ7vHXC0n0+r39r5DEDTunTZ0Nw9qhDnuSdoW88j6vo53DLKh7m/jrhh\\nj+wyEjtkrL4lIFXIF5ypgb5LwcQ86am34JTHkCCWoUP7Cz87tF1Upgh7Z9zXMaHL\\nZgx/b96mkuM1yUsihkx3KhQqlQmIf5lNd3TnC89MTow8N7c+8w+pB6ZXWkQm0Tlm\\n3g1FK2IKjTFkrwf5952jWfErSf2Vfd4UoPx91vJXqMmfAgMBAAE=\\n-----END PUBLIC KEY-----",
+  "runtimeSessionPublicKeyPem": "-----BEGIN PUBLIC KEY-----\\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAqkrkWB08iaIjzcUvIsn/\\nf0b9C/Tw7a8Cpf6vudZy9AkvLnlvTx7joDLW9msTvRj+C1Wnj9N7hOh1tgwd1Lt2\\nO9pTINxd2/LgweN6D8KgQXFrWItzMnKotCUGN6XS92wD67JcXoWdWe3qv2mm9mXE\\ndFLat5RE3u0e6KGy4bcmZq4NMxj9/IbiTuXgfnDfHvI5mkudwCmcQEqi0f6S+edp\\nElINM1GK/Zna30iQTOiY2WzDY41SDLJk1IHMdpqik4uTxgm/yF7PDtxoDpW97+W0\\nZNtwp5MJc+ReOIKT+gtnVBN/dXGpCyzlkvSB+iHL4MHSCrVBoMjJ3M+kEBkXJ26s\\nTyGVxZzJTrRkSjeTdjci7eqne10fK8HdKjogkPxinet40Juh+Xuola/dnvOGMZRu\\ncwPsVhyh2LSoAbLmywsEtsa3y53yseQj7i91YZa//Aj/iBhWiNe+ceGDiHyOFTUl\\n0mF69wqmEU6p15OkyixGrBS3KSY18e2hZmIGk5kCtNULAgMBAAE=\\n-----END PUBLIC KEY-----",
   "allowLocalDemoLicense": false,
   "offlineGraceHours": 24,
   "supportUrl": ""
