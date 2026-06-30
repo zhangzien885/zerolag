@@ -2126,6 +2126,15 @@ function showMainWindow() {
   mainWindow.focus();
 }
 
+function revealPrimaryInstanceWindow() {
+  if (!app.isReady()) {
+    app.once("ready", showMainWindow);
+    return;
+  }
+
+  showMainWindow();
+}
+
 function updateTrayMenu() {
   if (!tray) return;
 
@@ -2819,7 +2828,11 @@ function createWindow() {
   win.loadFile(path.join(__dirname, "src", "index.html"));
 }
 
-if (runtimeGuardServiceMode) {
+const hasDesktopInstanceLock = runtimeGuardServiceMode || app.requestSingleInstanceLock();
+
+if (!hasDesktopInstanceLock) {
+  app.quit();
+} else if (runtimeGuardServiceMode) {
   const { main: runRuntimeGuardService } = require("./scripts/runtime-guard-service");
   runRuntimeGuardService().then(() => {
     app.exit(0);
@@ -2828,6 +2841,10 @@ if (runtimeGuardServiceMode) {
     app.exit(1);
   });
 } else {
+app.on("second-instance", () => {
+  revealPrimaryInstanceWindow();
+});
+
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
   appIntegrityStatus = verifyAppIntegrity();

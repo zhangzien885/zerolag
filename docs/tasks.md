@@ -30,6 +30,7 @@
 - Game toolbox version center for manual update checks, current version/channel display, and download handoff.
 - Official website button that opens the future ZeroLag website.
 - Background tray mode: closing the desktop window hides ZeroLag to the Windows tray, while tray exit performs real cleanup.
+- Single-instance desktop startup: launching ZeroLag again while it is hidden in the tray reveals the existing window instead of opening another background instance.
 - Manual recovery control: topbar "restore daily mode" button stops the active Boost session and refreshes status without closing the app.
 - Restore assurance card showing whether Boost can currently be returned to daily mode, with clearer recovery result copy.
 - Manual rescan control: topbar "rescan" button refreshes license, permission, performance, diagnostics, and memory status on demand.
@@ -229,6 +230,7 @@
 - Added single-active-computer account sessions so the newest login device replaces older account tokens and copied account sessions cannot keep using membership elsewhere.
 - Added official service-status UI coverage for website, purchase, account, update, and support channel readiness plus safe website handoff without exposing internal endpoint details.
 - Added desktop layout smoke coverage to prevent fixed-height dashboards, hidden membership overflow, or clipped topbar status controls from regressing.
+- Added single-instance startup coverage so normal desktop launches cannot create duplicate UI/tray controllers, while runtime guard service mode remains independent.
 - Added native Windows Service wrapper source, build tooling, CI smoke coverage, and installer wiring that prefers the wrapper before falling back to explicitly gated Electron worker validation.
 - Added a redacted release-workstation readiness command that checks the build PC for .NET SDK, native wrapper output, code signing, production URLs, update signing, private server env, and Git cleanliness with CI smoke coverage.
 - Added local test code-signing certificate generation under `.secrets/codesign`, private env auto-loading for signing checks, and CI smoke coverage while keeping test certificates out of public-release readiness.
