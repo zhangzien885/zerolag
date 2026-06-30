@@ -14,6 +14,7 @@ npm run server:deployment-report:json
 npm run server:deployment-report:strict
 npm run release:workstation
 npm run release:inputs
+npm run release:inputs -- --write-server-env-snippet
 npm run release:next
 ```
 
@@ -25,6 +26,7 @@ npm run release:next
 - Use `npm run release:inputs -- --set domains.website=zerolag.gg` for safe single-field updates when you do not want to hand-edit JSON.
 - Fill real website, API, CDN, payment, code-signing, release CDN, and support values in the private `.secrets` copy.
 - After `npm run release:inputs` passes, run `npm run release:inputs -- --write-commands` to create a private PowerShell command plan under `.secrets` and review it before applying release changes.
+- After payment fields pass, run `npm run release:inputs -- --write-server-env-snippet` to create `.secrets/server-payment-snippet.env`, then merge the non-secret payment values into the private server env.
 - Do not paste payment API keys, private-key PEM text, or certificate passwords into the JSON file; use the `*Configured` boolean fields to confirm those secrets exist in the private server env or CI secrets.
 - Run `npm run release:inputs` before switching production mode so placeholder domains, manual payment, and test signing cannot be mistaken for formal release readiness.
 - Run `npm run release:next` whenever the next public-release action is unclear; it compresses the release dashboard into one recommended action.
@@ -69,6 +71,7 @@ npm run release:next
 - For wider paid testing, set `ZEROLAG_STATE_STORE=sqlite` and configure `ZEROLAG_SQLITE_STATE_PATH` on durable storage.
 - Confirm `npm run server:check:strict` prints safe SQLite state and backup summaries and does not report SQLite storage issues.
 - Configure `ZEROLAG_PAYMENT_PROVIDER`, `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS`, `ZEROLAG_PAYMENT_URL_TEMPLATE`, and `ZEROLAG_PAYMENT_MESSAGE` for the real payment provider.
+- Prefer generating those non-secret payment env lines from the formal input file with `npm run release:inputs -- --write-server-env-snippet`, then add the real API key, webhook secret, and certificate/password secrets only in the private server environment.
 - For WeChat Pay, configure `ZEROLAG_WECHAT_PAY_MCH_ID`, `ZEROLAG_WECHAT_PAY_APP_ID`, `ZEROLAG_WECHAT_PAY_API_V3_KEY`, `ZEROLAG_WECHAT_PAY_SERIAL_NO`, and `ZEROLAG_WECHAT_PAY_PRIVATE_KEY_PATH`; for Alipay, configure `ZEROLAG_ALIPAY_APP_ID`, `ZEROLAG_ALIPAY_PRIVATE_KEY_PATH`, and `ZEROLAG_ALIPAY_PUBLIC_KEY_PATH`.
 - Run `npm run payment:provider:smoke` after changing payment provider settings so the shared adapter rules, allowlist behavior, and credential-key requirements stay aligned.
 - Run `npm run server:payment-loop` to verify the account, order, signed webhook, activation, validation, refund, and revocation loop before connecting the real payment adapter.

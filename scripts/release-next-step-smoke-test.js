@@ -113,7 +113,8 @@ function main() {
     releaseStatus: statusWithItems([item("server-env-valid", false, "0 issue(s), 2 warning(s)")])
   });
   assert.strictEqual(paymentStep.step.stage, "server-payment-env");
-  assert.ok(paymentStep.step.command.includes("server:env-check"));
+  assert.ok(paymentStep.step.command.includes("release:inputs -- --write-server-env-snippet"));
+  assert.ok(paymentStep.step.afterThis.includes("server:env-check"));
 
   const updateStep = collectReleaseNextStep({
     formalInputsExists: true,

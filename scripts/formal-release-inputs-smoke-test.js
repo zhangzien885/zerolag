@@ -77,8 +77,12 @@ function main() {
   const domainPath = path.join(tempDir, "domain.json");
   const badDomainPath = path.join(tempDir, "bad-domain.json");
   const readyPath = path.join(tempDir, "ready.json");
+  const alipayReadyPath = path.join(tempDir, "alipay-ready.json");
   const commandPlanPath = path.join(tempDir, "formal-release-commands.ps1");
   const blockedCommandPlanPath = path.join(tempDir, "blocked-formal-release-commands.ps1");
+  const serverEnvSnippetPath = path.join(tempDir, "server-payment-snippet.env");
+  const alipayServerEnvSnippetPath = path.join(tempDir, "alipay-server-payment-snippet.env");
+  const blockedServerEnvSnippetPath = path.join(tempDir, "blocked-server-payment-snippet.env");
   const reservedPath = path.join(tempDir, "reserved.json");
   const secretPath = path.join(tempDir, "secret.json");
 
@@ -155,6 +159,11 @@ function main() {
   assert.match(blockedCommandsResult.stderr, /Formal release inputs are not ready/);
   assert.ok(!fs.existsSync(blockedCommandPlanPath), "blocked command plan should not be written");
 
+  const blockedServerEnvSnippetResult = run(["--file", setPath, "--write-server-env-snippet", "--output", blockedServerEnvSnippetPath]);
+  assert.notStrictEqual(blockedServerEnvSnippetResult.status, 0, "payment env snippet must not be written before payment inputs are ready");
+  assert.match(blockedServerEnvSnippetResult.stderr, /Payment server env snippet is not ready/);
+  assert.ok(!fs.existsSync(blockedServerEnvSnippetPath), "blocked payment env snippet should not be written");
+
   writeJson(readyPath, readyFixture());
   const readyResult = run(["--file", readyPath, "--json"]);
   assert.strictEqual(readyResult.status, 0, readyResult.stderr);
@@ -172,6 +181,49 @@ function main() {
   assert.match(commandPlan, /npm run production:config -- --domain zerolag\.gg --api-domain api\.zerolag\.gg --cdn-domain cdn\.zerolag\.gg --write/);
   assert.match(commandPlan, /npm run update:prepare -- --base-url https:\/\/cdn\.zerolag\.gg\/releases/);
   assert.ok(!commandPlan.includes("do-not-print"), "command plan must not expose rejected secret fixtures");
+
+  const serverEnvSnippetResult = run(["--file", readyPath, "--write-server-env-snippet", "--output", serverEnvSnippetPath]);
+  assert.strictEqual(serverEnvSnippetResult.status, 0, serverEnvSnippetResult.stderr);
+  assert.ok(fs.existsSync(serverEnvSnippetPath), "ready WeChat inputs should write a payment server env snippet");
+  const serverEnvSnippet = fs.readFileSync(serverEnvSnippetPath, "utf8");
+  assert.match(serverEnvSnippet, /ZeroLag payment server env snippet/);
+  assert.match(serverEnvSnippet, /ZEROLAG_PAYMENT_PROVIDER=wechat_pay/);
+  assert.match(serverEnvSnippet, /ZEROLAG_PAYMENT_ALLOWED_PROVIDERS=wechat_pay/);
+  assert.match(serverEnvSnippet, /ZEROLAG_PAYMENT_URL_TEMPLATE=https:\/\/pay\.zerolag\.gg\/checkout\/\{orderId\}/);
+  assert.match(serverEnvSnippet, /ZEROLAG_WECHAT_PAY_MCH_ID=1900000001/);
+  assert.match(serverEnvSnippet, /ZEROLAG_WECHAT_PAY_APP_ID=wx0000000000000000/);
+  assert.match(serverEnvSnippet, /ZEROLAG_WECHAT_PAY_SERIAL_NO=WECHATPAYCERTSERIAL/);
+  assert.match(serverEnvSnippet, /ZEROLAG_WECHAT_PAY_PRIVATE_KEY_PATH=D:\\secure\\wechatpay-apiclient-key\.pem/);
+  assert.match(serverEnvSnippet, /# ZEROLAG_WECHAT_PAY_API_V3_KEY=<set only in your private server secret store>/);
+  assert.ok(!/^ZEROLAG_WECHAT_PAY_API_V3_KEY=.+$/m.test(serverEnvSnippet), "WeChat API v3 key value must not be generated");
+  assert.ok(!serverEnvSnippet.includes("certificatePassword"), "payment snippet must not mention certificate password fields");
+  assert.ok(!serverEnvSnippet.includes("do-not-print"), "payment snippet must not expose secret fixtures");
+
+  const alipayReady = readyFixture();
+  alipayReady.payment.provider = "alipay";
+  alipayReady.payment.checkoutUrlTemplate = "https://pay.zerolag.gg/alipay/{orderId}";
+  alipayReady.payment.wechatPay = {
+    merchantId: "",
+    appId: "",
+    serialNo: "",
+    privateKeyPath: "",
+    apiV3KeyConfigured: false
+  };
+  alipayReady.payment.alipay = {
+    appId: "2026000000000000",
+    privateKeyPath: "D:\\secure\\alipay-app-private-key.pem",
+    publicKeyPath: "D:\\secure\\alipay-public-key.pem"
+  };
+  writeJson(alipayReadyPath, alipayReady);
+  const alipayServerEnvSnippetResult = run(["--file", alipayReadyPath, "--write-server-env-snippet", "--output", alipayServerEnvSnippetPath]);
+  assert.strictEqual(alipayServerEnvSnippetResult.status, 0, alipayServerEnvSnippetResult.stderr);
+  const alipayServerEnvSnippet = fs.readFileSync(alipayServerEnvSnippetPath, "utf8");
+  assert.match(alipayServerEnvSnippet, /ZEROLAG_PAYMENT_PROVIDER=alipay/);
+  assert.match(alipayServerEnvSnippet, /ZEROLAG_PAYMENT_ALLOWED_PROVIDERS=alipay/);
+  assert.match(alipayServerEnvSnippet, /ZEROLAG_ALIPAY_APP_ID=2026000000000000/);
+  assert.match(alipayServerEnvSnippet, /ZEROLAG_ALIPAY_PRIVATE_KEY_PATH=D:\\secure\\alipay-app-private-key\.pem/);
+  assert.match(alipayServerEnvSnippet, /ZEROLAG_ALIPAY_PUBLIC_KEY_PATH=D:\\secure\\alipay-public-key\.pem/);
+  assert.ok(!alipayServerEnvSnippet.includes("ZEROLAG_WECHAT_PAY_API_V3_KEY"), "Alipay snippet should not include WeChat secret placeholders");
 
   const reserved = readyFixture();
   reserved.domains.website = "zerolag.test";

@@ -5,6 +5,7 @@ const { isRealHttpsUrl } = require("./release-url-policy");
 const rootDir = path.join(__dirname, "..");
 const defaultInputPath = path.join(rootDir, ".secrets", "formal-release-inputs.json");
 const defaultCommandPlanPath = path.join(rootDir, ".secrets", "formal-release-commands.ps1");
+const defaultServerEnvSnippetPath = path.join(rootDir, ".secrets", "server-payment-snippet.env");
 const guidePath = path.join(rootDir, "docs", "formal-release-inputs.zh-CN.md");
 
 const paymentProviders = new Set(["wechat_pay", "alipay"]);
@@ -16,6 +17,7 @@ function usage() {
   console.log("  node scripts/formal-release-inputs.js --domain zerolag.gg");
   console.log("  node scripts/formal-release-inputs.js --set domains.website=zerolag.gg [--set payment.provider=wechat_pay]");
   console.log("  node scripts/formal-release-inputs.js --write-commands [--output .secrets/formal-release-commands.ps1]");
+  console.log("  node scripts/formal-release-inputs.js --write-server-env-snippet [--output .secrets/server-payment-snippet.env]");
   console.log("  node scripts/formal-release-inputs.js [--file .secrets/formal-release-inputs.json] [--json]");
   console.log("");
   console.log("Collects and validates the external facts required for a paid public release without printing secrets.");
@@ -481,6 +483,90 @@ function writeCommandPlan(outputPath, inputFile, result) {
   return outputPath;
 }
 
+function checkById(result, id) {
+  return (result.checks || []).find((entry) => entry.id === id);
+}
+
+function paymentSnippetRequiredCheckIds(input) {
+  const provider = text(input && input.payment && input.payment.provider);
+  const ids = ["payment-provider", "payment-checkout", "payment-webhook"];
+  if (provider === "wechat_pay") ids.push("wechat-merchant");
+  if (provider === "alipay") ids.push("alipay-merchant");
+  return ids;
+}
+
+function assertServerPaymentSnippetReady(input, result) {
+  const failed = paymentSnippetRequiredCheckIds(input)
+    .map((id) => checkById(result, id))
+    .find((entry) => !entry || !entry.ok);
+
+  if (failed) {
+    throw new Error(`Payment server env snippet is not ready. First blocker: ${failed.label}: ${failed.detail || "not ready"}`);
+  }
+}
+
+function envValue(value) {
+  const sanitized = String(value || "").replace(/\r?\n/g, " ").trim();
+  if (/^[A-Za-z0-9_:/?&=.%{}@,+\\.-]+$/.test(sanitized)) return sanitized;
+  return `"${sanitized.replace(/"/g, "'")}"`;
+}
+
+function envLine(key, value) {
+  return `${key}=${envValue(value)}`;
+}
+
+function serverPaymentEnvSnippet(inputFile, input, result) {
+  assertServerPaymentSnippetReady(input, result);
+
+  const payment = input.payment || {};
+  const provider = text(payment.provider);
+  const lines = [
+    "# ZeroLag payment server env snippet",
+    `# Source input: ${powerShellComment(inputFile)}`,
+    `# Generated at: ${new Date().toISOString()}`,
+    "# Paste these non-secret values into .secrets/server.env or your production secret store after review.",
+    "# This file intentionally omits payment API keys, webhook secrets, certificate passwords, and private-key text.",
+    `# Configure this merchant dashboard webhook URL: ${powerShellComment(payment.webhookUrl)}`,
+    "",
+    envLine("ZEROLAG_PAYMENT_PROVIDER", provider),
+    envLine("ZEROLAG_PAYMENT_ALLOWED_PROVIDERS", provider),
+    envLine("ZEROLAG_PAYMENT_URL_TEMPLATE", payment.checkoutUrlTemplate),
+    envLine("ZEROLAG_PAYMENT_MESSAGE", "Open the secure checkout page to finish payment.")
+  ];
+
+  if (provider === "wechat_pay") {
+    const wechatPay = payment.wechatPay || {};
+    lines.push(
+      "",
+      "# WeChat Pay non-secret merchant identifiers and private-key file path.",
+      envLine("ZEROLAG_WECHAT_PAY_MCH_ID", wechatPay.merchantId),
+      envLine("ZEROLAG_WECHAT_PAY_APP_ID", wechatPay.appId),
+      envLine("ZEROLAG_WECHAT_PAY_SERIAL_NO", wechatPay.serialNo),
+      envLine("ZEROLAG_WECHAT_PAY_PRIVATE_KEY_PATH", wechatPay.privateKeyPath),
+      "# ZEROLAG_WECHAT_PAY_API_V3_KEY=<set only in your private server secret store>"
+    );
+  }
+
+  if (provider === "alipay") {
+    const alipay = payment.alipay || {};
+    lines.push(
+      "",
+      "# Alipay non-secret app identifier and key file paths.",
+      envLine("ZEROLAG_ALIPAY_APP_ID", alipay.appId),
+      envLine("ZEROLAG_ALIPAY_PRIVATE_KEY_PATH", alipay.privateKeyPath),
+      envLine("ZEROLAG_ALIPAY_PUBLIC_KEY_PATH", alipay.publicKeyPath)
+    );
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
+function writeServerPaymentEnvSnippet(outputPath, inputFile, input, result) {
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, serverPaymentEnvSnippet(inputFile, input, result), "utf8");
+  return outputPath;
+}
+
 function initTemplate(outputPath, force) {
   if (fs.existsSync(outputPath) && !force) {
     throw new Error(`${outputPath} already exists. Pass --force to overwrite it.`);
@@ -525,6 +611,7 @@ function main() {
 
     const inputFile = path.resolve(argValue("--file", defaultInputPath));
     const writeCommands = hasFlag("--write-commands");
+    const writeServerEnvSnippet = hasFlag("--write-server-env-snippet");
     const domainValue = argValue("--domain", "");
     const hasDomainFlag = hasFlag("--domain") || process.argv.some((arg) => arg.startsWith("--domain="));
     const setValues = argValues("--set");
@@ -550,12 +637,21 @@ function main() {
       throw new Error(`Formal release input file is missing: ${inputFile}. Run npm run release:inputs -- --init first.`);
     }
 
-    const result = collectFormalReleaseInputs(readJson(inputFile));
+    const inputData = readJson(inputFile);
+    const result = collectFormalReleaseInputs(inputData);
     if (writeCommands) {
       const outputPath = path.resolve(argValue("--output", defaultCommandPlanPath));
       writeCommandPlan(outputPath, inputFile, result);
       console.log(`Formal release command plan written: ${outputPath}`);
       console.log("Review it before running; it does not contain payment keys or certificate passwords.");
+      return;
+    }
+
+    if (writeServerEnvSnippet) {
+      const outputPath = path.resolve(argValue("--output", defaultServerEnvSnippetPath));
+      writeServerPaymentEnvSnippet(outputPath, inputFile, inputData, result);
+      console.log(`Payment server env snippet written: ${outputPath}`);
+      console.log("Review it, then merge the non-secret values into the private server env; real keys stay in the secret store.");
       return;
     }
 
@@ -582,5 +678,6 @@ module.exports = {
   domainPresetAssignments,
   initTemplate,
   printGuide,
+  serverPaymentEnvSnippet,
   template
 };

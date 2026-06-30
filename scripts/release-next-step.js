@@ -90,9 +90,9 @@ function nextFromStatus(status, formalResult) {
       stage: "server-payment-env",
       title: "Apply real payment settings to the private server env",
       why: "The formal input file proves what the provider should be; the private env is what the live server will actually use.",
-      command: "Fill .secrets/server.env payment values, then run npm run server:env-check -- --profile sqlite --strict",
+      command: "npm run release:inputs -- --write-server-env-snippet",
       detail: [serverEnv, paymentProvider, paymentCredentials].filter(Boolean).map((item) => `${item.id}: ${item.detail}`).join("; "),
-      afterThis: "Run npm run server:check:strict after the provider warnings disappear."
+      afterThis: "Merge .secrets/server-payment-snippet.env into the private server env, add real secrets there, then run npm run server:env-check -- --profile sqlite --strict."
     });
   }
 

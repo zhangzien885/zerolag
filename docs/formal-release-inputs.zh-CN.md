@@ -91,3 +91,11 @@ npm run release:inputs -- --write-commands
 ```
 
 默认会写到 `.secrets/formal-release-commands.ps1`。这份文件只包含发布命令，不会写入支付密钥、证书密码或私钥正文。运行前仍然要先打开检查一遍。
+
+支付资料通过后，还可以生成一份服务端支付 env 片段：
+
+```powershell
+npm run release:inputs -- --write-server-env-snippet
+```
+
+默认会写到 `.secrets/server-payment-snippet.env`。它只包含支付渠道、收银台链接、商户号、App ID、证书序列号和私钥文件路径这类非密钥内容；支付 API Key、Webhook Secret、证书密码和私钥正文仍然要放在真正的私有服务端环境里。

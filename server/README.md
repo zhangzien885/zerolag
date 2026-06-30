@@ -242,6 +242,14 @@ $env:ZEROLAG_PAYMENT_MESSAGE="Open the secure checkout page to finish payment."
 
 `ZEROLAG_PAYMENT_PROVIDER` controls the provider returned from order creation. `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS` controls which signed webhook providers can complete or refund orders. Keep `manual` for local testing only; production should remove test providers from the allowlist.
 
+After the formal release input file contains the real payment provider, checkout URL, webhook URL, and merchant identifiers, generate a private non-secret env snippet:
+
+```powershell
+npm run release:inputs -- --write-server-env-snippet
+```
+
+This writes `.secrets/server-payment-snippet.env` by default. Review it, merge the non-secret payment lines into `.secrets/server.env` or the production secret store, then add the real webhook secret, API key, certificate password, and private key material only in that private server environment.
+
 When `ZEROLAG_PAYMENT_PROVIDER=wechat_pay`, configure `ZEROLAG_WECHAT_PAY_MCH_ID`, `ZEROLAG_WECHAT_PAY_APP_ID`, `ZEROLAG_WECHAT_PAY_API_V3_KEY`, `ZEROLAG_WECHAT_PAY_SERIAL_NO`, and `ZEROLAG_WECHAT_PAY_PRIVATE_KEY_PATH`. When `ZEROLAG_PAYMENT_PROVIDER=alipay`, configure `ZEROLAG_ALIPAY_APP_ID`, `ZEROLAG_ALIPAY_PRIVATE_KEY_PATH`, and `ZEROLAG_ALIPAY_PUBLIC_KEY_PATH`. `server:env-check`, `server:deployment-report`, and `deploy:checklist` report these fields as readiness only; do not commit the real merchant certificates or private keys.
 
 ## Rate Limiting

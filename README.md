@@ -71,6 +71,7 @@ npm run release:preflight:strict
 npm run release:workstation
 npm run release:inputs -- --guide
 npm run release:inputs
+npm run release:inputs -- --write-server-env-snippet
 npm run release:next
 npm run signing:test-cert
 npm run release:version -- --version 1.0.0 --write
@@ -98,6 +99,7 @@ Server commands automatically load `.secrets/server.env` when it exists. Existin
 `release:inputs -- --domain zerolag.gg` derives the website, API, CDN, checkout, webhook, release CDN, support URL, and support email fields from one real root domain.
 `release:inputs -- --set domains.website=zerolag.gg` safely writes allowlisted formal-release fields without hand-editing the private JSON file.
 `release:inputs -- --write-commands` writes a private reviewable PowerShell command plan after all formal inputs pass validation.
+`release:inputs -- --write-server-env-snippet` writes a private payment server env snippet from validated formal inputs without including payment API keys, webhook secrets, certificate passwords, or private-key text.
 `release:inputs` validates the private formal-release input checklist for real domains, payment provider, signing certificate readiness, release CDN, and support URL without printing secrets.
 `release:next` turns the current release status and formal input checklist into one beginner-friendly next action.
 `signing:test-cert` creates a local self-signed test code-signing certificate under `.secrets/codesign`; use it only to test packaging and signing flow, not for paid public release.
