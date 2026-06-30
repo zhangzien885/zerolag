@@ -13,7 +13,16 @@ npm run server:deployment-report
 npm run server:deployment-report:json
 npm run server:deployment-report:strict
 npm run release:workstation
+npm run release:inputs
 ```
+
+## 0. External Release Inputs
+
+- Run `npm run release:inputs -- --init` once to create `.secrets/formal-release-inputs.json`.
+- Fill real website, API, CDN, payment, code-signing, release CDN, and support values in the private `.secrets` copy.
+- Do not paste payment API keys, private-key PEM text, or certificate passwords into the JSON file; use the `*Configured` boolean fields to confirm those secrets exist in the private server env or CI secrets.
+- Run `npm run release:inputs` before switching production mode so placeholder domains, manual payment, and test signing cannot be mistaken for formal release readiness.
+- Keep `docs/formal-release-inputs.example.json` as the public shape reference only.
 
 ## 1. Desktop Release Config
 

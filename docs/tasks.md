@@ -230,6 +230,7 @@
 - Added native Windows Service wrapper source, build tooling, CI smoke coverage, and installer wiring that prefers the wrapper before falling back to explicitly gated Electron worker validation.
 - Added a redacted release-workstation readiness command that checks the build PC for .NET SDK, native wrapper output, code signing, production URLs, update signing, private server env, and Git cleanliness with CI smoke coverage.
 - Added local test code-signing certificate generation under `.secrets/codesign`, private env auto-loading for signing checks, and CI smoke coverage while keeping test certificates out of public-release readiness.
+- Added a formal release input checklist that validates real website/API/CDN domains, payment provider readiness, production code-signing readiness, release CDN URL, and support URL without printing payment keys, certificate passwords, or private key material.
 
 ## Known Boundaries
 

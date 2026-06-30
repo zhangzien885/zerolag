@@ -1,0 +1,47 @@
+{
+  "schema": "zerolag-formal-release-inputs-v1",
+  "notes": [
+    "Copy this file to .secrets/formal-release-inputs.json before filling real values.",
+    "Do not paste private-key PEM text, certificate passwords, API keys, or payment secrets into this file.",
+    "Use boolean flags such as apiV3KeyConfigured/passwordConfigured to prove secrets exist elsewhere."
+  ],
+  "version": {
+    "target": "1.0.0"
+  },
+  "domains": {
+    "website": "your-domain.example",
+    "api": "api.your-domain.example",
+    "cdn": "cdn.your-domain.example"
+  },
+  "payment": {
+    "provider": "manual",
+    "checkoutUrlTemplate": "https://pay.your-domain.example/checkout/{orderId}",
+    "webhookUrl": "https://api.your-domain.example/v1/payments/webhook",
+    "merchantName": "",
+    "wechatPay": {
+      "merchantId": "",
+      "appId": "",
+      "serialNo": "",
+      "privateKeyPath": "",
+      "apiV3KeyConfigured": false
+    },
+    "alipay": {
+      "appId": "",
+      "privateKeyPath": "",
+      "publicKeyPath": ""
+    }
+  },
+  "codeSigning": {
+    "profile": "test",
+    "certificateSource": "",
+    "passwordConfigured": false
+  },
+  "release": {
+    "cdnReleaseBaseUrl": "https://cdn.your-domain.example/releases",
+    "installerName": "ZeroLag-Setup-1.0.0.exe"
+  },
+  "support": {
+    "supportUrl": "https://your-domain.example/support",
+    "contactEmail": "support@your-domain.example"
+  }
+}
