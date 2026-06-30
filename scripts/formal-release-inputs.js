@@ -12,6 +12,7 @@ function usage() {
   console.log("Usage:");
   console.log("  node scripts/formal-release-inputs.js --init [--output .secrets/formal-release-inputs.json] [--force]");
   console.log("  node scripts/formal-release-inputs.js --guide");
+  console.log("  node scripts/formal-release-inputs.js --set domains.website=zerolag.gg [--set payment.provider=wechat_pay]");
   console.log("  node scripts/formal-release-inputs.js [--file .secrets/formal-release-inputs.json] [--json]");
   console.log("");
   console.log("Collects and validates the external facts required for a paid public release without printing secrets.");
@@ -26,6 +27,20 @@ function argValue(name, fallback = "") {
 
 function hasFlag(name) {
   return process.argv.includes(name);
+}
+
+function argValues(name) {
+  const values = [];
+  for (let index = 0; index < process.argv.length; index += 1) {
+    const arg = process.argv[index];
+    if (arg === name && process.argv[index + 1]) {
+      values.push(process.argv[index + 1]);
+      index += 1;
+    } else if (arg.startsWith(`${name}=`)) {
+      values.push(arg.slice(name.length + 1));
+    }
+  }
+  return values;
 }
 
 function readJson(filePath) {
@@ -150,6 +165,78 @@ function boolStatus(value) {
 
 function hasText(value) {
   return text(value).length > 0;
+}
+
+const editableFields = {
+  "version.target": "string",
+  "domains.website": "string",
+  "domains.api": "string",
+  "domains.cdn": "string",
+  "payment.provider": "string",
+  "payment.checkoutUrlTemplate": "string",
+  "payment.webhookUrl": "string",
+  "payment.merchantName": "string",
+  "payment.wechatPay.merchantId": "string",
+  "payment.wechatPay.appId": "string",
+  "payment.wechatPay.serialNo": "string",
+  "payment.wechatPay.privateKeyPath": "string",
+  "payment.wechatPay.apiV3KeyConfigured": "boolean",
+  "payment.alipay.appId": "string",
+  "payment.alipay.privateKeyPath": "string",
+  "payment.alipay.publicKeyPath": "string",
+  "codeSigning.profile": "string",
+  "codeSigning.certificateSource": "string",
+  "codeSigning.passwordConfigured": "boolean",
+  "codeSigning.passwordSecretName": "string",
+  "release.cdnReleaseBaseUrl": "string",
+  "release.installerName": "string",
+  "support.supportUrl": "string",
+  "support.contactEmail": "string"
+};
+
+function parseSetArg(raw) {
+  const equalsIndex = raw.indexOf("=");
+  if (equalsIndex <= 0) {
+    throw new Error(`Invalid --set value: ${raw}. Use --set field.path=value.`);
+  }
+  return {
+    field: raw.slice(0, equalsIndex).trim(),
+    value: raw.slice(equalsIndex + 1).trim()
+  };
+}
+
+function parseFieldValue(field, rawValue) {
+  const fieldType = editableFields[field];
+  if (!fieldType) {
+    throw new Error(`Unsupported formal release field: ${field}. Run npm run release:inputs -- --guide for supported fields.`);
+  }
+  if (fieldType === "boolean") {
+    if (/^(true|yes|1)$/i.test(rawValue)) return true;
+    if (/^(false|no|0)$/i.test(rawValue)) return false;
+    throw new Error(`Field ${field} expects true or false.`);
+  }
+  return rawValue;
+}
+
+function setDeepValue(target, dottedPath, value) {
+  const parts = dottedPath.split(".");
+  let cursor = target;
+  parts.slice(0, -1).forEach((part) => {
+    if (!cursor[part] || typeof cursor[part] !== "object" || Array.isArray(cursor[part])) {
+      cursor[part] = {};
+    }
+    cursor = cursor[part];
+  });
+  cursor[parts[parts.length - 1]] = value;
+}
+
+function applySetValues(input, assignments) {
+  const data = input || template();
+  assignments.forEach((assignment) => {
+    const parsed = parseSetArg(assignment);
+    setDeepValue(data, parsed.field, parseFieldValue(parsed.field, parsed.value));
+  });
+  return data;
 }
 
 function makeCheck(id, label, ok, detail, nextStep, severity = "blocker") {
@@ -355,6 +442,13 @@ function printGuide() {
   console.log(fs.readFileSync(guidePath, "utf8").trimEnd());
 }
 
+function updateInputFile(inputFile, assignments) {
+  const existing = fs.existsSync(inputFile) ? readJson(inputFile) : template();
+  const updated = applySetValues(existing, assignments);
+  writeJson(inputFile, updated);
+  return updated;
+}
+
 function main() {
   if (hasFlag("--help")) {
     usage();
@@ -376,6 +470,18 @@ function main() {
     }
 
     const inputFile = path.resolve(argValue("--file", defaultInputPath));
+    const setValues = argValues("--set");
+    if (setValues.length) {
+      const updated = updateInputFile(inputFile, setValues);
+      console.log(`Formal release input file updated: ${inputFile}`);
+      console.log(`Updated fields: ${setValues.map((item) => parseSetArg(item).field).join(", ")}`);
+      console.log("");
+      const result = collectFormalReleaseInputs(updated);
+      printHuman(result, inputFile);
+      if (!result.ok) process.exitCode = 1;
+      return;
+    }
+
     if (!fs.existsSync(inputFile)) {
       throw new Error(`Formal release input file is missing: ${inputFile}. Run npm run release:inputs -- --init first.`);
     }
@@ -398,6 +504,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  applySetValues,
   collectFormalReleaseInputs,
   initTemplate,
   printGuide,

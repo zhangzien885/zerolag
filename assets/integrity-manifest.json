@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T04:54:19.201Z",
+  "generatedAt": "2026-06-30T05:10:08.890Z",
   "files": [
     {
       "path": "package.json",
@@ -84,11 +84,11 @@
     },
     {
       "path": "scripts/formal-release-inputs.js",
-      "sha256": "d89064db7176d9c1f9320ce25e250cef4550be5a7b4d206bb562ea5e7280ed5c"
+      "sha256": "944fb220c3c33eb8ceaec6e0bd94e560374ae4cb34104c00b2d5ef209ab5eb7d"
     },
     {
       "path": "scripts/formal-release-inputs-smoke-test.js",
-      "sha256": "581affffa1026baeef1df1c757c4af76f6bdd39f16e6ba9a5d8fe022a6ba3b17"
+      "sha256": "3d9e49a51e2ff0639a0e6bc997625bc642f5cb26ac8b7584a1c2af139a31c1ea"
     },
     {
       "path": "scripts/generate-test-code-signing-cert.js",
@@ -204,7 +204,7 @@
     },
     {
       "path": "scripts/server-production-check.js",
-      "sha256": "6ac0ffffa2025baa41d9dcf4564d742a6038f3d729025dc010a5bfba077a35f8"
+      "sha256": "c6e28359d7d3b084738ac7bb0d86c8e1c07eac0e23282ea795cbb23eac7c49ec"
     },
     {
       "path": "scripts/server-smoke-test.js",
@@ -212,7 +212,7 @@
     },
     {
       "path": "scripts/generate-deployment-checklist.js",
-      "sha256": "f3322009fcc60613493149ae1264574b4c0bef9be6c3103acf71fd0a5eeb8ac2"
+      "sha256": "2b80d192e9a0f412b91a1ae57126179f002097958677c95172e6a11a5080c331"
     },
     {
       "path": "scripts/generate-server-deployment-report.js",
@@ -240,7 +240,7 @@
     },
     {
       "path": "scripts/check-server-env.js",
-      "sha256": "09c0e82e33b658151a65b609f059af3e61e028f8dac29b607c34671be0130976"
+      "sha256": "1c7711dabef4e1e00dfbee7387d5d5c36f4127cea4c7e6a27d16d2cb49d2baf9"
     },
     {
       "path": "scripts/generate-server-secrets.js",
@@ -303,5 +303,5 @@
       "sha256": "88e790f4e8a56c15098dff7234e769dae7d04718745d0b839b471f55bd0ae571"
     }
   ],
-  "signature": "70858fa8945e5edfa5d525007d4239e130c0ae99aee703e9c44e650c2a6b637a"
+  "signature": "77f33a72b8f921c717c8eb15ae5c93b65792f7b5fad76498fefa0fa8a288be81"
 }

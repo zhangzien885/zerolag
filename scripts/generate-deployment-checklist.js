@@ -46,8 +46,22 @@ function env(name, fallback = "") {
 }
 
 function isStrongSecret(value, defaultValue) {
-  const text = String(value || "");
-  return text.length >= 32 && text !== defaultValue && !/change-before-production|dev/i.test(text);
+  const text = String(value || "").trim();
+  const normalized = text.toLowerCase();
+  const knownWeakValues = new Set([
+    "dev",
+    "development",
+    "test",
+    "testing",
+    "demo",
+    "password",
+    "changeme",
+    "change-me"
+  ]);
+  return text.length >= 32
+    && text !== defaultValue
+    && !normalized.includes("change-before-production")
+    && !knownWeakValues.has(normalized);
 }
 
 function normalizePaymentProvider(value) {

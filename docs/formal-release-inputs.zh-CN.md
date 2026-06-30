@@ -17,6 +17,19 @@ npm run release:next
 
 如果第一条提示文件已存在，不用覆盖，直接看第二条指南和第三条校验。
 
+## 不想手改 JSON 时
+
+可以用 `--set 字段=值` 安全写入常用字段：
+
+```powershell
+npm run release:inputs -- --set domains.website=zerolag.gg
+npm run release:inputs -- --set domains.api=api.zerolag.gg --set domains.cdn=cdn.zerolag.gg
+npm run release:inputs -- --set payment.provider=wechat_pay
+npm run release:inputs -- --set codeSigning.profile=production --set codeSigning.passwordConfigured=true
+```
+
+`--set` 只允许写入公开配置、商户标识、文件路径和 `true / false` 状态。支付 API Key、证书密码、私钥正文这类敏感内容会被拒绝写入。
+
 ## 必填资料
 
 | 你要准备什么 | 从哪里拿 | 填到哪里 | 为什么需要 |

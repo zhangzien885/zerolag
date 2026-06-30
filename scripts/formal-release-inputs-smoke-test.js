@@ -73,6 +73,7 @@ function parseJson(stdout) {
 function main() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-release-inputs-"));
   const templatePath = path.join(tempDir, "formal-release-inputs.json");
+  const setPath = path.join(tempDir, "set.json");
   const readyPath = path.join(tempDir, "ready.json");
   const reservedPath = path.join(tempDir, "reserved.json");
   const secretPath = path.join(tempDir, "secret.json");
@@ -89,6 +90,30 @@ function main() {
   const defaultResult = run(["--file", templatePath]);
   assert.notStrictEqual(defaultResult.status, 0, "placeholder template must not pass readiness");
   assert.match(defaultResult.stdout, /BLOCKED/, "human output should show blocked status");
+
+  const setResult = run([
+    "--file",
+    setPath,
+    "--set",
+    "domains.website=zerolag.gg",
+    "--set",
+    "payment.wechatPay.apiV3KeyConfigured=true"
+  ]);
+  assert.notStrictEqual(setResult.status, 0, "partial --set updates should still fail readiness");
+  assert.ok(fs.existsSync(setPath), "--set should create the private input file when missing");
+  const setData = parseJson(fs.readFileSync(setPath, "utf8"));
+  assert.strictEqual(setData.domains.website, "zerolag.gg");
+  assert.strictEqual(setData.payment.wechatPay.apiV3KeyConfigured, true);
+  assert.match(setResult.stdout, /Updated fields: domains\.website, payment\.wechatPay\.apiV3KeyConfigured/);
+
+  const unsupportedSetResult = run(["--file", setPath, "--set", "payment.wechatPay.apiV3Key=do-not-write"]);
+  assert.notStrictEqual(unsupportedSetResult.status, 0, "secret fields must not be writable through --set");
+  assert.match(unsupportedSetResult.stderr, /Unsupported formal release field/);
+  assert.ok(!unsupportedSetResult.stderr.includes("do-not-write"), "rejected secret values must not be echoed");
+
+  const badBooleanResult = run(["--file", setPath, "--set", "codeSigning.passwordConfigured=maybe"]);
+  assert.notStrictEqual(badBooleanResult.status, 0, "boolean fields should reject ambiguous values");
+  assert.match(badBooleanResult.stderr, /expects true or false/);
 
   writeJson(readyPath, readyFixture());
   const readyResult = run(["--file", readyPath, "--json"]);

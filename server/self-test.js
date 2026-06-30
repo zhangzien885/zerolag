@@ -438,6 +438,25 @@ async function main() {
     assert(sqliteEnvCheckBody.summary.runtimeSessionAsymmetricProofConfigured === false, "SQLite server env check should report asymmetric runtime proof status.");
     assert(sqliteEnvCheckBody.summary.paymentProviderCredentialsConfigured === true, "SQLite server env check should report payment credential readiness for manual mode.");
     assert(!sqliteEnvCheck.stdout.includes("zl_server_"), "Server env check must not print generated secret values.");
+    const devSubstringEnvPath = path.join(tempDir, "sqlite-server-dev-substring.env");
+    fs.writeFileSync(
+      devSubstringEnvPath,
+      sqliteEnvFile.replace(
+        /^ZEROLAG_ADMIN_SECRET=.*$/m,
+        "ZEROLAG_ADMIN_SECRET=zl_admin_randomdevsubstring_123456789012345678901234567890"
+      ),
+      "utf8"
+    );
+    const devSubstringEnvCheck = await runNodeScript("scripts/check-server-env.js", [
+      "--file",
+      devSubstringEnvPath,
+      "--profile",
+      "sqlite"
+    ]);
+    assert(
+      devSubstringEnvCheck.status === 0,
+      `Strong generated-style secrets must not fail just because they contain the letters dev: ${devSubstringEnvCheck.stderr || devSubstringEnvCheck.stdout}`
+    );
     const deploymentReportPath = path.join(tempDir, "server-deployment-report.md");
     const deploymentReport = await runNodeScript("scripts/generate-server-deployment-report.js", [
       "--output",
