@@ -99,7 +99,7 @@ function main() {
     const dryRun = runNode([
       scriptPath,
       "--base-url",
-      "https://cdn.zerolag.test/releases",
+      "https://cdn.zerolag.gg/releases",
       "--manifest",
       manifestPath,
       "--package",
@@ -120,7 +120,7 @@ function main() {
     const written = runNode([
       scriptPath,
       "--base-url",
-      "https://cdn.zerolag.test/releases",
+      "https://cdn.zerolag.gg/releases",
       "--manifest",
       manifestPath,
       "--package",
@@ -138,7 +138,7 @@ function main() {
     assertOk(writtenResult.written === true, "Write mode should report written.");
     assertOk(manifest.latest === "1.2.3", "Write mode should sync latest version.");
     assertOk(manifest.minSupported === "1.0.0", "Write mode should preserve minSupported.");
-    assertOk(manifest.downloadUrl === "https://cdn.zerolag.test/releases/ZeroLag%20Setup%201.2.3.exe", "Write mode should set encoded installer URL.");
+    assertOk(manifest.downloadUrl === "https://cdn.zerolag.gg/releases/ZeroLag%20Setup%201.2.3.exe", "Write mode should set encoded installer URL.");
     assertOk(manifest.releaseNotes[0] === "Keep public note", "Write mode should preserve release notes.");
     assertOk(manifest.signatureAlgorithm === "RSA-SHA256", "Write mode should sign manifest.");
     assertOk(verifyManifest(manifest, publicKeyPath), "Written manifest signature should verify.");
@@ -170,11 +170,23 @@ function main() {
     assertOk(placeholderResult.downloadUrl === "https://example.com/releases/ZeroLag%20Setup%201.2.3.exe", "Explicit placeholder mode should build a placeholder download URL.");
     assertOk(placeholderResult.nextSteps.some((step) => step.includes("Replace placeholder update URLs")), "Explicit placeholder mode should warn about replacement.");
 
-    writeJson(artifactsPath, { version: "9.9.9", installer: { file: "ZeroLag Setup 9.9.9.exe" } });
     runNode([
       scriptPath,
       "--base-url",
       "https://cdn.zerolag.test/releases",
+      "--manifest",
+      manifestPath,
+      "--package",
+      packagePath,
+      "--artifacts",
+      artifactsPath
+    ], 1);
+
+    writeJson(artifactsPath, { version: "9.9.9", installer: { file: "ZeroLag Setup 9.9.9.exe" } });
+    runNode([
+      scriptPath,
+      "--base-url",
+      "https://cdn.zerolag.gg/releases",
       "--manifest",
       manifestPath,
       "--package",

@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { isRealHttpsUrl } = require("./release-url-policy");
 
 const rootDir = path.join(__dirname, "..");
 const websiteDir = path.join(rootDir, "website");
@@ -20,16 +21,8 @@ function readJson(filePath, fallback = {}) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-function isHttpsUrl(value) {
-  return /^https:\/\//i.test(String(value || ""));
-}
-
-function isPlaceholderUrl(value) {
-  return /example\.com|localhost|127\.0\.0\.1/i.test(String(value || ""));
-}
-
 function publicUrl(value) {
-  return isHttpsUrl(value) && !isPlaceholderUrl(value) ? value : "";
+  return isRealHttpsUrl(value) ? value : "";
 }
 
 function readinessSummary(report) {

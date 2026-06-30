@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { isPlaceholderHost } = require("./release-url-policy");
 
 const rootDir = path.join(__dirname, "..");
 const defaultConfigPath = path.join(rootDir, "assets", "app-config.json");
@@ -39,7 +40,7 @@ function normalizeHost(value, label, options = {}) {
   if (!/^[a-z0-9][a-z0-9.-]*[a-z0-9]$/.test(host)) {
     throw new Error(`${label} must be a domain name, for example zerolag.example.`);
   }
-  if (!options.allowPlaceholder && /example\.com|localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(host)) {
+  if (!options.allowPlaceholder && isPlaceholderHost(host)) {
     throw new Error(`${label} must not use a placeholder or local-only domain.`);
   }
   return host;

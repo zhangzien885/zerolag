@@ -1,6 +1,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const crypto = require("crypto");
 const { spawnSync } = require("child_process");
 
 const rootDir = path.join(__dirname, "..");
@@ -13,6 +14,10 @@ function assertOk(condition, message) {
 function writeJson(filePath, value) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
+function sha256Text(value) {
+  return crypto.createHash("sha256").update(Buffer.from(value, "utf8")).digest("hex");
 }
 
 function safeRemoveTemp(tempRoot) {
@@ -102,7 +107,7 @@ function writeReadyEnv(filePath) {
     "ZEROLAG_SQLITE_BACKUP_MAX_AGE_HOURS=24",
     "ZEROLAG_PAYMENT_PROVIDER=wechat_pay",
     "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS=wechat_pay",
-    "ZEROLAG_PAYMENT_URL_TEMPLATE=https://pay.zerolag.test/orders/{orderId}",
+    "ZEROLAG_PAYMENT_URL_TEMPLATE=https://pay.zerolag.gg/orders/{orderId}",
     "ZEROLAG_WECHAT_PAY_MCH_ID=1234567890",
     "ZEROLAG_WECHAT_PAY_APP_ID=wx1234567890",
     `ZEROLAG_WECHAT_PAY_API_V3_KEY=${"x".repeat(32)}`,
@@ -151,6 +156,7 @@ function paths(tempRoot) {
     serviceGuard: path.join(tempRoot, "service-guard.json"),
     serverEnv: path.join(tempRoot, "server.env"),
     wrapperOutput: path.join(tempRoot, "ZeroLag.RuntimeGuard.Service.exe"),
+    installer: path.join(tempRoot, "ZeroLag-Setup-1.2.3.exe"),
     cert: path.join(tempRoot, "codesign.pfx")
   };
 }
@@ -184,27 +190,30 @@ function writeReadyFixture(paths) {
   });
   writeJson(paths.appConfig, {
     releaseMode: "production",
-    websiteUrl: "https://zerolag.test",
-    purchaseUrl: "https://zerolag.test/buy",
-    analyticsUrl: "https://api.zerolag.test/v1/website/events",
-    supportUrl: "https://zerolag.test/support",
-    apiBaseUrl: "https://api.zerolag.test",
-    updateManifestUrl: "https://cdn.zerolag.test/releases/latest.json",
+    websiteUrl: "https://zerolag.gg",
+    purchaseUrl: "https://zerolag.gg/buy",
+    analyticsUrl: "https://api.zerolag.gg/v1/website/events",
+    supportUrl: "https://zerolag.gg/support",
+    apiBaseUrl: "https://api.zerolag.gg",
+    updateManifestUrl: "https://cdn.zerolag.gg/releases/latest.json",
     updatePublicKeyPem: "-----BEGIN PUBLIC KEY-----\\nfixture\\n-----END PUBLIC KEY-----",
     runtimeSessionPublicKeyPem: "-----BEGIN PUBLIC KEY-----\\nfixture\\n-----END PUBLIC KEY-----",
     allowLocalDemoLicense: false
   });
   writeJson(paths.updateManifest, {
     latest: "1.2.3",
-    downloadUrl: "https://cdn.zerolag.test/releases/ZeroLag-Setup-1.2.3.exe",
+    downloadUrl: "https://cdn.zerolag.gg/releases/ZeroLag-Setup-1.2.3.exe",
     signatureAlgorithm: "RSA-SHA256",
     signature: "fixture-signature"
   });
+  const installerBody = "fixture installer";
+  fs.writeFileSync(paths.installer, installerBody, "utf8");
   writeJson(paths.releaseArtifacts, {
+    version: "1.2.3",
     installer: {
       file: "ZeroLag-Setup-1.2.3.exe",
-      size: 123456,
-      sha256: "a".repeat(64)
+      size: Buffer.byteLength(installerBody, "utf8"),
+      sha256: sha256Text(installerBody)
     }
   });
   writeJson(paths.websiteRelease, {
@@ -247,6 +256,18 @@ function main() {
     assertOk(readyStatus.publicReleaseReady === true, "Ready fixture should be public-release ready.");
     assertOk(readyStatus.summary.blockerCount === 0, "Ready fixture should have no blockers.");
     assertOk(readyStatus.groups.some((entry) => entry.id === "payment" && entry.ready), "Payment group should be ready.");
+
+    const reservedConfig = JSON.parse(fs.readFileSync(fixturePaths.appConfig, "utf8"));
+    reservedConfig.websiteUrl = "https://zerolag.test";
+    reservedConfig.purchaseUrl = "https://zerolag.test/buy";
+    reservedConfig.analyticsUrl = "https://api.zerolag.test/v1/website/events";
+    reservedConfig.supportUrl = "https://zerolag.test/support";
+    reservedConfig.apiBaseUrl = "https://api.zerolag.test";
+    reservedConfig.updateManifestUrl = "https://cdn.zerolag.test/releases/latest.json";
+    writeJson(fixturePaths.appConfig, reservedConfig);
+    const reserved = runStatus(commonArgs(fixturePaths), readyEnv);
+    const reservedStatus = JSON.parse(reserved.stdout);
+    assertOk(reservedStatus.publicReleaseReady === false, "Reserved .test domains must not be public-release ready.");
 
     const human = runStatus(commonArgs(fixturePaths).filter((arg) => arg !== "--json"), readyEnv);
     assertOk(human.stdout.includes("ZeroLag 正式版状态面板"), "Human output should include the dashboard title.");

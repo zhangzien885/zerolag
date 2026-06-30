@@ -3,6 +3,7 @@ const path = require("path");
 const cp = require("child_process");
 const asarTools = require("@electron/asar");
 const { inspectSigningEnv } = require("./check-code-signing-env");
+const { isHttpsUrl, isPlaceholderUrl } = require("./release-url-policy");
 
 const rootDir = path.join(__dirname, "..");
 const defaultDistDir = path.join(rootDir, "dist");
@@ -44,14 +45,6 @@ function safeJsonCommand(command, args, fallback = {}) {
   } catch (_error) {
     return fallback;
   }
-}
-
-function isHttpsUrl(value) {
-  return /^https:\/\//i.test(String(value || ""));
-}
-
-function isPlaceholderUrl(value) {
-  return /example\.com|localhost|127\.0\.0\.1/i.test(String(value || ""));
 }
 
 function status(ok) {

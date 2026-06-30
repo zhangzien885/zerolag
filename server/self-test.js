@@ -633,7 +633,7 @@ async function main() {
         ZEROLAG_SQLITE_BACKUP_MAX_AGE_HOURS: "1",
         ZEROLAG_PAYMENT_PROVIDER: "wechat_pay",
         ZEROLAG_PAYMENT_ALLOWED_PROVIDERS: "wechat_pay",
-        ZEROLAG_PAYMENT_URL_TEMPLATE: "https://pay.zerolag.test/checkout/{orderId}",
+        ZEROLAG_PAYMENT_URL_TEMPLATE: "https://pay.zerolag.gg/checkout/{orderId}",
         ZEROLAG_PAYMENT_MESSAGE: "Open the secure checkout page to finish payment.",
         ZEROLAG_WECHAT_PAY_MCH_ID: "1900000001",
         ZEROLAG_WECHAT_PAY_APP_ID: "wx0000000000000001",

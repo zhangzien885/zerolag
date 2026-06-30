@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { defaultServerEnvPath, parseEnvLine } = require("../server/env");
+const { isRealHttpUrl } = require("./release-url-policy");
 
 const defaultServerSecret = "zerolag-dev-server-secret-change-before-production";
 const defaultAdminSecret = "zerolag-dev-admin-secret-change-before-production";
@@ -81,6 +82,11 @@ function isPositiveNumber(value) {
 
 function isDisabled(value) {
   return String(value || "") === "1";
+}
+
+function isRealPaymentUrlTemplate(value) {
+  const url = String(value || "").replace(/\{orderId\}/g, "order-fixture");
+  return isRealHttpUrl(url);
 }
 
 function isSafeKeyVersion(value) {
@@ -212,7 +218,7 @@ function inspect(entries, profile) {
   );
 
   addIssue(warnings, paymentProvider !== defaultPaymentProvider, "Payment provider is still manual.");
-  addIssue(warnings, paymentUrlTemplate && paymentUrlTemplate !== defaultPaymentUrlTemplate, "Payment URL template is still the local placeholder.");
+  addIssue(warnings, paymentUrlTemplate && paymentUrlTemplate !== defaultPaymentUrlTemplate && isRealPaymentUrlTemplate(paymentUrlTemplate), "Payment URL template is still a placeholder or local-only URL.");
   addIssue(warnings, runtimeSessionProofAlgorithm !== "HMAC-SHA256", "Runtime session proof algorithm is still HMAC-SHA256; RSA-SHA256 is recommended before paid public release.");
   addIssue(
     warnings,

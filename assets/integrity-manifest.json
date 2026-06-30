@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T03:23:10.183Z",
+  "generatedAt": "2026-06-30T03:56:32.537Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "16945dd380968cf3296acc6cbdea5b47aaaa055f47bbc5b629e94b046bd2f606"
+      "sha256": "de800a61662a50f1e5fc1f2104b557b3a4f52a62c5320e8e93360b861c9d702c"
     },
     {
       "path": "main.js",
@@ -24,7 +24,7 @@
     },
     {
       "path": "src/renderer.js",
-      "sha256": "e7dbd7724f11ffde27f67c1faa1196d5bc7f0552a5a24563d377799d2d332a32"
+      "sha256": "3d709b4e5a9bd1eaf63abd4cbda25a35127377288d6b65973e3d77068f60229d"
     },
     {
       "path": "src/styles.css",
@@ -52,19 +52,27 @@
     },
     {
       "path": "scripts/check-release-workstation.js",
-      "sha256": "12d2947925dd1946be920840ea8e826b0c3550c55adc07f0802216ddce9bbacd"
+      "sha256": "fa8b849f1fb5469fd01c83720a5a179013ef4afd77058a226ed130f4d840b236"
     },
     {
       "path": "scripts/release-workstation-smoke-test.js",
-      "sha256": "e4b3e179a291f7d8ad38afead45d7016ad503b0b35068879b9bac43bcddb66a2"
+      "sha256": "ae55983b34ef52126ae7c898255c6f92fdb3e3f68c10dc182e44a87e9b0f99c2"
+    },
+    {
+      "path": "scripts/release-url-policy.js",
+      "sha256": "2bffd5477999a29e9588a627e7c581af1520fd898fbbe5fab56e7043f540b62a"
+    },
+    {
+      "path": "scripts/release-url-policy-smoke-test.js",
+      "sha256": "6f35bafdde4a9676abcfdc45bd92eb66602f8b970b1bb7b9167d6467f1bb0125"
     },
     {
       "path": "scripts/release-status.js",
-      "sha256": "10fc74adea7703cf0f148069a28cd354b9c95155feed31954b796111b6036bfa"
+      "sha256": "95d1ad8b347a5fec0dde33c5e359b7c9e16a67b26e8b4627f0617089666e8f61"
     },
     {
       "path": "scripts/release-status-smoke-test.js",
-      "sha256": "fc52eaa86b6e7f7e053091b367ac6dc164c9b49d3a543d104c978d33d8dc5e74"
+      "sha256": "c51da9e74fc7857acc2ce20116bd75647244574775a6f5da0a60d622418c262e"
     },
     {
       "path": "scripts/generate-test-code-signing-cert.js",
@@ -80,7 +88,7 @@
     },
     {
       "path": "scripts/runtime-session-keygen-smoke-test.js",
-      "sha256": "8462fff8169a2c893ed6976b3e2ac08d15048c7cdb2b4826de3a8bb69e56e6c8"
+      "sha256": "48581f16dc51e32f248348f364e2d61572816daf71782f71ec02c77a689c2fb6"
     },
     {
       "path": "scripts/bootstrap-production-env.js",
@@ -132,7 +140,7 @@
     },
     {
       "path": "scripts/generate-release-report.js",
-      "sha256": "7c464c75139f208de6155a1b34182bc75505867279183eb8195ff59379c1e025"
+      "sha256": "09f4cfe9a1383faa37fce40f2609178e7d1fa49653e566cc0ba3b83e07a67af3"
     },
     {
       "path": "scripts/release-report-smoke-test.js",
@@ -148,7 +156,7 @@
     },
     {
       "path": "scripts/ci-report-artifact-smoke-test.js",
-      "sha256": "166375b31d8ee70a846397a18eab145ce762a3034ebd571329e1ced4c04a6d7f"
+      "sha256": "1fb855696d833a02b17af50b415b890a5a31249e8dd9b3e2fd66d91445712b0c"
     },
     {
       "path": "scripts/check-release-gate.js",
@@ -160,11 +168,11 @@
     },
     {
       "path": "scripts/publish-website-release.js",
-      "sha256": "71451416e2bb41d8f0ca929a3d354888eeccbce319372f6d14618b649d263e6c"
+      "sha256": "9cd0f291806130765ab0372e66b87f99951e555e9903d2950bfc44687ada8348"
     },
     {
       "path": "scripts/website-smoke-test.js",
-      "sha256": "c4271da86021c1b56ce3a7b70ff2969a1f569409c2a7d21f8b2d3910edc3470a"
+      "sha256": "cf8781b9be67fc2a267c779f17d8366e48698b80e5e38b54bf5c5f591f2615b0"
     },
     {
       "path": "scripts/website-release-publish-smoke-test.js",
@@ -172,11 +180,11 @@
     },
     {
       "path": "scripts/production-check.js",
-      "sha256": "b3c0f01854cc2d6e5b604de067b0da4f0d7acf9906e8c8f6bb128430e4d2c009"
+      "sha256": "eef71d2cdc9e4e84865cdd82ca3668438e384c03619861c7c5e7de09317c8e35"
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "194a3ce5504908427c58f6311c51bea82dc9774c23eb294e0c71ce3125809fb3"
+      "sha256": "c926bddbd3edc34a36f458b50a33f53404d3edf756cbf10ea120e1a90fed3405"
     },
     {
       "path": "scripts/server-production-check.js",
@@ -188,11 +196,11 @@
     },
     {
       "path": "scripts/generate-deployment-checklist.js",
-      "sha256": "4bf8f2b5ab44da89d0f5c1f67216de01617e07e7ba66e4f8e733af96487dae30"
+      "sha256": "f3322009fcc60613493149ae1264574b4c0bef9be6c3103acf71fd0a5eeb8ac2"
     },
     {
       "path": "scripts/generate-server-deployment-report.js",
-      "sha256": "5b837c27b19769d47f0c9e112774f48bd34690a5e20fa7384dd5335debcb801a"
+      "sha256": "72328b78c2ebe52e158536221d086b540d09f109f403c6e31b282baa781c421e"
     },
     {
       "path": "scripts/server-deployment-report-smoke-test.js",
@@ -216,7 +224,7 @@
     },
     {
       "path": "scripts/check-server-env.js",
-      "sha256": "9bb7e14a8b460935f8c5b86aea9088752ddcda30461af893209bb5a6b16b0aba"
+      "sha256": "1ab1d880b53659aaed8bb5441b698ee1acf18cbd83e616c84e24efe419dea7fd"
     },
     {
       "path": "scripts/generate-server-secrets.js",
@@ -275,5 +283,5 @@
       "sha256": "88e790f4e8a56c15098dff7234e769dae7d04718745d0b839b471f55bd0ae571"
     }
   ],
-  "signature": "d6846742198895c7e6825b70c8d3b52f75448b6f82c1796fd1f51a1e9fea7df0"
+  "signature": "bc158fd7bba256bdfd5f07e3c4e5ef0b5c811ebd52493181e88c3d2e4f064743"
 }

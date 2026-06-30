@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { isRealHttpsUrl } = require("./release-url-policy");
 
 const rootDir = path.join(__dirname, "..");
 const defaultConfigPath = path.join(rootDir, "assets", "app-config.json");
@@ -31,14 +32,6 @@ function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
-function isHttpsUrl(value) {
-  return /^https:\/\//i.test(String(value || ""));
-}
-
-function isPlaceholderUrl(value) {
-  return /example\.com|localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(String(value || ""));
-}
-
 function normalizePem(value) {
   return String(value || "").replace(/\\n/g, "\n").trim();
 }
@@ -68,12 +61,12 @@ function productionBlockers(appConfig, packageJson, updateManifest) {
     ["apiBaseUrl", appConfig.apiBaseUrl],
     ["updateManifestUrl", appConfig.updateManifestUrl]
   ].forEach(([label, value]) => {
-    addBlocker(blockers, isHttpsUrl(value) && !isPlaceholderUrl(value), `${label} must be a real HTTPS URL.`);
+    addBlocker(blockers, isRealHttpsUrl(value), `${label} must be a real HTTPS URL.`);
   });
   addBlocker(blockers, isPublicKeyPem(appConfig.updatePublicKeyPem), "updatePublicKeyPem must be configured with a PEM public key.");
   addBlocker(blockers, isPublicKeyPem(appConfig.runtimeSessionPublicKeyPem), "runtimeSessionPublicKeyPem must be configured with a PEM public key.");
   addBlocker(blockers, updateManifest.latest === packageJson.version, "assets/update.json latest must match package.json version.");
-  addBlocker(blockers, isHttpsUrl(updateManifest.downloadUrl) && !isPlaceholderUrl(updateManifest.downloadUrl), "Update manifest downloadUrl must be a real HTTPS URL.");
+  addBlocker(blockers, isRealHttpsUrl(updateManifest.downloadUrl), "Update manifest downloadUrl must be a real HTTPS URL.");
   addBlocker(blockers, updateManifest.signatureAlgorithm === "RSA-SHA256" && Boolean(updateManifest.signature), "Update manifest must be signed.");
   return blockers;
 }

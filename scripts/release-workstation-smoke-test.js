@@ -44,18 +44,18 @@ function writeReadyFixture(tempDir) {
   });
   writeJson(paths.appConfig, {
     releaseMode: "production",
-    websiteUrl: "https://zerolag.example/download",
-    purchaseUrl: "https://zerolag.example/buy",
-    analyticsUrl: "https://zerolag.example/api/analytics",
-    supportUrl: "https://zerolag.example/support",
-    apiBaseUrl: "https://api.zerolag.example",
-    updateManifestUrl: "https://cdn.zerolag.example/update.json",
+    websiteUrl: "https://zerolag.gg/download",
+    purchaseUrl: "https://zerolag.gg/buy",
+    analyticsUrl: "https://zerolag.gg/api/analytics",
+    supportUrl: "https://zerolag.gg/support",
+    apiBaseUrl: "https://api.zerolag.gg",
+    updateManifestUrl: "https://cdn.zerolag.gg/update.json",
     runtimeSessionPublicKeyPem: "-----BEGIN PUBLIC KEY-----\nfixture\n-----END PUBLIC KEY-----",
     updatePublicKeyPem: "-----BEGIN PUBLIC KEY-----\nfixture\n-----END PUBLIC KEY-----"
   });
   writeJson(paths.updateManifest, {
     latest: "1.2.3",
-    downloadUrl: "https://cdn.zerolag.example/ZeroLag-1.2.3.exe",
+    downloadUrl: "https://cdn.zerolag.gg/ZeroLag-1.2.3.exe",
     signatureAlgorithm: "RSA-SHA256",
     signature: "fixture-signature"
   });

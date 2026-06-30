@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { isHttpsUrl, isPlaceholderUrl } = require("./release-url-policy");
 
 const rootDir = path.join(__dirname, "..");
 const configPath = path.join(rootDir, "assets", "app-config.json");
@@ -7,14 +8,6 @@ const strict = process.argv.includes("--strict");
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
-}
-
-function isHttpsUrl(value) {
-  return /^https:\/\//i.test(String(value || ""));
-}
-
-function isPlaceholderUrl(value) {
-  return /example\.com|localhost|127\.0\.0\.1/i.test(String(value || ""));
 }
 
 function normalizePem(value) {
@@ -52,7 +45,9 @@ function main() {
   addIssue(issues, !productionMode || isHttpsUrl(config.supportUrl), "Production supportUrl must be HTTPS.");
   addIssue(issues, !productionMode || !isPlaceholderUrl(config.supportUrl), "Production supportUrl must not use a placeholder domain.");
   addIssue(issues, !productionMode || isHttpsUrl(config.apiBaseUrl), "Production apiBaseUrl must be HTTPS.");
+  addIssue(issues, !productionMode || !isPlaceholderUrl(config.apiBaseUrl), "Production apiBaseUrl must not use a placeholder domain.");
   addIssue(issues, !productionMode || isHttpsUrl(config.updateManifestUrl), "Production updateManifestUrl must be HTTPS.");
+  addIssue(issues, !productionMode || !isPlaceholderUrl(config.updateManifestUrl), "Production updateManifestUrl must not use a placeholder domain.");
   addIssue(issues, !productionMode || Boolean(config.updatePublicKeyPem), "Production updatePublicKeyPem is required for signed update metadata.");
   addIssue(issues, !productionMode || isPublicKeyPem(config.updatePublicKeyPem), "Production updatePublicKeyPem must be a PEM public key.");
   addIssue(issues, !productionMode || Boolean(config.runtimeSessionPublicKeyPem), "Production runtimeSessionPublicKeyPem is required for RSA runtime session proof verification.");

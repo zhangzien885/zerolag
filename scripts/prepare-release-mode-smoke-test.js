@@ -83,12 +83,12 @@ function writeUnreadyFixture(configPath, packagePath, updatePath) {
 function writeReadyFixture(configPath, packagePath, updatePath) {
   writeJson(configPath, {
     releaseMode: "development",
-    websiteUrl: "https://zerolag.test",
-    purchaseUrl: "https://zerolag.test/buy",
-    analyticsUrl: "https://api.zerolag.test/v1/website/events",
-    supportUrl: "https://zerolag.test/support",
-    apiBaseUrl: "https://api.zerolag.test",
-    updateManifestUrl: "https://cdn.zerolag.test/releases/latest.json",
+    websiteUrl: "https://zerolag.gg",
+    purchaseUrl: "https://zerolag.gg/buy",
+    analyticsUrl: "https://api.zerolag.gg/v1/website/events",
+    supportUrl: "https://zerolag.gg/support",
+    apiBaseUrl: "https://api.zerolag.gg",
+    updateManifestUrl: "https://cdn.zerolag.gg/releases/latest.json",
     updatePublicKeyPem: publicKeyPem,
     runtimeSessionPublicKeyPem: publicKeyPem,
     allowLocalDemoLicense: false
@@ -99,7 +99,7 @@ function writeReadyFixture(configPath, packagePath, updatePath) {
   });
   writeJson(updatePath, {
     latest: "1.0.0",
-    downloadUrl: "https://cdn.zerolag.test/releases/ZeroLag-Setup-1.0.0.exe",
+    downloadUrl: "https://cdn.zerolag.gg/releases/ZeroLag-Setup-1.0.0.exe",
     signatureAlgorithm: "RSA-SHA256",
     signature: "signature-fixture"
   });

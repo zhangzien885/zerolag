@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
 const { inspectSigningEnv } = require("./check-code-signing-env");
+const { isHttpsUrl, isPlaceholderUrl } = require("./release-url-policy");
 const { defaultServerEnvPath } = require("../server/env");
 
 const rootDir = path.join(__dirname, "..");
@@ -40,14 +41,6 @@ function relativePath(filePath) {
   const relative = path.relative(rootDir, resolved);
   if (relative && !relative.startsWith("..") && !path.isAbsolute(relative)) return relative.replace(/\\/g, "/");
   return `${path.basename(resolved)} (external)`;
-}
-
-function isHttpsUrl(value) {
-  return /^https:\/\//i.test(String(value || ""));
-}
-
-function isPlaceholderUrl(value) {
-  return /example\.com|localhost|127\.0\.0\.1/i.test(String(value || ""));
 }
 
 function commandVersion(command, args) {

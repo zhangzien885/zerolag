@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { loadServerEnvFile } = require("../server/env");
 const { checkServerEnvFile } = require("./check-server-env");
+const { isRealHttpsUrl } = require("./release-url-policy");
 
 const rootDir = path.join(__dirname, "..");
 const defaultOutputPath = path.join(rootDir, "docs", "server-deployment-report.generated.md");
@@ -68,16 +69,8 @@ function normalizeRuntimeSessionProofAlgorithm(value) {
   return normalized || "HMAC-SHA256";
 }
 
-function isHttpsUrl(value) {
-  return /^https:\/\//i.test(String(value || ""));
-}
-
-function isPlaceholderUrl(value) {
-  return /example\.com|localhost|127\.0\.0\.1/i.test(String(value || ""));
-}
-
 function isProductionUrl(value) {
-  return isHttpsUrl(value) && !isPlaceholderUrl(value);
+  return isRealHttpsUrl(value);
 }
 
 function yesNo(value) {

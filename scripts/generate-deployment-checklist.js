@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { loadServerEnvFile } = require("../server/env");
 const { inspectSigningEnv } = require("./check-code-signing-env");
+const { isRealHttpsUrl } = require("./release-url-policy");
 
 const rootDir = path.join(__dirname, "..");
 const defaultOutputPath = path.join(rootDir, "docs", "deployment-checklist.generated.md");
@@ -42,18 +43,6 @@ function argValue(name) {
 
 function env(name, fallback = "") {
   return process.env[name] || fallback;
-}
-
-function isHttpsUrl(value) {
-  return /^https:\/\//i.test(String(value || ""));
-}
-
-function isPlaceholderUrl(value) {
-  return /example\.com|localhost|127\.0\.0\.1/i.test(String(value || ""));
-}
-
-function isRealHttpsUrl(value) {
-  return isHttpsUrl(value) && !isPlaceholderUrl(value);
 }
 
 function isStrongSecret(value, defaultValue) {

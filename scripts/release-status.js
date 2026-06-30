@@ -1,8 +1,10 @@
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const { spawnSync } = require("child_process");
 const { inspectSigningEnv } = require("./check-code-signing-env");
 const { checkServerEnvFile } = require("./check-server-env");
+const { isRealHttpsUrl } = require("./release-url-policy");
 const { defaultServerEnvPath } = require("../server/env");
 
 const rootDir = path.join(__dirname, "..");
@@ -38,18 +40,6 @@ function safeRelative(filePath) {
   const relative = path.relative(rootDir, resolved);
   if (relative && !relative.startsWith("..") && !path.isAbsolute(relative)) return relative.replace(/\\/g, "/");
   return `${path.basename(resolved)} (external)`;
-}
-
-function isHttpsUrl(value) {
-  return /^https:\/\//i.test(String(value || ""));
-}
-
-function isPlaceholderUrl(value) {
-  return /example\.com|localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(String(value || ""));
-}
-
-function isRealHttpsUrl(value) {
-  return isHttpsUrl(value) && !isPlaceholderUrl(value);
 }
 
 function commandVersion(command, args) {
@@ -135,22 +125,50 @@ function serverSummary(serverEnvPath) {
     };
   }
 
-  const status = checkServerEnvFile(serverEnvPath, { profile: "sqlite", strict: false });
+  const status = checkServerEnvFile(serverEnvPath, { profile: "sqlite", strict: true });
   return {
     exists: true,
-    ok: status.issues.length === 0,
+    ok: status.ok,
     warningCount: status.warnings.length,
     issueCount: status.issues.length,
     summary: status.summary || {}
   };
 }
 
-function firstInstaller(releaseArtifacts) {
+function sha256File(filePath) {
+  return crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
+}
+
+function resolveInstallerPath(installer, releaseArtifactsPath) {
+  const candidates = [];
+  if (installer.path) {
+    candidates.push(path.isAbsolute(installer.path) ? installer.path : path.resolve(rootDir, installer.path));
+    candidates.push(path.resolve(path.dirname(releaseArtifactsPath), installer.path));
+  }
+  if (installer.file) {
+    candidates.push(path.resolve(path.dirname(releaseArtifactsPath), installer.file));
+    candidates.push(path.join(rootDir, "dist", installer.file));
+  }
+  return candidates.find((candidate) => fs.existsSync(candidate)) || candidates[0] || "";
+}
+
+function firstInstaller(releaseArtifacts, releaseArtifactsPath, packageVersion) {
   const installer = releaseArtifacts.installer || {};
+  const filePath = resolveInstallerPath(installer, releaseArtifactsPath);
+  const existsOnDisk = Boolean(filePath && fs.existsSync(filePath) && fs.statSync(filePath).isFile());
+  const actualSha256 = existsOnDisk ? sha256File(filePath) : "";
+  const hashMatches = Boolean(installer.sha256 && actualSha256 && installer.sha256 === actualSha256);
+  const versionMatches = releaseArtifacts.version === packageVersion;
   return {
     file: installer.file || "",
+    filePath,
     sha256: installer.sha256 || "",
-    size: installer.size || 0
+    actualSha256,
+    size: installer.size || 0,
+    existsOnDisk,
+    hashMatches,
+    versionMatches,
+    ok: Boolean(installer.file && installer.sha256 && existsOnDisk && hashMatches && versionMatches)
   };
 }
 
@@ -180,7 +198,7 @@ function collectReleaseStatus(input = {}) {
   const paymentProvider = server.summary.paymentProvider || "missing";
   const paymentConfigured = paymentProvider !== "manual" && paymentProvider !== "missing" && Boolean(server.summary.paymentProviderCredentialsConfigured);
   const runtimeProof = server.summary.runtimeSessionProofAlgorithm || "missing";
-  const installer = firstInstaller(releaseArtifacts);
+  const installer = firstInstaller(releaseArtifacts, releaseArtifactsPath, version);
   const wrapperOutput = wrapperOutputArg
     ? path.resolve(wrapperOutputArg)
     : serviceGuard.nativeServiceWrapperOutput
@@ -211,7 +229,7 @@ function collectReleaseStatus(input = {}) {
       item("payment-loop", "支付闭环测试", Boolean(scripts["server:payment-loop:smoke"]), scripts["server:payment-loop:smoke"] ? "covered by CI" : "missing", "保留 npm run server:payment-loop:smoke，确保下单、支付、退款都可测")
     ]),
     group("update-release", "更新和发布", [
-      item("installer-artifact", "安装包工件", Boolean(installer.file && installer.sha256), installer.file || "missing", "运行 npm run release:rehearsal 或 npm run release:build 生成安装包"),
+      item("installer-artifact", "安装包工件", installer.ok, installer.ok ? installer.file : `file=${installer.file || "missing"}; disk=${installer.existsOnDisk ? "yes" : "no"}; version=${installer.versionMatches ? "match" : "mismatch"}; sha256=${installer.hashMatches ? "match" : "mismatch"}`, "运行 npm run release:rehearsal 或 npm run release:build 生成安装包"),
       item("update-version", "更新版本匹配", updateManifest.latest === version, `manifest=${updateManifest.latest || "missing"}; package=${version}`, "运行 npm run release:version 和 npm run update:prepare"),
       item("update-signature", "更新清单签名", updateManifest.signatureAlgorithm === "RSA-SHA256" && Boolean(updateManifest.signature), updateManifest.signature ? "signed" : "missing", "运行 npm run update:prepare 或 npm run update:sign"),
       item("download-url", "更新下载地址", isRealHttpsUrl(updateManifest.downloadUrl), updateManifest.downloadUrl || "missing", "真实 CDN 准备好后重新生成 update.json"),
@@ -244,7 +262,7 @@ function collectReleaseStatus(input = {}) {
   return {
     ok: blockers.length === 0 && warnings.length === 0,
     publicReleaseReady: blockers.length === 0 && warnings.length === 0,
-    localRehearsalReady: Boolean(scripts["release:rehearsal"]) && signing.ok && Boolean(installer.file),
+    localRehearsalReady: Boolean(scripts["release:rehearsal"]) && signing.ok && installer.ok,
     generatedAt: new Date().toISOString(),
     version,
     summary: {

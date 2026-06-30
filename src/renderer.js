@@ -899,8 +899,30 @@ function isHttpPaymentUrl(value) {
   return /^https?:\/\//i.test(String(value || ""));
 }
 
+function isPlaceholderPublicHost(value) {
+  try {
+    const host = new URL(String(value || "")).hostname
+      .toLowerCase()
+      .replace(/^\[|\]$/g, "")
+      .replace(/\.+$/g, "");
+    return !host
+      || host === "localhost"
+      || host === "local"
+      || host.endsWith(".local")
+      || host === "example.com"
+      || host.endsWith(".example.com")
+      || /\.(example|invalid|localhost|test)$/.test(host)
+      || /^(0|10|127)\./.test(host)
+      || /^169\.254\./.test(host)
+      || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host)
+      || /^192\.168\./.test(host);
+  } catch (_error) {
+    return true;
+  }
+}
+
 function isConfiguredPublicUrl(value) {
-  return isHttpPaymentUrl(value) && !/example\.com|localhost|127\.0\.0\.1/i.test(String(value || ""));
+  return isHttpPaymentUrl(value) && !isPlaceholderPublicHost(value);
 }
 
 function purchaseFallbackAvailable(config = {}) {

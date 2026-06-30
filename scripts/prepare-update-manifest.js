@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { isHttpsUrl, isPlaceholderUrl } = require("./release-url-policy");
 
 const rootDir = path.join(__dirname, "..");
 const defaultPackagePath = path.join(rootDir, "package.json");
@@ -28,14 +29,6 @@ function readJson(filePath) {
 function writeJson(filePath, value) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-}
-
-function isHttpsUrl(value) {
-  return /^https:\/\//i.test(String(value || ""));
-}
-
-function isPlaceholderUrl(value) {
-  return /example\.com|localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(String(value || ""));
 }
 
 function stableStringify(value) {

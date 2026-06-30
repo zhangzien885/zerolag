@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { inspectSigningEnv } = require("./check-code-signing-env");
+const { isHttpsUrl, isPlaceholderUrl } = require("./release-url-policy");
 
 const rootDir = path.join(__dirname, "..");
 const strict = process.argv.includes("--strict");
@@ -16,14 +17,6 @@ function fileExists(relativePath) {
 function readTextIfExists(relativePath) {
   const filePath = path.join(rootDir, relativePath);
   return fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf8") : "";
-}
-
-function isHttpsUrl(value) {
-  return /^https:\/\//i.test(String(value || ""));
-}
-
-function isPlaceholderUrl(value) {
-  return /example\.com|localhost|127\.0\.0\.1/i.test(String(value || ""));
 }
 
 function isSemver(value) {

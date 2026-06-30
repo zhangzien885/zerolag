@@ -71,7 +71,7 @@ function main() {
     const dryRun = runNode([
       scriptPath,
       "--domain",
-      "zerolag.test",
+      "zerolag.gg",
       "--config",
       configPath,
       "--update",
@@ -80,18 +80,18 @@ function main() {
     const dryRunResult = JSON.parse(dryRun.stdout);
     assertOk(dryRunResult.written === false, "Dry-run should not write files.");
     assertOk(readJson(configPath).releaseMode === "development", "Dry-run must not mutate app config.");
-    assertOk(dryRunResult.appConfigPatch.websiteUrl === "https://zerolag.test", "Dry-run should build website URL.");
-    assertOk(dryRunResult.appConfigPatch.apiBaseUrl === "https://api.zerolag.test", "Dry-run should default API subdomain.");
-    assertOk(dryRunResult.updatePatch.downloadUrl === "https://cdn.zerolag.test/releases/ZeroLag-Setup-{version}.exe", "Dry-run should default CDN download URL.");
+    assertOk(dryRunResult.appConfigPatch.websiteUrl === "https://zerolag.gg", "Dry-run should build website URL.");
+    assertOk(dryRunResult.appConfigPatch.apiBaseUrl === "https://api.zerolag.gg", "Dry-run should default API subdomain.");
+    assertOk(dryRunResult.updatePatch.downloadUrl === "https://cdn.zerolag.gg/releases/ZeroLag-Setup-{version}.exe", "Dry-run should default CDN download URL.");
 
     const written = runNode([
       scriptPath,
       "--domain",
-      "zerolag.test",
+      "zerolag.gg",
       "--api-domain",
-      "api-pay.zerolag.test",
+      "api-pay.zerolag.gg",
       "--cdn-domain",
-      "download.zerolag.test",
+      "download.zerolag.gg",
       "--installer-name",
       "ZeroLag-Setup-1.2.3.exe",
       "--config",
@@ -106,15 +106,16 @@ function main() {
     assertOk(writtenResult.written === true, "Write mode should report written.");
     assertOk(appConfig.releaseMode === "production", "Write mode should switch release mode to production.");
     assertOk(appConfig.allowLocalDemoLicense === false, "Write mode should disable local demo license.");
-    assertOk(appConfig.purchaseUrl === "https://zerolag.test/buy", "Write mode should set purchase URL.");
-    assertOk(appConfig.supportUrl === "https://zerolag.test/support", "Write mode should set support URL.");
-    assertOk(appConfig.analyticsUrl === "https://api-pay.zerolag.test/v1/website/events", "Write mode should set analytics endpoint.");
-    assertOk(appConfig.apiBaseUrl === "https://api-pay.zerolag.test", "Write mode should set API base URL.");
-    assertOk(appConfig.updateManifestUrl === "https://download.zerolag.test/releases/latest.json", "Write mode should set update manifest URL.");
-    assertOk(updateManifest.downloadUrl === "https://download.zerolag.test/releases/ZeroLag-Setup-1.2.3.exe", "Write mode should set installer download URL.");
+    assertOk(appConfig.purchaseUrl === "https://zerolag.gg/buy", "Write mode should set purchase URL.");
+    assertOk(appConfig.supportUrl === "https://zerolag.gg/support", "Write mode should set support URL.");
+    assertOk(appConfig.analyticsUrl === "https://api-pay.zerolag.gg/v1/website/events", "Write mode should set analytics endpoint.");
+    assertOk(appConfig.apiBaseUrl === "https://api-pay.zerolag.gg", "Write mode should set API base URL.");
+    assertOk(appConfig.updateManifestUrl === "https://download.zerolag.gg/releases/latest.json", "Write mode should set update manifest URL.");
+    assertOk(updateManifest.downloadUrl === "https://download.zerolag.gg/releases/ZeroLag-Setup-1.2.3.exe", "Write mode should set installer download URL.");
     assertOk(appConfig.updatePublicKeyPem === "", "Write mode must preserve key fields for later secure fill.");
 
     runNode([scriptPath, "--domain", "example.com", "--config", configPath, "--update", updatePath], 1);
+    runNode([scriptPath, "--domain", "zerolag.test", "--config", configPath, "--update", updatePath], 1);
     const placeholder = runNode([
       scriptPath,
       "--domain",

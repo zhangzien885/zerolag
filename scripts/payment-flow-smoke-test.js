@@ -65,7 +65,8 @@ function main() {
   assertIncludes(rendererJs, "navigator.clipboard.writeText(pendingPurchaseOrderId)", "Renderer must copy order IDs without exposing activation codes.");
   assertIncludes(rendererJs, "copyOrderIdButton.disabled = !pendingPurchaseOrderId", "Order ID copy action must be enabled only after order creation.");
   assertIncludes(rendererJs, "isHttpPaymentUrl", "Renderer must gate checkout by HTTP payment URL.");
-  assertIncludes(rendererJs, "example\\.com|localhost|127\\.0\\.0\\.1", "Renderer must not enable placeholder purchase URLs.");
+  assertIncludes(rendererJs, "isPlaceholderPublicHost", "Renderer must centralize placeholder purchase URL blocking.");
+  assertIncludes(rendererJs, "example|invalid|localhost|test", "Renderer must not enable reserved placeholder purchase URLs.");
   assertIncludes(rendererJs, "wechat_pay", "Renderer must recognize WeChat Pay provider metadata.");
   assertIncludes(rendererJs, "alipay", "Renderer must recognize Alipay provider metadata.");
   assertIncludes(serverIndex, "function normalizeCode", "Server must normalize activation codes consistently.");
