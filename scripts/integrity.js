@@ -24,6 +24,8 @@ const protectedFiles = [
   "scripts/release-url-policy-smoke-test.js",
   "scripts/release-status.js",
   "scripts/release-status-smoke-test.js",
+  "scripts/release-next-step.js",
+  "scripts/release-next-step-smoke-test.js",
   "scripts/formal-release-inputs.js",
   "scripts/formal-release-inputs-smoke-test.js",
   "scripts/generate-test-code-signing-cert.js",
