@@ -43,6 +43,7 @@
 - Official service readiness card in the game toolbox for website, purchase, account, update, and support channels, with refresh and safe website handoff actions.
 - System detection panel for CPU, discrete GPU preference, live memory usage, and Game Mode status.
 - Memory usage refresh every second with one decimal place.
+- Responsive desktop layout guardrails so narrow or short windows can scroll instead of clipping the topbar or membership panel.
 - Anti-tamper integrity manifest for protected files.
 - DevTools and common debug shortcuts disabled in the desktop window.
 - Result output hides sensitive implementation details from normal users.
@@ -227,6 +228,7 @@
 - Added desktop account binding UI plus server account tokens so WeChat, QQ, email, and phone identifiers can own linked memberships.
 - Added single-active-computer account sessions so the newest login device replaces older account tokens and copied account sessions cannot keep using membership elsewhere.
 - Added official service-status UI coverage for website, purchase, account, update, and support channel readiness plus safe website handoff without exposing internal endpoint details.
+- Added desktop layout smoke coverage to prevent fixed-height dashboards, hidden membership overflow, or clipped topbar status controls from regressing.
 - Added native Windows Service wrapper source, build tooling, CI smoke coverage, and installer wiring that prefers the wrapper before falling back to explicitly gated Electron worker validation.
 - Added a redacted release-workstation readiness command that checks the build PC for .NET SDK, native wrapper output, code signing, production URLs, update signing, private server env, and Git cleanliness with CI smoke coverage.
 - Added local test code-signing certificate generation under `.secrets/codesign`, private env auto-loading for signing checks, and CI smoke coverage while keeping test certificates out of public-release readiness.

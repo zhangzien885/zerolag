@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T08:12:43.658Z",
+  "generatedAt": "2026-06-30T08:27:59.900Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "097c5610b264c7721e2930a4f3bc3f1c87b91bea8800210730d713054e01a4b0"
+      "sha256": "34d111bde8a8d12f7a3984ea1b8149bb435a76452f8795384e6609772f473210"
     },
     {
       "path": "main.js",
@@ -28,7 +28,7 @@
     },
     {
       "path": "src/styles.css",
-      "sha256": "81190d36986f8e43c87276a609fd19536094667ec2238957269c2a6c37352867"
+      "sha256": "f885844dd7920cc2c2ebdd8523d8abc3e70f10f5d48a66f684be3cf9a59fcc2c"
     },
     {
       "path": "scripts/runtime-guard-core.js",
@@ -303,5 +303,5 @@
       "sha256": "88e790f4e8a56c15098dff7234e769dae7d04718745d0b839b471f55bd0ae571"
     }
   ],
-  "signature": "f4e2050b4812b0ed8a8a29f8ba822453f766859b3f992776eda043474db8a511"
+  "signature": "e0ed462d43b73b77ab35730f0b8c6eff9dee440a935080e4f350209cd6052b6f"
 }

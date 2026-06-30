@@ -29,7 +29,22 @@ body {
     radial-gradient(circle at 72% 8%, rgba(105, 183, 255, 0.11), transparent 30%),
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 80px),
     var(--bg);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body::-webkit-scrollbar {
+  width: 10px;
+}
+
+body::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.28);
+}
+
+body::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(0, 0, 0, 0.28);
+  background: linear-gradient(180deg, rgba(167, 255, 90, 0.72), rgba(78, 232, 143, 0.46));
+  background-clip: padding-box;
 }
 
 button,
@@ -38,11 +53,13 @@ body {
 }
 
 .shell {
-  width: min(1120px, calc(100vw - 28px));
-  height: calc(100vh - 28px);
+  width: min(1400px, calc(100vw - 28px));
+  min-height: calc(100vh - 28px);
+  height: auto;
   margin: 14px auto;
   display: grid;
-  grid-template-rows: minmax(340px, 1fr) minmax(286px, 300px);
+  grid-template-rows: auto auto;
+  align-content: start;
   gap: 14px;
 }
 
@@ -82,7 +99,7 @@ body {
 
 .topbar {
   display: grid;
-  grid-template-columns: minmax(300px, 360px) minmax(340px, 1fr) 310px;
+  grid-template-columns: minmax(250px, 320px) minmax(280px, 1fr) minmax(260px, 360px);
   align-items: center;
   gap: 12px;
   margin-bottom: 0;
@@ -192,12 +209,14 @@ body {
 }
 
 .topbar-status {
-  display: grid;
-  width: 310px;
+  display: flex;
+  width: min(100%, 360px);
+  flex-direction: column;
   align-items: center;
-  justify-items: end;
+  justify-self: end;
+  justify-items: stretch;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -211,12 +230,12 @@ body {
 
 .topbar-pills {
   position: relative;
-  display: grid;
-  grid-template-columns: 38px repeat(4, max-content);
+  display: flex;
   align-items: stretch;
-  max-width: none;
+  width: 100%;
+  max-width: 100%;
   justify-content: end;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 0;
   border: 1px solid rgba(196, 255, 220, 0.1);
   background:
@@ -245,7 +264,9 @@ body {
   position: relative;
   display: flex;
   flex: 0 0 auto;
+  width: 100%;
   align-items: stretch;
+  justify-content: flex-end;
   gap: 4px;
   border: 1px solid rgba(196, 255, 220, 0.12);
   background:
@@ -283,7 +304,9 @@ body {
 }
 
 .topbar-actions {
+  flex: 1;
   gap: 4px;
+  justify-content: flex-end;
 }
 
 .website-button {
@@ -442,7 +465,7 @@ body {
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 220px minmax(360px, 1fr) 230px;
+  grid-template-columns: minmax(200px, 0.75fr) minmax(420px, 1.7fr) minmax(230px, 0.85fr);
   gap: 14px;
   flex: 1;
   min-height: 0;
@@ -883,11 +906,15 @@ body.ready-mid .metric-rail {
   min-height: 0;
 }
 
+.lower-grid > * {
+  min-width: 0;
+}
+
 .pipeline-panel,
 .result-panel,
 .membership-panel {
   padding: 16px;
-  overflow: hidden;
+  overflow: visible;
   min-height: 0;
 }
 
@@ -897,7 +924,7 @@ body.ready-mid .metric-rail {
 }
 
 .membership-panel {
-  align-self: stretch;
+  align-self: start;
 }
 
 .steps {
@@ -1897,16 +1924,17 @@ body.ready-mid .metric-rail {
 
 @media (max-width: 1500px) {
   .shell {
-    width: min(1120px, calc(100vw - 28px));
-    height: calc(100vh - 28px);
+    width: min(1360px, calc(100vw - 28px));
+    min-height: calc(100vh - 28px);
+    height: auto;
     margin: 14px auto;
   }
 
   .topbar {
-    grid-template-columns: minmax(300px, 360px) minmax(340px, 1fr) 310px;
+    grid-template-columns: minmax(240px, 320px) minmax(260px, 1fr) minmax(260px, 360px);
     grid-template-areas: "brand signal controls";
     align-items: center;
-    column-gap: 14px;
+    column-gap: 12px;
     row-gap: 0;
   }
 
@@ -1933,11 +1961,61 @@ body.ready-mid .metric-rail {
 
   .topbar-status {
     grid-area: controls;
-    width: 310px;
+    width: min(100%, 360px);
   }
 
   .hero-grid {
-    grid-template-columns: 220px minmax(360px, 1fr) 230px;
+    grid-template-columns: minmax(190px, 0.78fr) minmax(360px, 1.55fr) minmax(220px, 0.9fr);
+  }
+
+  .lower-grid {
+    grid-template-columns: minmax(260px, 1fr) minmax(280px, 1fr) minmax(280px, 0.95fr);
+  }
+}
+
+@media (max-height: 820px) {
+  .shell {
+    width: min(1400px, calc(100vw - 20px));
+    min-height: calc(100vh - 20px);
+    margin: 10px auto;
+    gap: 12px;
+  }
+
+  .hero-panel {
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .metric-rail,
+  .system-card {
+    padding: 14px;
+  }
+
+  .score-block {
+    margin-top: 12px;
+  }
+
+  .score-block strong {
+    font-size: clamp(46px, 5vh, 60px);
+  }
+
+  .boost-core {
+    padding: 24px 28px;
+  }
+
+  .boost-copy {
+    min-height: 240px;
+    gap: 16px;
+  }
+
+  .boost-copy h1 {
+    font-size: clamp(27px, 2.2vw, 34px);
+  }
+
+  .pipeline-panel,
+  .result-panel,
+  .membership-panel {
+    padding: 14px;
   }
 }
 
