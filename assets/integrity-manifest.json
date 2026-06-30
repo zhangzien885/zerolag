@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T04:14:29.920Z",
+  "generatedAt": "2026-06-30T04:32:47.723Z",
   "files": [
     {
       "path": "package.json",
-      "sha256": "e72af02eae7965cd79012d8225a6499a77c5c09dd630283c64f496289d26a52c"
+      "sha256": "0dce60d87dae1c5cc024f2ba0312072b3967911d303b28966799dce1e06ffcc2"
     },
     {
       "path": "main.js",
@@ -192,11 +192,11 @@
     },
     {
       "path": "scripts/release-preflight.js",
-      "sha256": "9e1af09f8ad84ff47f0a26230eada60bea286147f7812684c5f3badc96aea958"
+      "sha256": "9aa2e13ae843beff81288786d479b43a7a2038d17ecb25bb5cd7e8fabbdfa349"
     },
     {
       "path": "scripts/server-production-check.js",
-      "sha256": "e798bace3d8c3aa2a03178213e826c485715b1f8eb0adfdb92b8717799801e11"
+      "sha256": "6ac0ffffa2025baa41d9dcf4564d742a6038f3d729025dc010a5bfba077a35f8"
     },
     {
       "path": "scripts/server-smoke-test.js",
@@ -232,7 +232,7 @@
     },
     {
       "path": "scripts/check-server-env.js",
-      "sha256": "1ab1d880b53659aaed8bb5441b698ee1acf18cbd83e616c84e24efe419dea7fd"
+      "sha256": "09c0e82e33b658151a65b609f059af3e61e028f8dac29b607c34671be0130976"
     },
     {
       "path": "scripts/generate-server-secrets.js",
@@ -245,6 +245,10 @@
     {
       "path": "server/env.js",
       "sha256": "f9124feb42d486e72992d3d9d4d5a3e10d145d723a129a0e71c62acb47e613c2"
+    },
+    {
+      "path": "server/payment-provider.js",
+      "sha256": "5ebfcc742ec514e513dc703e428f8dda3e70bf801e5afd485d20b742f4e0e326"
     },
     {
       "path": "assets/zerolag-logo.svg",
@@ -291,5 +295,5 @@
       "sha256": "88e790f4e8a56c15098dff7234e769dae7d04718745d0b839b471f55bd0ae571"
     }
   ],
-  "signature": "4b38c3569a8b2c66dd7f5a87c5d77ad167cb65d1824c4828fdcf27da25cb093a"
+  "signature": "8a1b6053aa367506aa17c8fb57b42349cff5a303ce02704069c04aed7b5eaf92"
 }

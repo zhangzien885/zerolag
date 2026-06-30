@@ -3,6 +3,14 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { loadServerEnvFile } = require("./env");
+const {
+  createPaymentIntent,
+  defaultPaymentProvider,
+  defaultPaymentUrlTemplate,
+  paymentConfigFromOptions,
+  paymentProviderAllowed,
+  normalizePaymentProvider
+} = require("./payment-provider");
 const { createConfiguredStateStore } = require("./state-store");
 
 const rootDir = path.join(__dirname, "..");
@@ -19,18 +27,8 @@ const defaultMaintenanceIntervalMs = 6 * 60 * 60 * 1000;
 const defaultServerSecret = "zerolag-dev-server-secret-change-before-production";
 const defaultAdminSecret = "zerolag-dev-admin-secret-change-before-production";
 const defaultPaymentWebhookSecret = "zerolag-dev-payment-webhook-secret-change-before-production";
-const defaultPaymentProvider = "manual";
 const defaultRuntimeSessionKeyVersion = "runtime-session-v1";
 const defaultRuntimeSessionProofAlgorithm = "HMAC-SHA256";
-const defaultPaymentAllowedProviders = [
-  "manual",
-  "manual-admin",
-  "manual-signed-webhook",
-  "signed-webhook",
-  "self-test"
-];
-const defaultPaymentUrlTemplate = "zerolag://pay/{orderId}";
-const defaultPaymentMessage = "支付通道正在准备，完成支付确认后会自动开通。";
 const defaultRateLimitByRoute = {
   "website:events": 240,
   "orders:create": 30,
@@ -325,42 +323,6 @@ function paymentWebhookSecretFromOptions(options = {}) {
     || defaultPaymentWebhookSecret;
 }
 
-function normalizePaymentProvider(value, fallback = defaultPaymentProvider) {
-  const normalized = String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, "_")
-    .slice(0, 48);
-  return normalized || fallback;
-}
-
-function paymentProviderListFromValue(value) {
-  if (Array.isArray(value)) {
-    return value.map((item) => normalizePaymentProvider(item, "")).filter(Boolean);
-  }
-
-  return String(value || "")
-    .split(",")
-    .map((item) => normalizePaymentProvider(item, ""))
-    .filter(Boolean);
-}
-
-function paymentConfigFromOptions(options = {}) {
-  const input = options.payment || {};
-  const provider = normalizePaymentProvider(input.provider || process.env.ZEROLAG_PAYMENT_PROVIDER || defaultPaymentProvider);
-  const configuredAllowed = paymentProviderListFromValue(
-    input.allowedProviders || process.env.ZEROLAG_PAYMENT_ALLOWED_PROVIDERS || defaultPaymentAllowedProviders
-  );
-  const allowedProviders = Array.from(new Set([provider, ...configuredAllowed]));
-
-  return {
-    provider,
-    allowedProviders,
-    urlTemplate: String(input.urlTemplate || process.env.ZEROLAG_PAYMENT_URL_TEMPLATE || defaultPaymentUrlTemplate),
-    message: String(input.message || process.env.ZEROLAG_PAYMENT_MESSAGE || defaultPaymentMessage)
-  };
-}
-
 function runtimeSessionKeyVersionFromOptions(options = {}) {
   const input = options.runtimeSession || {};
   const value = String(input.keyVersion || process.env.ZEROLAG_RUNTIME_SESSION_KEY_VERSION || defaultRuntimeSessionKeyVersion)
@@ -417,18 +379,6 @@ function runtimeSessionProofConfigFromOptions(options = {}) {
     algorithm,
     privateKeyPem: runtimeSessionPrivateKeyPemFromOptions(options)
   };
-}
-
-function paymentProviderAllowed(provider, options = {}) {
-  return paymentConfigFromOptions(options).allowedProviders.includes(normalizePaymentProvider(provider, ""));
-}
-
-function paymentUrlFromTemplate(template, order) {
-  return String(template || defaultPaymentUrlTemplate)
-    .replace(/\{orderId\}/g, encodeURIComponent(order.orderId || ""))
-    .replace(/\{amountCents\}/g, encodeURIComponent(String(order.amountCents || "")))
-    .replace(/\{currency\}/g, encodeURIComponent(order.currency || ""))
-    .replace(/\{plan\}/g, encodeURIComponent(order.plan || ""));
 }
 
 function backupConfigFromOptions(options = {}) {
@@ -1949,11 +1899,7 @@ async function createOrder(request, response, options = {}) {
   jsonResponse(response, 201, {
     ok: true,
     order: safeOrderRecord(order),
-    payment: {
-      provider: paymentConfig.provider,
-      paymentUrl: paymentUrlFromTemplate(paymentConfig.urlTemplate, order),
-      message: paymentConfig.message
-    }
+    payment: createPaymentIntent(paymentConfig, order)
   });
 }
 

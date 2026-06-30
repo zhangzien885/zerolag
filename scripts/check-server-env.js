@@ -1,28 +1,20 @@
 const fs = require("fs");
 const path = require("path");
 const { defaultServerEnvPath, parseEnvLine } = require("../server/env");
+const {
+  defaultPaymentProvider,
+  defaultPaymentUrlTemplate,
+  missingPaymentCredentialKeys,
+  normalizePaymentProvider,
+  paymentCredentialKeysFor,
+  paymentProviderListFromValue,
+  testPaymentProviders
+} = require("../server/payment-provider");
 const { isRealHttpUrl } = require("./release-url-policy");
 
 const defaultServerSecret = "zerolag-dev-server-secret-change-before-production";
 const defaultAdminSecret = "zerolag-dev-admin-secret-change-before-production";
 const defaultPaymentWebhookSecret = "zerolag-dev-payment-webhook-secret-change-before-production";
-const defaultPaymentProvider = "manual";
-const defaultPaymentUrlTemplate = "zerolag://pay/{orderId}";
-const testPaymentProviders = new Set(["self-test", "manual-signed-webhook", "signed-webhook"]);
-const providerCredentialKeys = {
-  wechat_pay: [
-    "ZEROLAG_WECHAT_PAY_MCH_ID",
-    "ZEROLAG_WECHAT_PAY_APP_ID",
-    "ZEROLAG_WECHAT_PAY_API_V3_KEY",
-    "ZEROLAG_WECHAT_PAY_SERIAL_NO",
-    "ZEROLAG_WECHAT_PAY_PRIVATE_KEY_PATH"
-  ],
-  alipay: [
-    "ZEROLAG_ALIPAY_APP_ID",
-    "ZEROLAG_ALIPAY_PRIVATE_KEY_PATH",
-    "ZEROLAG_ALIPAY_PUBLIC_KEY_PATH"
-  ]
-};
 
 function usage() {
   console.log("Usage:");
@@ -48,26 +40,12 @@ function normalizeStoreKind(value) {
     .replace(/[^a-z0-9_-]/g, "_");
 }
 
-function normalizePaymentProvider(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, "_");
-}
-
 function normalizeRuntimeSessionProofAlgorithm(value) {
   return String(value || "")
     .trim()
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-}
-
-function paymentProviderList(value) {
-  return String(value || "")
-    .split(",")
-    .map(normalizePaymentProvider)
-    .filter(Boolean);
 }
 
 function isStrongSecret(value, defaultValue) {
@@ -151,10 +129,10 @@ function inspect(entries, profile) {
   const warnings = [];
   const stateStore = normalizeStoreKind(value(entries, "ZEROLAG_STATE_STORE", "json"));
   const paymentProvider = normalizePaymentProvider(value(entries, "ZEROLAG_PAYMENT_PROVIDER", defaultPaymentProvider));
-  const paymentAllowedProviders = paymentProviderList(value(entries, "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS", ""));
+  const paymentAllowedProviders = paymentProviderListFromValue(value(entries, "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS", ""));
   const paymentUrlTemplate = value(entries, "ZEROLAG_PAYMENT_URL_TEMPLATE", "");
-  const paymentCredentialKeys = providerCredentialKeys[paymentProvider] || [];
-  const missingPaymentCredentialKeys = paymentCredentialKeys.filter((key) => !String(value(entries, key, "")).trim());
+  const paymentCredentialKeys = paymentCredentialKeysFor(paymentProvider);
+  const missingPaymentKeys = missingPaymentCredentialKeys(entries, paymentProvider);
   const runtimeSessionKeyVersion = value(entries, "ZEROLAG_RUNTIME_SESSION_KEY_VERSION", "");
   const runtimeSessionProofAlgorithm = normalizeRuntimeSessionProofAlgorithm(value(entries, "ZEROLAG_RUNTIME_SESSION_PROOF_ALGORITHM", ""));
   const runtimeSessionPrivateKeyText = decodePrivateKeyText(entries);
@@ -213,8 +191,8 @@ function inspect(entries, profile) {
   addIssue(issues, paymentAllowedProviders.includes(paymentProvider), "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS must include ZEROLAG_PAYMENT_PROVIDER.");
   addIssue(
     issues,
-    missingPaymentCredentialKeys.length === 0,
-    `Missing ${paymentProvider} payment credential keys: ${missingPaymentCredentialKeys.join(", ")}`
+    missingPaymentKeys.length === 0,
+    `Missing ${paymentProvider} payment credential keys: ${missingPaymentKeys.join(", ")}`
   );
 
   addIssue(warnings, paymentProvider !== defaultPaymentProvider, "Payment provider is still manual.");
@@ -241,8 +219,8 @@ function inspect(entries, profile) {
       paymentProvider,
       paymentAllowedProviderCount: paymentAllowedProviders.length,
       paymentCredentialKeysRequired: paymentCredentialKeys.length,
-      paymentCredentialKeysConfigured: paymentCredentialKeys.length - missingPaymentCredentialKeys.length,
-      paymentProviderCredentialsConfigured: paymentCredentialKeys.length === 0 || missingPaymentCredentialKeys.length === 0,
+      paymentCredentialKeysConfigured: paymentCredentialKeys.length - missingPaymentKeys.length,
+      paymentProviderCredentialsConfigured: paymentCredentialKeys.length === 0 || missingPaymentKeys.length === 0,
       runtimeSessionKeyVersion,
       runtimeSessionProofAlgorithm,
       runtimeSessionAsymmetricProofConfigured,

@@ -84,6 +84,7 @@ function main() {
       "assets/update.json",
       "server/index.js",
       "server/env.js",
+      "server/payment-provider.js",
       "server/state-store.js",
       "server/admin-client.js",
       "scripts/server-production-check.js",
@@ -136,9 +137,11 @@ function main() {
     assertOk(manifest.type === "server-deployment-pack", "Manifest should identify the deployment pack.");
     assertOk(Array.isArray(manifest.files) && manifest.files.length === result.fileCount, "Manifest should include every generated file.");
     assertOk(manifest.files.some((file) => file.path === "server/index.js"), "Manifest should include server/index.js.");
+    assertOk(manifest.files.some((file) => file.path === "server/payment-provider.js"), "Manifest should include server/payment-provider.js.");
     assertOk(manifest.files.every((file) => /^[a-f0-9]{64}$/.test(file.sha256)), "Manifest entries should include SHA256 hashes.");
 
     runNodeCheck(packRoot, "server/index.js");
+    runNodeCheck(packRoot, "server/payment-provider.js");
     runNodeCheck(packRoot, "scripts/server-smoke-test.js");
     runNodeCheck(packRoot, "scripts/payment-loop-smoke-test.js");
 

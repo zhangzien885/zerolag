@@ -1,6 +1,13 @@
 const fs = require("fs");
 const path = require("path");
 const { loadServerEnvFile } = require("../server/env");
+const {
+  defaultPaymentProvider,
+  defaultPaymentUrlTemplate,
+  normalizePaymentProvider,
+  paymentProviderListFromValue,
+  testPaymentProviders
+} = require("../server/payment-provider");
 const { checkServerEnvFile } = require("./check-server-env");
 
 const rootDir = path.join(__dirname, "..");
@@ -8,8 +15,6 @@ const strict = process.argv.includes("--strict");
 const defaultServerSecret = "zerolag-dev-server-secret-change-before-production";
 const defaultAdminSecret = "zerolag-dev-admin-secret-change-before-production";
 const defaultPaymentWebhookSecret = "zerolag-dev-payment-webhook-secret-change-before-production";
-const defaultPaymentProvider = "manual";
-const defaultPaymentUrlTemplate = "zerolag://pay/{orderId}";
 
 const envFileLoad = loadServerEnvFile();
 
@@ -44,20 +49,6 @@ function isPositiveNumber(value) {
 function positiveNumber(value, fallback) {
   const number = Number(value);
   return Number.isFinite(number) && number > 0 ? number : fallback;
-}
-
-function normalizePaymentProvider(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, "_");
-}
-
-function paymentProviderList(value) {
-  return String(value || "")
-    .split(",")
-    .map(normalizePaymentProvider)
-    .filter(Boolean);
 }
 
 function stateSummary(state) {
@@ -209,7 +200,7 @@ function main() {
   const sqliteBackupDir = env("ZEROLAG_SQLITE_BACKUP_DIR", backupDir);
   const sqliteBackupMaxAgeHours = positiveNumber(env("ZEROLAG_SQLITE_BACKUP_MAX_AGE_HOURS"), 24);
   const paymentProvider = normalizePaymentProvider(env("ZEROLAG_PAYMENT_PROVIDER", defaultPaymentProvider));
-  const paymentAllowedProviders = paymentProviderList(env(
+  const paymentAllowedProviders = paymentProviderListFromValue(env(
     "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS",
     "manual,manual-admin,manual-signed-webhook,signed-webhook,self-test"
   ));
@@ -293,7 +284,7 @@ function main() {
   addIssue(warnings, paymentProvider !== defaultPaymentProvider, "Payment provider is still manual; configure ZEROLAG_PAYMENT_PROVIDER before paid release.");
   addIssue(
     warnings,
-    !paymentAllowedProviders.some((provider) => ["self-test", "manual-signed-webhook", "signed-webhook"].includes(provider)),
+    !paymentAllowedProviders.some((provider) => testPaymentProviders.has(provider)),
     "Payment provider allowlist still includes test webhook providers; remove them before public release."
   );
   addIssue(warnings, fs.existsSync(path.dirname(statePath)), `State directory does not exist yet: ${path.dirname(statePath)}`);

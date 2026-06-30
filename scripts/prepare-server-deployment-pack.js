@@ -13,6 +13,7 @@ const copiedFiles = [
   "server/create-activation-code.js",
   "server/env.js",
   "server/index.js",
+  "server/payment-provider.js",
   "server/README.md",
   "server/state-store.js",
   "scripts/apply-app-config-snippet.js",

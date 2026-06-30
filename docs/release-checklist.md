@@ -64,6 +64,7 @@ npm run release:inputs
 - Confirm `npm run server:check:strict` prints safe SQLite state and backup summaries and does not report SQLite storage issues.
 - Configure `ZEROLAG_PAYMENT_PROVIDER`, `ZEROLAG_PAYMENT_ALLOWED_PROVIDERS`, `ZEROLAG_PAYMENT_URL_TEMPLATE`, and `ZEROLAG_PAYMENT_MESSAGE` for the real payment provider.
 - For WeChat Pay, configure `ZEROLAG_WECHAT_PAY_MCH_ID`, `ZEROLAG_WECHAT_PAY_APP_ID`, `ZEROLAG_WECHAT_PAY_API_V3_KEY`, `ZEROLAG_WECHAT_PAY_SERIAL_NO`, and `ZEROLAG_WECHAT_PAY_PRIVATE_KEY_PATH`; for Alipay, configure `ZEROLAG_ALIPAY_APP_ID`, `ZEROLAG_ALIPAY_PRIVATE_KEY_PATH`, and `ZEROLAG_ALIPAY_PUBLIC_KEY_PATH`.
+- Run `npm run payment:provider:smoke` after changing payment provider settings so the shared adapter rules, allowlist behavior, and credential-key requirements stay aligned.
 - Run `npm run server:payment-loop` to verify the account, order, signed webhook, activation, validation, refund, and revocation loop before connecting the real payment adapter.
 - Run `npm run server:check:strict`.
 - Run `npm run server:smoke`; it should print `isolated-sqlite` when SQLite is configured and must not touch the live state path.

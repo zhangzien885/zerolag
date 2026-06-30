@@ -164,6 +164,8 @@ npm run server:payment-loop
 
 The command starts an isolated temporary server and does not touch live membership state. It creates a test account, creates a pending order, sends a signed provider-style payment success webhook, confirms the generated activation code is visible only to the owning account, activates the membership, validates it, sends a signed refund webhook, and confirms the membership is no longer active.
 
+Payment provider normalization, allowlist checks, credential-key requirements, and checkout URL generation live in `server/payment-provider.js` so WeChat Pay or Alipay can be connected behind one stable adapter boundary.
+
 Use a different provider label when checking provider-specific configuration wording:
 
 ```powershell
