@@ -354,6 +354,21 @@ function signIntegrityPayload(files) {
   return crypto.createHmac("sha256", integritySecret).update(body).digest("hex");
 }
 
+const packagedIntegrityRequiredPaths = new Set([
+  "main.js",
+  "preload.js",
+  "src/index.html",
+  "src/splash.html",
+  "src/renderer.js",
+  "src/styles.css",
+  "scripts/runtime-guard-core.js",
+  "scripts/runtime-guard-service.js",
+  "scripts/runtime-watchdog.js",
+  "assets/app-config.json",
+  "assets/zerolag-logo.svg",
+  "assets/zerolag-power-plan-template.protected.json"
+]);
+
 function verifyAppIntegrity() {
   if (!fs.existsSync(integrityManifestPath)) {
     return { ok: false, reason: "完整性清单缺失" };
@@ -366,7 +381,20 @@ function verifyAppIntegrity() {
       return { ok: false, reason: "完整性签名异常" };
     }
 
+    const protectedPaths = new Set(files.map((item) => item.path));
+    if (app.isPackaged) {
+      for (const requiredPath of packagedIntegrityRequiredPaths) {
+        if (!protectedPaths.has(requiredPath)) {
+          return { ok: false, reason: "Integrity manifest missing runtime file" };
+        }
+      }
+    }
+
     for (const item of files) {
+      if (app.isPackaged && !packagedIntegrityRequiredPaths.has(item.path)) {
+        continue;
+      }
+
       const filePath = path.join(__dirname, item.path);
       if (!fs.existsSync(filePath)) {
         return { ok: false, reason: "核心文件缺失" };

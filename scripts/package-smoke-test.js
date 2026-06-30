@@ -26,6 +26,10 @@ function sha256File(filePath) {
   return crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
 }
 
+function sha256Buffer(value) {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
 function readText(filePath) {
   return fs.readFileSync(filePath, "utf8");
 }
@@ -64,6 +68,21 @@ function main() {
   const manifest = JSON.parse(readText(manifestPath));
   const protectedPaths = new Set((manifest.files || []).map((item) => item.path));
   const asarFiles = new Set(asarTools.listPackage(asarPath).map((item) => item.replace(/\\/g, "/").replace(/^\/+/, "")));
+  const manifestByPath = new Map((manifest.files || []).map((item) => [item.path, item]));
+  const packagedIntegrityRequiredPaths = [
+    "main.js",
+    "preload.js",
+    "src/index.html",
+    "src/splash.html",
+    "src/renderer.js",
+    "src/styles.css",
+    "scripts/runtime-guard-core.js",
+    "scripts/runtime-guard-service.js",
+    "scripts/runtime-watchdog.js",
+    "assets/app-config.json",
+    "assets/zerolag-logo.svg",
+    "assets/zerolag-power-plan-template.protected.json"
+  ];
 
   [
     "package.json",
@@ -91,6 +110,14 @@ function main() {
     "assets/zerolag-power-plan-template.protected.json"
   ].forEach((relativePath) => {
     assertOk(asarFiles.has(relativePath), `Packaged app archive missing: ${relativePath}`);
+  });
+
+  packagedIntegrityRequiredPaths.forEach((relativePath) => {
+    const manifestEntry = manifestByPath.get(relativePath);
+    assertOk(manifestEntry, `Packaged runtime integrity manifest missing: ${relativePath}`);
+    assertOk(asarFiles.has(relativePath), `Packaged runtime integrity file missing from archive: ${relativePath}`);
+    const packagedHash = sha256Buffer(asarTools.extractFile(asarPath, relativePath));
+    assertOk(packagedHash === manifestEntry.sha256, `Packaged runtime integrity hash mismatch: ${relativePath}`);
   });
 
   const packageConfig = packageJson.build || {};

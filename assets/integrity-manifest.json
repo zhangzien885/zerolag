@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T07:01:08.684Z",
+  "generatedAt": "2026-06-30T08:12:43.658Z",
   "files": [
     {
       "path": "package.json",
@@ -8,7 +8,7 @@
     },
     {
       "path": "main.js",
-      "sha256": "cde230bce597112d2f2ba09b39a6280b0b0b03141445235e44fd6640b6dc828a"
+      "sha256": "3e6f6c58e1b1858d51d8c5afcf40a840902bbeb039bdd16159e8f3654b058da2"
     },
     {
       "path": "preload.js",
@@ -128,7 +128,7 @@
     },
     {
       "path": "scripts/package-smoke-test.js",
-      "sha256": "796c1f172eeb1dc839256610036d6aa51733f62d24d81f97e03cee4b84e51aba"
+      "sha256": "eebcbcd456fd9e0c430f646870dd22e19a56a3d891e6b888553eced52423f956"
     },
     {
       "path": "scripts/installer-smoke-test.js",
@@ -303,5 +303,5 @@
       "sha256": "88e790f4e8a56c15098dff7234e769dae7d04718745d0b839b471f55bd0ae571"
     }
   ],
-  "signature": "9a35572ef531d6d00757dc002697a589487ab886774e6b3efb51ba013fc64102"
+  "signature": "f4e2050b4812b0ed8a8a29f8ba822453f766859b3f992776eda043474db8a511"
 }
