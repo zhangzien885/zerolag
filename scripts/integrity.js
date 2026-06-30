@@ -38,6 +38,8 @@ const protectedFiles = [
   "scripts/generate-release-artifacts.js",
   "scripts/generate-release-report.js",
   "scripts/release-report-smoke-test.js",
+  "scripts/local-release-rehearsal.js",
+  "scripts/local-release-rehearsal-smoke-test.js",
   "scripts/ci-report-artifact-smoke-test.js",
   "scripts/check-release-gate.js",
   "scripts/release-gate-smoke-test.js",
