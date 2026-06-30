@@ -579,6 +579,10 @@ function websiteOpenSucceeded(result) {
   return result === true || Boolean(result && result.ok);
 }
 
+function updateOpenSucceeded(result) {
+  return result === true || Boolean(result && result.ok);
+}
+
 async function openOfficialWebsiteWithFeedback(source = "topbar") {
   try {
     const result = await window.zeroLag.openWebsite();
@@ -607,6 +611,32 @@ async function openOfficialWebsiteWithFeedback(source = "topbar") {
       setText(els.serviceDetail, "官方页面打开失败，请稍后再试。");
     }
     addLog("官方页面打开失败。", "warn");
+  }
+
+  return false;
+}
+
+async function openUpdateDownloadWithFeedback() {
+  if (!pendingUpdateUrl) {
+    addLog("更新下载地址暂未配置。", "warn");
+    return false;
+  }
+
+  try {
+    const result = await window.zeroLag.openUpdateUrl(pendingUpdateUrl);
+    if (updateOpenSucceeded(result)) {
+      addLog("已打开更新下载页面。", "good");
+      return true;
+    }
+
+    addLog(
+      result && result.reason === "UPDATE_URL_NOT_READY"
+        ? "更新下载地址暂未配置。"
+        : "更新下载页面暂时打不开，请稍后再试。",
+      "warn"
+    );
+  } catch {
+    addLog("更新下载页面暂时打不开，请稍后再试。", "warn");
   }
 
   return false;
@@ -1383,13 +1413,7 @@ els.versionCheckButton.addEventListener("click", async () => {
 });
 
 els.versionInstallButton.addEventListener("click", async () => {
-  if (!pendingUpdateUrl) {
-    addLog("更新地址暂未配置。", "warn");
-    return;
-  }
-
-  await window.zeroLag.openUpdateUrl(pendingUpdateUrl);
-  addLog("已打开更新下载页面。", "good");
+  await openUpdateDownloadWithFeedback();
 });
 
 els.supportPrepareButton.addEventListener("click", async () => {
@@ -1631,13 +1655,7 @@ els.closeUpdateButton.addEventListener("click", () => {
 });
 
 els.installUpdateButton.addEventListener("click", async () => {
-  if (!pendingUpdateUrl) {
-    addLog("更新地址暂未配置。", "warn");
-    return;
-  }
-
-  await window.zeroLag.openUpdateUrl(pendingUpdateUrl);
-  addLog("已打开更新下载页面。", "good");
+  await openUpdateDownloadWithFeedback();
 });
 
 updateAccountPlaceholder();

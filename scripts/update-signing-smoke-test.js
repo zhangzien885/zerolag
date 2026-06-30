@@ -6,6 +6,8 @@ const { spawnSync } = require("child_process");
 const rootDir = path.join(__dirname, "..");
 const sourceManifestPath = path.join(rootDir, "assets", "update.json");
 const signingScriptPath = path.join(rootDir, "scripts", "sign-update-manifest.js");
+const mainJsPath = path.join(rootDir, "main.js");
+const rendererJsPath = path.join(rootDir, "src", "renderer.js");
 
 function runNode(args, expectedStatus = 0) {
   const result = spawnSync(process.execPath, args, {
@@ -33,6 +35,10 @@ function assertOk(condition, message) {
   }
 }
 
+function assertIncludes(text, snippet, message) {
+  assertOk(text.includes(snippet), message);
+}
+
 function safeRemoveTemp(tempRoot) {
   const resolvedRoot = path.resolve(tempRoot);
   const resolvedTemp = path.resolve(os.tmpdir());
@@ -46,6 +52,21 @@ function safeRemoveTemp(tempRoot) {
 function main() {
   assertOk(fs.existsSync(sourceManifestPath), "assets/update.json is missing.");
   assertOk(fs.existsSync(signingScriptPath), "scripts/sign-update-manifest.js is missing.");
+
+  const mainJs = fs.readFileSync(mainJsPath, "utf8");
+  const rendererJs = fs.readFileSync(rendererJsPath, "utf8");
+  assertIncludes(mainJs, "zerolag:open-update-url", "Main process must expose the update download opener.");
+  assertIncludes(mainJs, "isConfiguredPublicUrl(target)", "Update download opener must reject placeholder or local URLs.");
+  assertIncludes(mainJs, 'reason: "UPDATE_URL_NOT_READY"', "Update download opener must return a safe not-ready reason.");
+  assertIncludes(mainJs, 'reason: "UPDATE_URL_OPEN_FAILED"', "Update download opener must report shell open failures.");
+  assertIncludes(rendererJs, "openUpdateDownloadWithFeedback", "Renderer must route update opening through a feedback helper.");
+  assertIncludes(rendererJs, "updateOpenSucceeded(result)", "Renderer must verify update opening before showing success.");
+  assertIncludes(rendererJs, 'result && result.reason === "UPDATE_URL_NOT_READY"', "Renderer must show a safe not-ready update message.");
+  const rendererOpenUpdateCalls = rendererJs.match(/window\.zeroLag\.openUpdateUrl/g) || [];
+  assertOk(
+    rendererOpenUpdateCalls.length === 1,
+    "Renderer must call openUpdateUrl only from the shared update feedback helper."
+  );
 
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "zerolag-update-smoke-"));
   const manifestPath = path.join(tempRoot, "update.json");

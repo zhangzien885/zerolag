@@ -35,6 +35,8 @@ let mainWindow = null;
 let tray = null;
 let supportLogWriteQueue = Promise.resolve();
 let lastSupportBundlePath = "";
+let normalDesktopStartupReady = false;
+let pendingPrimaryInstanceReveal = false;
 
 function defaultAppConfig() {
   return {
@@ -2127,8 +2129,8 @@ function showMainWindow() {
 }
 
 function revealPrimaryInstanceWindow() {
-  if (!app.isReady()) {
-    app.once("ready", showMainWindow);
+  if (!normalDesktopStartupReady) {
+    pendingPrimaryInstanceReveal = true;
     return;
   }
 
@@ -2822,13 +2824,18 @@ function createWindow() {
       }
       win.show();
       win.focus();
+      normalDesktopStartupReady = true;
+      if (pendingPrimaryInstanceReveal) {
+        pendingPrimaryInstanceReveal = false;
+        showMainWindow();
+      }
     }, delay);
   });
 
   win.loadFile(path.join(__dirname, "src", "index.html"));
 }
 
-const hasDesktopInstanceLock = runtimeGuardServiceMode || app.requestSingleInstanceLock();
+let hasDesktopInstanceLock = runtimeGuardServiceMode || app.requestSingleInstanceLock();
 
 if (!hasDesktopInstanceLock) {
   app.quit();
@@ -2851,8 +2858,16 @@ app.whenReady().then(async () => {
   app.setAppUserModelId("ZeroLag");
 
   if (process.platform === "win32" && !skipElevation && !(await isAdmin())) {
+    app.releaseSingleInstanceLock();
+    hasDesktopInstanceLock = false;
     const result = await relaunchAsAdmin();
     if (result.ok) {
+      app.quit();
+      return;
+    }
+
+    hasDesktopInstanceLock = app.requestSingleInstanceLock();
+    if (!hasDesktopInstanceLock) {
       app.quit();
       return;
     }
@@ -3014,9 +3029,27 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle("zerolag:open-update-url", async (_event, url) => {
     const target = String(url || "");
-    if (!isHttpUrl(target)) return false;
-    await shell.openExternal(target);
-    return true;
+    if (!isConfiguredPublicUrl(target)) {
+      return {
+        ok: false,
+        configured: false,
+        reason: "UPDATE_URL_NOT_READY"
+      };
+    }
+
+    try {
+      await shell.openExternal(target);
+      return {
+        ok: true,
+        configured: true
+      };
+    } catch {
+      return {
+        ok: false,
+        configured: true,
+        reason: "UPDATE_URL_OPEN_FAILED"
+      };
+    }
   });
   ipcMain.handle("zerolag:activate-license", async (_event, code) => activateLicenseV2(normalizeActivationCode(code)));
   ipcMain.handle("zerolag:boost", async () => runOneClickBoost());
