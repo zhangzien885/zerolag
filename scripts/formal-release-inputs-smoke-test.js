@@ -83,6 +83,10 @@ function main() {
   const serverEnvSnippetPath = path.join(tempDir, "server-payment-snippet.env");
   const alipayServerEnvSnippetPath = path.join(tempDir, "alipay-server-payment-snippet.env");
   const blockedServerEnvSnippetPath = path.join(tempDir, "blocked-server-payment-snippet.env");
+  const alignedServerEnvPath = path.join(tempDir, "server.env");
+  const missingSecretServerEnvPath = path.join(tempDir, "missing-secret-server.env");
+  const mismatchedServerEnvPath = path.join(tempDir, "mismatched-server.env");
+  const alipayAlignedServerEnvPath = path.join(tempDir, "alipay-server.env");
   const reservedPath = path.join(tempDir, "reserved.json");
   const secretPath = path.join(tempDir, "secret.json");
 
@@ -164,6 +168,10 @@ function main() {
   assert.match(blockedServerEnvSnippetResult.stderr, /Payment server env snippet is not ready/);
   assert.ok(!fs.existsSync(blockedServerEnvSnippetPath), "blocked payment env snippet should not be written");
 
+  const blockedServerEnvAlignmentResult = run(["--file", setPath, "--verify-server-env", "--server-env", missingSecretServerEnvPath]);
+  assert.notStrictEqual(blockedServerEnvAlignmentResult.status, 0, "payment env alignment must not pass before formal payment inputs are ready");
+  assert.match(blockedServerEnvAlignmentResult.stdout, /Formal payment inputs are not ready/);
+
   writeJson(readyPath, readyFixture());
   const readyResult = run(["--file", readyPath, "--json"]);
   assert.strictEqual(readyResult.status, 0, readyResult.stderr);
@@ -179,6 +187,9 @@ function main() {
   assert.match(commandPlan, /ZeroLag formal release command plan/);
   assert.match(commandPlan, /npm run release:version -- --version 1\.0\.0 --write/);
   assert.match(commandPlan, /npm run production:config -- --domain zerolag\.gg --api-domain api\.zerolag\.gg --cdn-domain cdn\.zerolag\.gg --write/);
+  assert.match(commandPlan, /npm run release:inputs -- --write-server-env-snippet/);
+  assert.match(commandPlan, /npm run release:inputs -- --verify-server-env --server-env \.secrets\\server\.env/);
+  assert.match(commandPlan, /npm run server:env-check -- --profile sqlite --strict/);
   assert.match(commandPlan, /npm run update:prepare -- --base-url https:\/\/cdn\.zerolag\.gg\/releases/);
   assert.ok(!commandPlan.includes("do-not-print"), "command plan must not expose rejected secret fixtures");
 
@@ -198,6 +209,55 @@ function main() {
   assert.ok(!/^ZEROLAG_WECHAT_PAY_API_V3_KEY=.+$/m.test(serverEnvSnippet), "WeChat API v3 key value must not be generated");
   assert.ok(!serverEnvSnippet.includes("certificatePassword"), "payment snippet must not mention certificate password fields");
   assert.ok(!serverEnvSnippet.includes("do-not-print"), "payment snippet must not expose secret fixtures");
+
+  const webhookSecret = "zl_payment_webhook_should_not_print_abcdefghijklmnopqrstuvwxyz123456";
+  const apiV3Key = "wechat_api_v3_should_not_print_abcdefghijklmnopqrstuvwxyz123456";
+  fs.writeFileSync(
+    alignedServerEnvPath,
+    `${serverEnvSnippet}\nZEROLAG_PAYMENT_WEBHOOK_SECRET=${webhookSecret}\nZEROLAG_WECHAT_PAY_API_V3_KEY=${apiV3Key}\n`,
+    "utf8"
+  );
+  const alignedServerEnvResult = run(["--file", readyPath, "--verify-server-env", "--server-env", alignedServerEnvPath, "--json"]);
+  assert.strictEqual(alignedServerEnvResult.status, 0, alignedServerEnvResult.stderr);
+  const alignedServerEnv = parseJson(alignedServerEnvResult.stdout);
+  assert.strictEqual(alignedServerEnv.ok, true);
+  assert.strictEqual(alignedServerEnv.provider, "wechat_pay");
+  assert.strictEqual(alignedServerEnv.checkedKeys, 9);
+  assert.strictEqual(alignedServerEnv.matchedKeys, 9);
+  assert.ok(!alignedServerEnvResult.stdout.includes(webhookSecret), "webhook secret values must not be printed");
+  assert.ok(!alignedServerEnvResult.stdout.includes(apiV3Key), "WeChat API v3 key values must not be printed");
+
+  fs.writeFileSync(missingSecretServerEnvPath, serverEnvSnippet, "utf8");
+  const missingSecretAlignmentResult = run(["--file", readyPath, "--verify-server-env", "--server-env", missingSecretServerEnvPath, "--json"]);
+  assert.notStrictEqual(missingSecretAlignmentResult.status, 0, "missing private payment secrets should block alignment");
+  const missingSecretAlignment = parseJson(missingSecretAlignmentResult.stdout);
+  assert.strictEqual(missingSecretAlignment.ok, false);
+  assert.ok(missingSecretAlignment.issues.some((issue) => issue.includes("ZEROLAG_PAYMENT_WEBHOOK_SECRET")), "missing webhook secret should be reported by key name");
+  assert.ok(missingSecretAlignment.issues.some((issue) => issue.includes("ZEROLAG_WECHAT_PAY_API_V3_KEY")), "missing WeChat API key should be reported by key name");
+
+  fs.writeFileSync(
+    mismatchedServerEnvPath,
+    [
+      "ZEROLAG_PAYMENT_PROVIDER=manual",
+      "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS=manual",
+      "ZEROLAG_PAYMENT_URL_TEMPLATE=https://pay.zerolag.gg/checkout/{orderId}",
+      `ZEROLAG_PAYMENT_WEBHOOK_SECRET=${webhookSecret}`,
+      "ZEROLAG_WECHAT_PAY_MCH_ID=wrong-mch",
+      "ZEROLAG_WECHAT_PAY_APP_ID=wx0000000000000000",
+      "ZEROLAG_WECHAT_PAY_SERIAL_NO=WECHATPAYCERTSERIAL",
+      "ZEROLAG_WECHAT_PAY_PRIVATE_KEY_PATH=D:\\secure\\wechatpay-apiclient-key.pem",
+      `ZEROLAG_WECHAT_PAY_API_V3_KEY=${apiV3Key}`,
+      ""
+    ].join("\n"),
+    "utf8"
+  );
+  const mismatchedServerEnvResult = run(["--file", readyPath, "--verify-server-env", "--server-env", mismatchedServerEnvPath]);
+  assert.notStrictEqual(mismatchedServerEnvResult.status, 0, "mismatched payment env values should block alignment");
+  assert.match(mismatchedServerEnvResult.stdout, /ZEROLAG_PAYMENT_PROVIDER does not match/);
+  assert.match(mismatchedServerEnvResult.stdout, /ZEROLAG_PAYMENT_ALLOWED_PROVIDERS does not include wechat_pay/);
+  assert.match(mismatchedServerEnvResult.stdout, /ZEROLAG_WECHAT_PAY_MCH_ID does not match/);
+  assert.ok(!mismatchedServerEnvResult.stdout.includes(webhookSecret), "alignment output must not print webhook secret values");
+  assert.ok(!mismatchedServerEnvResult.stdout.includes(apiV3Key), "alignment output must not print API key values");
 
   const alipayReady = readyFixture();
   alipayReady.payment.provider = "alipay";
@@ -224,6 +284,20 @@ function main() {
   assert.match(alipayServerEnvSnippet, /ZEROLAG_ALIPAY_PRIVATE_KEY_PATH=D:\\secure\\alipay-app-private-key\.pem/);
   assert.match(alipayServerEnvSnippet, /ZEROLAG_ALIPAY_PUBLIC_KEY_PATH=D:\\secure\\alipay-public-key\.pem/);
   assert.ok(!alipayServerEnvSnippet.includes("ZEROLAG_WECHAT_PAY_API_V3_KEY"), "Alipay snippet should not include WeChat secret placeholders");
+
+  fs.writeFileSync(
+    alipayAlignedServerEnvPath,
+    `${alipayServerEnvSnippet}\nZEROLAG_PAYMENT_WEBHOOK_SECRET=${webhookSecret}\n`,
+    "utf8"
+  );
+  const alipayAlignmentResult = run(["--file", alipayReadyPath, "--verify-server-env", "--server-env", alipayAlignedServerEnvPath, "--json"]);
+  assert.strictEqual(alipayAlignmentResult.status, 0, alipayAlignmentResult.stderr);
+  const alipayAlignment = parseJson(alipayAlignmentResult.stdout);
+  assert.strictEqual(alipayAlignment.ok, true);
+  assert.strictEqual(alipayAlignment.provider, "alipay");
+  assert.strictEqual(alipayAlignment.checkedKeys, 7);
+  assert.strictEqual(alipayAlignment.matchedKeys, 7);
+  assert.ok(!alipayAlignmentResult.stdout.includes(webhookSecret), "Alipay alignment output must not print webhook secret values");
 
   const reserved = readyFixture();
   reserved.domains.website = "zerolag.test";

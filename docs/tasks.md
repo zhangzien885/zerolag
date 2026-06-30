@@ -238,6 +238,7 @@
 - Added `npm run release:inputs -- --domain <domain>` to derive the website, API, CDN, checkout, webhook, release CDN, support URL, and support email fields from one real public root domain.
 - Added `npm run release:inputs -- --write-commands` to write a private reviewable PowerShell command plan after all formal release inputs pass validation.
 - Added `npm run release:inputs -- --write-server-env-snippet` to derive non-secret WeChat Pay or Alipay server env lines from validated formal release inputs without writing API keys, webhook secrets, certificate passwords, or private-key text.
+- Added `npm run release:inputs -- --verify-server-env` to compare validated formal payment inputs against the private server env by key/status only, so payment provider drift is caught without printing secret values.
 - Tightened server secret-strength checks so known default or obvious weak values still fail, while generated strong secrets are not rejected just because a random substring happens to contain `dev`.
 
 ## Known Boundaries

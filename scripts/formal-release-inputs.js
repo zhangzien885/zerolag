@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { defaultServerEnvPath: defaultPrivateServerEnvPath, parseEnvLine } = require("../server/env");
 const { isRealHttpsUrl } = require("./release-url-policy");
 
 const rootDir = path.join(__dirname, "..");
@@ -18,6 +19,7 @@ function usage() {
   console.log("  node scripts/formal-release-inputs.js --set domains.website=zerolag.gg [--set payment.provider=wechat_pay]");
   console.log("  node scripts/formal-release-inputs.js --write-commands [--output .secrets/formal-release-commands.ps1]");
   console.log("  node scripts/formal-release-inputs.js --write-server-env-snippet [--output .secrets/server-payment-snippet.env]");
+  console.log("  node scripts/formal-release-inputs.js --verify-server-env [--server-env .secrets/server.env] [--json]");
   console.log("  node scripts/formal-release-inputs.js [--file .secrets/formal-release-inputs.json] [--json]");
   console.log("");
   console.log("Collects and validates the external facts required for a paid public release without printing secrets.");
@@ -421,7 +423,10 @@ function collectFormalReleaseInputs(input) {
     nextCommands: [
       `npm run release:version -- --version ${targetVersion || "<version>"} --write`,
       `npm run production:config -- --domain ${websiteHost} --api-domain ${apiHost} --cdn-domain ${cdnHost} --write`,
-      "Fill .secrets/server.env payment values, then run npm run server:env-check -- --profile sqlite --strict",
+      "npm run release:inputs -- --write-server-env-snippet",
+      "# Merge .secrets/server-payment-snippet.env into .secrets/server.env and add real payment secrets before continuing.",
+      "npm run release:inputs -- --verify-server-env --server-env .secrets\\server.env",
+      "npm run server:env-check -- --profile sqlite --strict",
       "npm run release:artifacts",
       `npm run update:prepare -- --base-url ${baseUrl} --private-key .secrets\\update-private.pem --public-key .secrets\\update-public.pem --write`,
       "npm run production:mode -- --mode production --write",
@@ -567,6 +572,224 @@ function writeServerPaymentEnvSnippet(outputPath, inputFile, input, result) {
   return outputPath;
 }
 
+function readServerEnvEntries(filePath) {
+  const entries = new Map();
+  const duplicateKeys = [];
+  const invalidLines = [];
+
+  if (!fs.existsSync(filePath)) {
+    return {
+      exists: false,
+      entries,
+      duplicateKeys,
+      invalidLines
+    };
+  }
+
+  fs.readFileSync(filePath, "utf8").split(/\r?\n/).forEach((line, index) => {
+    const entry = parseEnvLine(line);
+    if (!entry) {
+      const trimmed = String(line || "").trim();
+      if (trimmed && !trimmed.startsWith("#")) invalidLines.push(index + 1);
+      return;
+    }
+    if (entries.has(entry.key)) duplicateKeys.push(entry.key);
+    entries.set(entry.key, entry.value);
+  });
+
+  return {
+    exists: true,
+    entries,
+    duplicateKeys: Array.from(new Set(duplicateKeys)),
+    invalidLines
+  };
+}
+
+function paymentProviderList(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => text(item))
+    .map((item) => item.toLowerCase())
+    .filter(Boolean);
+}
+
+function expectedPaymentEnvChecks(input) {
+  const payment = input.payment || {};
+  const provider = text(payment.provider);
+  const checks = [
+    {
+      type: "exact",
+      key: "ZEROLAG_PAYMENT_PROVIDER",
+      expected: provider
+    },
+    {
+      type: "allowlist",
+      key: "ZEROLAG_PAYMENT_ALLOWED_PROVIDERS",
+      provider
+    },
+    {
+      type: "exact",
+      key: "ZEROLAG_PAYMENT_URL_TEMPLATE",
+      expected: text(payment.checkoutUrlTemplate)
+    },
+    {
+      type: "present",
+      key: "ZEROLAG_PAYMENT_WEBHOOK_SECRET"
+    }
+  ];
+
+  if (provider === "wechat_pay") {
+    const wechatPay = payment.wechatPay || {};
+    checks.push(
+      {
+        type: "exact",
+        key: "ZEROLAG_WECHAT_PAY_MCH_ID",
+        expected: text(wechatPay.merchantId)
+      },
+      {
+        type: "exact",
+        key: "ZEROLAG_WECHAT_PAY_APP_ID",
+        expected: text(wechatPay.appId)
+      },
+      {
+        type: "exact",
+        key: "ZEROLAG_WECHAT_PAY_SERIAL_NO",
+        expected: text(wechatPay.serialNo)
+      },
+      {
+        type: "exact",
+        key: "ZEROLAG_WECHAT_PAY_PRIVATE_KEY_PATH",
+        expected: text(wechatPay.privateKeyPath)
+      },
+      {
+        type: "present",
+        key: "ZEROLAG_WECHAT_PAY_API_V3_KEY"
+      }
+    );
+  }
+
+  if (provider === "alipay") {
+    const alipay = payment.alipay || {};
+    checks.push(
+      {
+        type: "exact",
+        key: "ZEROLAG_ALIPAY_APP_ID",
+        expected: text(alipay.appId)
+      },
+      {
+        type: "exact",
+        key: "ZEROLAG_ALIPAY_PRIVATE_KEY_PATH",
+        expected: text(alipay.privateKeyPath)
+      },
+      {
+        type: "exact",
+        key: "ZEROLAG_ALIPAY_PUBLIC_KEY_PATH",
+        expected: text(alipay.publicKeyPath)
+      }
+    );
+  }
+
+  return checks;
+}
+
+function collectServerPaymentEnvAlignment(inputFile, input, result, serverEnvFile) {
+  const issues = [];
+  const warnings = [];
+  const payment = input.payment || {};
+  const provider = text(payment.provider);
+  const readyFailure = paymentSnippetRequiredCheckIds(input)
+    .map((id) => checkById(result, id))
+    .find((entry) => !entry || !entry.ok);
+
+  if (readyFailure) {
+    issues.push(`Formal payment inputs are not ready: ${readyFailure.label}.`);
+    return {
+      ok: false,
+      formalInputFile: inputFile,
+      serverEnvFile,
+      provider: provider || "missing",
+      checkedKeys: 0,
+      matchedKeys: 0,
+      issues,
+      warnings
+    };
+  }
+
+  const parsed = readServerEnvEntries(serverEnvFile);
+  if (!parsed.exists) issues.push("Private server env file is missing.");
+  if (parsed.duplicateKeys.length) issues.push(`Duplicate payment env keys: ${parsed.duplicateKeys.join(", ")}.`);
+  if (parsed.invalidLines.length) issues.push(`Invalid env lines: ${parsed.invalidLines.join(", ")}.`);
+
+  const checks = expectedPaymentEnvChecks(input);
+  let matchedKeys = 0;
+  checks.forEach((check) => {
+    const value = parsed.entries.get(check.key);
+    const configured = text(value).length > 0;
+
+    if (check.type === "present") {
+      if (configured) matchedKeys += 1;
+      else issues.push(`${check.key} is missing from the private server env.`);
+      return;
+    }
+
+    if (check.type === "allowlist") {
+      const providers = paymentProviderList(value);
+      if (!providers.includes(check.provider)) {
+        issues.push(`${check.key} does not include ${check.provider}.`);
+      } else {
+        matchedKeys += 1;
+      }
+      const extraProviders = providers.filter((item) => item !== check.provider);
+      if (extraProviders.length) {
+        warnings.push(`${check.key} includes extra provider entries; confirm this is intentional.`);
+      }
+      return;
+    }
+
+    if (configured && value === check.expected) {
+      matchedKeys += 1;
+    } else if (!configured) {
+      issues.push(`${check.key} is missing from the private server env.`);
+    } else {
+      issues.push(`${check.key} does not match the formal release input.`);
+    }
+  });
+
+  return {
+    ok: issues.length === 0,
+    formalInputFile: inputFile,
+    serverEnvFile,
+    provider,
+    checkedKeys: checks.length,
+    matchedKeys,
+    issues,
+    warnings
+  };
+}
+
+function printServerPaymentEnvAlignment(alignment) {
+  console.log(`ZeroLag payment server env alignment: ${alignment.ok ? "READY" : "BLOCKED"}`);
+  console.log(`Formal input file: ${alignment.formalInputFile}`);
+  console.log(`Server env file: ${alignment.serverEnvFile}`);
+  console.log(`Provider: ${alignment.provider}`);
+  console.log(`Matched keys: ${alignment.matchedKeys}/${alignment.checkedKeys}`);
+  if (alignment.issues.length) {
+    console.log("");
+    console.log("Issues:");
+    alignment.issues.forEach((issue) => console.log(`- ${issue}`));
+  }
+  if (alignment.warnings.length) {
+    console.log("");
+    console.log("Warnings:");
+    alignment.warnings.forEach((warning) => console.log(`- ${warning}`));
+  }
+  console.log("");
+  console.log("Next:");
+  console.log("- Run npm run release:inputs -- --write-server-env-snippet when non-secret payment values need to be regenerated.");
+  console.log("- Merge the snippet into the private server env and add real secrets only in that private location.");
+  console.log("- Run npm run server:env-check -- --profile sqlite --strict after this alignment check is ready.");
+}
+
 function initTemplate(outputPath, force) {
   if (fs.existsSync(outputPath) && !force) {
     throw new Error(`${outputPath} already exists. Pass --force to overwrite it.`);
@@ -612,6 +835,7 @@ function main() {
     const inputFile = path.resolve(argValue("--file", defaultInputPath));
     const writeCommands = hasFlag("--write-commands");
     const writeServerEnvSnippet = hasFlag("--write-server-env-snippet");
+    const verifyServerEnv = hasFlag("--verify-server-env");
     const domainValue = argValue("--domain", "");
     const hasDomainFlag = hasFlag("--domain") || process.argv.some((arg) => arg.startsWith("--domain="));
     const setValues = argValues("--set");
@@ -655,6 +879,18 @@ function main() {
       return;
     }
 
+    if (verifyServerEnv) {
+      const serverEnvFile = path.resolve(argValue("--server-env", process.env.ZEROLAG_ENV_FILE || defaultPrivateServerEnvPath));
+      const alignment = collectServerPaymentEnvAlignment(inputFile, inputData, result, serverEnvFile);
+      if (hasFlag("--json")) {
+        console.log(JSON.stringify(alignment, null, 2));
+      } else {
+        printServerPaymentEnvAlignment(alignment);
+      }
+      if (!alignment.ok) process.exitCode = 1;
+      return;
+    }
+
     if (hasFlag("--json")) {
       console.log(JSON.stringify(result, null, 2));
     } else {
@@ -675,6 +911,7 @@ module.exports = {
   applySetValues,
   commandPlan,
   collectFormalReleaseInputs,
+  collectServerPaymentEnvAlignment,
   domainPresetAssignments,
   initTemplate,
   printGuide,

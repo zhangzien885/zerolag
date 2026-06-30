@@ -92,7 +92,7 @@ function nextFromStatus(status, formalResult) {
       why: "The formal input file proves what the provider should be; the private env is what the live server will actually use.",
       command: "npm run release:inputs -- --write-server-env-snippet",
       detail: [serverEnv, paymentProvider, paymentCredentials].filter(Boolean).map((item) => `${item.id}: ${item.detail}`).join("; "),
-      afterThis: "Merge .secrets/server-payment-snippet.env into the private server env, add real secrets there, then run npm run server:env-check -- --profile sqlite --strict."
+      afterThis: "Merge .secrets/server-payment-snippet.env into the private server env, add real secrets there, run npm run release:inputs -- --verify-server-env --server-env .secrets\\server.env, then run npm run server:env-check -- --profile sqlite --strict."
     });
   }
 

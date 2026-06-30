@@ -99,3 +99,11 @@ npm run release:inputs -- --write-server-env-snippet
 ```
 
 默认会写到 `.secrets/server-payment-snippet.env`。它只包含支付渠道、收银台链接、商户号、App ID、证书序列号和私钥文件路径这类非密钥内容；支付 API Key、Webhook Secret、证书密码和私钥正文仍然要放在真正的私有服务端环境里。
+
+把片段合并进私有服务端环境、并补上真实密钥后，再跑一次对齐检查：
+
+```powershell
+npm run release:inputs -- --verify-server-env --server-env .\.secrets\server.env
+```
+
+这条命令只报告哪些 env 键匹配、缺失或不一致，不会打印真实密钥值。

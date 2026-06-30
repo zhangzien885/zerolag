@@ -115,6 +115,7 @@ function main() {
   assert.strictEqual(paymentStep.step.stage, "server-payment-env");
   assert.ok(paymentStep.step.command.includes("release:inputs -- --write-server-env-snippet"));
   assert.ok(paymentStep.step.afterThis.includes("server:env-check"));
+  assert.ok(paymentStep.step.afterThis.includes("--verify-server-env"));
 
   const updateStep = collectReleaseNextStep({
     formalInputsExists: true,
