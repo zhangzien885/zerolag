@@ -87,7 +87,7 @@ function main() {
     releaseStatus: statusWithItems([])
   });
   assert.strictEqual(incompleteInputs.step.stage, "formal-inputs-fill");
-  assert.strictEqual(incompleteInputs.step.command, "npm run release:inputs");
+  assert.strictEqual(incompleteInputs.step.command, "npm run release:inputs -- --guide");
 
   const formalResult = readyFormalInputs();
   assert.strictEqual(formalResult.readyForPublicRelease, true);

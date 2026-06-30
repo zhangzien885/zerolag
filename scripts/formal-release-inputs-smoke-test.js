@@ -81,6 +81,11 @@ function main() {
   assert.strictEqual(initResult.status, 0, initResult.stderr);
   assert.ok(fs.existsSync(templatePath), "init should write the input template");
 
+  const guideResult = run(["--guide"]);
+  assert.strictEqual(guideResult.status, 0, guideResult.stderr);
+  assert.match(guideResult.stdout, /zerolag-formal-release-guide-v1/, "guide output should include the stable guide marker");
+  assert.match(guideResult.stdout, /release:next/, "guide should point back to the next-step command");
+
   const defaultResult = run(["--file", templatePath]);
   assert.notStrictEqual(defaultResult.status, 0, "placeholder template must not pass readiness");
   assert.match(defaultResult.stdout, /BLOCKED/, "human output should show blocked status");

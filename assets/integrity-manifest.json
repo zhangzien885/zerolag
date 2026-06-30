@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T04:43:19.749Z",
+  "generatedAt": "2026-06-30T04:54:19.201Z",
   "files": [
     {
       "path": "package.json",
@@ -76,19 +76,19 @@
     },
     {
       "path": "scripts/release-next-step.js",
-      "sha256": "80e305dddfc70095cc790054227f478fdfcd2e58b0cc1dfef13ce9fec068173f"
+      "sha256": "6402193d8577d7446f6b09308338d6fa3f50a9a0b5152c2a487a88efd9a32e81"
     },
     {
       "path": "scripts/release-next-step-smoke-test.js",
-      "sha256": "640c659045915acac062accf8f643e7a31a27919200de5cbe6f7caa94ed70993"
+      "sha256": "ceda072e8007d41759b041fb7b4d80d7e111cd5e10e2ed746d9dd66675e7467c"
     },
     {
       "path": "scripts/formal-release-inputs.js",
-      "sha256": "67a5ea757a83a8460339526c9d3e05cfdeee592f2650f130ba3adae88a308eda"
+      "sha256": "d89064db7176d9c1f9320ce25e250cef4550be5a7b4d206bb562ea5e7280ed5c"
     },
     {
       "path": "scripts/formal-release-inputs-smoke-test.js",
-      "sha256": "e1d2d0e79f69d76b809ce10d010cc0645b14c4804372cf2bd178fb5ddec03cc8"
+      "sha256": "581affffa1026baeef1df1c757c4af76f6bdd39f16e6ba9a5d8fe022a6ba3b17"
     },
     {
       "path": "scripts/generate-test-code-signing-cert.js",
@@ -303,5 +303,5 @@
       "sha256": "88e790f4e8a56c15098dff7234e769dae7d04718745d0b839b471f55bd0ae571"
     }
   ],
-  "signature": "a4e635f57f99eb616c7f96c6738f0960fb760dd35fbbc85375cea758190ab378"
+  "signature": "70858fa8945e5edfa5d525007d4239e130c0ae99aee703e9c44e650c2a6b637a"
 }

@@ -233,6 +233,7 @@
 - Added a formal release input checklist that validates real website/API/CDN domains, payment provider readiness, production code-signing readiness, release CDN URL, and support URL without printing payment keys, certificate passwords, or private key material.
 - Added a dedicated server payment-provider adapter boundary for provider normalization, allowlists, credential-key requirements, checkout URL generation, deployment packaging, and CI smoke coverage before connecting real WeChat Pay or Alipay APIs.
 - Added a beginner-facing release next-step command that combines formal release inputs and release status into one recommended action, with CI smoke coverage.
+- Added a Chinese beginner guide for the formal release input file, exposed through `npm run release:inputs -- --guide`, so domain, payment, CDN, signing, and support fields can be filled without reading raw JSON alone.
 
 ## Known Boundaries
 

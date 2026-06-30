@@ -4,12 +4,14 @@ const { isRealHttpsUrl } = require("./release-url-policy");
 
 const rootDir = path.join(__dirname, "..");
 const defaultInputPath = path.join(rootDir, ".secrets", "formal-release-inputs.json");
+const guidePath = path.join(rootDir, "docs", "formal-release-inputs.zh-CN.md");
 
 const paymentProviders = new Set(["wechat_pay", "alipay"]);
 
 function usage() {
   console.log("Usage:");
   console.log("  node scripts/formal-release-inputs.js --init [--output .secrets/formal-release-inputs.json] [--force]");
+  console.log("  node scripts/formal-release-inputs.js --guide");
   console.log("  node scripts/formal-release-inputs.js [--file .secrets/formal-release-inputs.json] [--json]");
   console.log("");
   console.log("Collects and validates the external facts required for a paid public release without printing secrets.");
@@ -346,6 +348,13 @@ function initTemplate(outputPath, force) {
   return outputPath;
 }
 
+function printGuide() {
+  if (!fs.existsSync(guidePath)) {
+    throw new Error(`Formal release input guide is missing: ${guidePath}`);
+  }
+  console.log(fs.readFileSync(guidePath, "utf8").trimEnd());
+}
+
 function main() {
   if (hasFlag("--help")) {
     usage();
@@ -353,6 +362,11 @@ function main() {
   }
 
   try {
+    if (hasFlag("--guide")) {
+      printGuide();
+      return;
+    }
+
     if (hasFlag("--init")) {
       const outputPath = path.resolve(argValue("--output", defaultInputPath));
       initTemplate(outputPath, hasFlag("--force"));
@@ -386,5 +400,6 @@ if (require.main === module) {
 module.exports = {
   collectFormalReleaseInputs,
   initTemplate,
+  printGuide,
   template
 };

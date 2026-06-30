@@ -205,9 +205,11 @@ function collectReleaseNextStep(input = {}) {
         stage: "formal-inputs-fill",
         title: "Finish the formal release input file",
         why: "Code cannot safely switch to public release until the real external facts are known.",
-        command: "npm run release:inputs",
+        command: "npm run release:inputs -- --guide",
         detail: failed ? `${failed.label}: ${failed.detail}` : "Formal release input checks are not ready.",
-        afterThis: failed && failed.nextStep ? failed.nextStep : "Run npm run release:inputs again after editing the file."
+        afterThis: failed && failed.nextStep
+          ? `${failed.nextStep} Then run npm run release:inputs again.`
+          : "Fill the private file with real values, then run npm run release:inputs again."
       })
     };
   }

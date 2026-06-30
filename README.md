@@ -69,6 +69,7 @@ npm run server:secrets
 npm run release:preflight
 npm run release:preflight:strict
 npm run release:workstation
+npm run release:inputs -- --guide
 npm run release:inputs
 npm run release:next
 npm run signing:test-cert
@@ -93,6 +94,7 @@ Server commands automatically load `.secrets/server.env` when it exists. Existin
 
 `release:preflight` summarizes the remaining packaging, signing, update, and production-config gates. Use `release:preflight:strict` only when preparing a real public build. See `docs/release-checklist.md`.
 `release:workstation` checks whether the current PC can build and sign a paid release, including .NET SDK, native service wrapper exe, code-signing env, production URLs, update signing, private server env, and Git cleanliness.
+`release:inputs -- --guide` prints a beginner-friendly field guide for the private formal-release input file.
 `release:inputs` validates the private formal-release input checklist for real domains, payment provider, signing certificate readiness, release CDN, and support URL without printing secrets.
 `release:next` turns the current release status and formal input checklist into one beginner-friendly next action.
 `signing:test-cert` creates a local self-signed test code-signing certificate under `.secrets/codesign`; use it only to test packaging and signing flow, not for paid public release.
